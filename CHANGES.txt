@@ -1,0 +1,255 @@
+Version 2.18 (03/04/2015)
+------------
+- Added bar and line graph.
+- Added data label options for all graph types.
+- Added semantic_classes option.
+- Added axis text callback options.
+- Added detection of mbstring extension. If not available, fall back to basic
+  string functions.
+- Added check for too many divisions being created.
+- Fixed broken axis_right option on some multi-dataset graphs.
+- Fixed legend dragging.
+- Fixed divide by zero error in colour range function.
+
+Version 2.17 (27/11/2014)
+------------
+- Added fixed axis positioning options.
+- Added colour range and set functions.
+- Added auto_fit option and resizing support.
+- Fixed crosshairs bugs when embedded in HTML.
+
+Version 2.16 (24/09/2014)
+------------
+- Added stacked grouped bar graph.
+- Added image markers support.
+- Added skewing of 3D bar side and top.
+- Added support for fixed bar width.
+- Added option to set the number of decimal digits shown on axis text.
+- Added opacity value support for graph background colour.
+- Added exception details option for debugging.
+- Replaced all @ error handlers with tests for problem values.
+- Fixed escaping of text.
+- Fixed blank lines in multi-line text being ignored.
+- Fixed rendering of graphs with a single value.
+
+Version 2.15.1 (12/05/2014)
+--------------
+- Added crosshair options.
+- Fixed X axis being incorrectly labelled when using large associative dataset.
+
+Version 2.15 (11/03/2014)
+------------
+- Added donut graph.
+- Added polar area graph.
+- Added exploded pie graph.
+- Added support for dual Y axes.
+- Fixed legend dragging when embedded in HTML.
+
+Version 2.14 (05/10/2013)
+------------
+- Added pattern fill support.
+- Added total labels for stacked bar graphs.
+- Better validation of structured data.
+- Better handling of non-ASCII strings.
+- Replaced rgba() values with opacity attributes.
+- Fixed compatibility with PHP 5.1.x.
+- Fixed drawing of pie graphs containing relatively small values.
+- Fixed X axis calculations for negative or non-integral values.
+- Fixed structured axis_text when units_label or units_before_label used.
+- Fixed position of labels on stacked bar graphs with negative values.
+- Fixed legend entries skipping NULL or 0 values.
+
+Version 2.13 (31/07/2013)
+------------
+- Added PopulationPyramid graph.
+- Added units_before_x and units_before_y options for axis text.
+- Added units_label and units_before_label options for pie/bar labels.
+- Added units_tooltip, units_before_tooltip, units_tooltip_key and
+  units_before_tooltip_key options for tooltip values.
+- Added stroke_dash, minify and minify_js options.
+- Added structured data options: marker_type, marker_size, marker_stroke_width,
+  marker_stroke_colour, stroke_colour, stroke_width and stroke_dash.
+- Fixed display of character entities in tooltips.
+- Fixed measurement of text containing character entities.
+- Fixed dragging of legend over pie graphs.
+
+Version 2.12 (18/05/2013)
+------------
+- Added log_axis_y and log_axis_y_base options.
+- Added decimal and thousands options for number formatting.
+- Added grid_back_stripe and grid_back_stripe_colour options.
+- Added per-axis font options.
+- Added units_x and units_y options for axis text.
+- Added show_label_key option for pie graphs.
+- 3D pie graphs now calculate a depth when the setting is too great.
+- Fixed structure option to take precedence over scatter_2d option.
+- Fixed display of small numbers on axes.
+- Added workaround for Safari 6 <use/> bug.
+
+Version 2.11 (12/03/2013)
+------------
+- Added stacked and grouped cylinder graphs.
+- Added structured data support.
+- Added normal and horizontal floating bar graphs.
+- Added bubble graph.
+- Added box and whisker graph.
+- Added back_round_clip option.
+- Added reverse option for radar graphs.
+- Added support for negative values on radar graphs.
+- Added support for multi-line tooltips.
+- Fixed drawing of axes when all values negative.
+- Fixed svg node in namespaced XHTML.
+- Improved performance.
+
+Version 2.10 (23/10/2012)
+------------
+- Added cylinder graph.
+- Added stacked and grouped 3D bar graphs.
+- Added support for gradients in graph element backgrounds.
+- Added gradient shaded side to 3D pie graphs.
+- Added best fit lines for scatter graphs.
+- Added support for drawing associative data on scatter graphs.
+- Added show_axis_h and show_axis_v options.
+- Added minimum_units_y option.
+- Improved axis text label spacing again.
+- Better text positioning for radar graphs.
+- New default colours.
+- Fixed tooltips positioning when embedded in HTML5/XHTML.
+- Fixed text being selected when dragging legend.
+- Fixed graphs with all values negative not being drawn.
+
+Version 2.9 (29/08/2012)
+-----------
+- Added bar label options.
+- Added axis division and subdivision styles and other options.
+- Added diamond, hexagon, octagon, asterisk, star, threestar, fourstar and
+  eightstar markers.
+- Added legend columns option.
+- Added guide line opacity, text opacity, font adjust, text align, length and
+  length in units options.
+- Added grid background colour option.
+- Added grid line style options.
+- Added marker border options.
+- Added character encoding option.
+- Added gradient stop opacity support.
+- Improved subdivision calculations.
+- Improved axis text label spacing.
+- Removed main clipping path when not using a rounded rectangle background.
+- Fixed grid clipping path using non-unique ID.
+- Fixed line graphs not reaching right hand side of graph.
+- Fixed line graphs drawing vertical line to axis when filling enabled.
+- Fixed guide line title line spacing.
+- Fixed error caused by empty data sets.
+
+Version 2.8 (27/07/2012)
+-----------
+- Added stacked line graph.
+- Added radar graph and multi-radar graph.
+- Added axis_text_space option.
+- Added axis_stroke_width option.
+- Added force_assoc option.
+- Fixed legend dragging without tooltips enabled.
+- Fixed display of labels when axes disabled.
+- Fixed use of associative array data.
+- Added fill to legend display for line graphs.
+
+Version 2.7.1 (02/07/2012)
+-------------
+- Fixed order of entries in multi-line graphs.
+- Fixed script type attribute to match SVG standard.
+- Fixed order of legend entries for stacked bar, horizontal bar and
+  horizontal grouped bar graphs.
+- Fixed format of negative decimal numbers.
+
+Version 2.7 (25/05/2012)
+----------
+- Added guideline options.
+- Added axis text rotation.
+- Improved HTML embedding.
+- Reduced output size of grouped and stacked bar graphs.
+
+Version 2.6 (30/03/2012)
+-----------
+- Moved all configuration defaults to svggraph.ini.
+- Added legend_* options.
+- Added label_* options.
+- Added graph_title_* options.
+
+Version 2.5.1 (20/02/2012)
+-------------
+- Fixed bug with 0 values in stacked graphs.
+
+Version 2.5 (09/08/2011)
+-----------
+- Improved Javascript event handlers.
+- Added grid and axis subdivision options.
+- Added stroke width option.
+- Added more line/scatter marker symbols.
+- Added line dash option.
+- Added support for per-dataset fill opacity and line width.
+- Added pie graph start angle option.
+
+Version 2.4 (07/07/2011)
+-----------
+- Added multiple scatter graph.
+- Added option to use full x,y data for scatter graphs.
+- Added support for per-dataset marker options.
+- Added support for per-dataset fill_under options.
+- Fixed axis options are now available on both axes.
+
+Version 2.3 (26/04/2011)
+-----------
+- Added horizontal bar graph.
+- Added horizontal stacked bar graph.
+- Added horizontal grouped bar graph.
+- Updated 3D bar graph to support negative values.
+- Added fixed axis and division options.
+
+Version 2.2.1 (17/03/2011)
+-------------
+- Fixed display of graphs with a single data point.
+
+Version 2.2 (21/02/2011)
+-----------
+- Added background image support.
+- Added support for negative numbers on bar/line graphs.
+- Updated axis calculations.
+- Tooltips are now supported for all graph types.
+
+Version 2.1 (12/01/2011)
+-----------
+- Added stacked bar graph.
+- Added grouped bar graph.
+- Added multiple line graph.
+- Improved gradient support.
+- Made markers mandatory on scatter graph.
+
+Version 2.0 (19/08/2010)
+-----------
+- Update to PHP 5 OOP syntax.
+- Added 3D pie graph.
+- Added scatter graph.
+- Added tooltips for graph markers.
+- Minor improvements.
+
+Version 1.2.1 (11/04/2010)
+-------------
+- Fixed error shown with E_STRICT.
+
+Version 1.2 (01/05/2009)
+-----------
+- Added Bar3DGraph graph type.
+- Added axis divisions.
+
+Version 1.1 (27/03/2009)
+-----------
+- Added PieGraph graph type.
+- Added title and description options.
+- Added namespaced output option.
+- Reduced output file size using grouping, symbols.
+- Unused gradients are no longer output.
+
+Version 1.0 (16/03/2009)
+-----------
+- First released version.
+
