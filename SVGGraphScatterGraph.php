@@ -52,21 +52,29 @@ class ScatterGraph extends PointGraph {
       ++$bnum;
     }
 
+    $best_fit_above = $best_fit_below = '';
     if($this->best_fit) {
-      $best_fit = is_array($this->best_fit) ? $this->best_fit[0] :
-        $this->best_fit;
-      $colour = is_array($this->best_fit_colour) ? $this->best_fit_colour[0] :
-        $this->best_fit_colour;
-      $stroke_width = is_array($this->best_fit_width) ?
-        $this->best_fit_width[0] : $this->best_fit_width;
-      $dash = is_array($this->best_fit_dash) ?
-        $this->best_fit_dash[0] : $this->best_fit_dash;
-      $body .= $this->BestFit($best_fit, 0, $colour, $stroke_width, $dash);
+      $bftype = $this->ArrayOption($this->best_fit, 0);
+      $colour = $this->ArrayOption($this->best_fit_colour, 0);
+      $stroke_width = $this->ArrayOption($this->best_fit_width, 0);
+      $dash = $this->ArrayOption($this->best_fit_dash, 0);
+      $opacity = $this->ArrayOption($this->best_fit_opacity, 0);
+      $best_fit = $this->BestFit($bftype, 0, $colour, $stroke_width, $dash,
+        $opacity);
+      if($this->semantic_classes)
+        $best_fit = $this->Element('g', array('class' => 'bestfit'), NULL,
+          $best_fit);
+      if($this->ArrayOption($this->best_fit_above, 0))
+        $best_fit_above = $best_fit;
+      else
+        $best_fit_below = $best_fit;
     }
+    $body .= $best_fit_below;
     $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();
+    $body .= $best_fit_above;
     return $body;
   }
 

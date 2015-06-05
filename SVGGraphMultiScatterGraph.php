@@ -40,6 +40,7 @@ class MultiScatterGraph extends PointGraph {
 
     $chunk_count = count($this->multi_graph);
     $this->ColourSetup($this->multi_graph->ItemsCount(-1), $chunk_count);
+    $best_fit_above = $best_fit_below = '';
     for($i = 0; $i < $chunk_count; ++$i) {
       $bnum = 0;
       $axis = $this->DatasetYAxis($i);
@@ -58,18 +59,35 @@ class MultiScatterGraph extends PointGraph {
 
       // draw the best-fit line for this data set
       if($this->best_fit) {
-        $best_fit = $this->ArrayOption($this->best_fit, $i);
+        $bftype = $this->ArrayOption($this->best_fit, $i);
         $colour = $this->ArrayOption($this->best_fit_colour, $i);
         $stroke_width = $this->ArrayOption($this->best_fit_width, $i);
         $dash = $this->ArrayOption($this->best_fit_dash, $i);
-        $body .= $this->BestFit($best_fit, $i, $colour, $stroke_width, $dash);
+        $opacity = $this->ArrayOption($this->best_fit_opacity, $i);
+        $above = $this->ArrayOption($this->best_fit_above, $i);
+
+        $best_fit = $this->BestFit($bftype, $i, $colour, $stroke_width, $dash,
+          $opacity);
+        if($above)
+          $best_fit_above .= $best_fit;
+        else
+          $best_fit_below .= $best_fit;
       }
     }
 
+    if($this->semantic_classes) {
+      $cls = array('class' => 'bestfit');
+      if(!empty($best_fit_below))
+        $best_fit_below = $this->Element('g', $cls, NULL, $best_fit_below);
+      if(!empty($best_fit_above))
+        $best_fit_above = $this->Element('g', $cls, NULL, $best_fit_above);
+    }
+    $body .= $best_fit_below;
     $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();
+    $body .= $best_fit_above;
     return $body;
   }
 

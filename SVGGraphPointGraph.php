@@ -386,7 +386,8 @@ abstract class PointGraph extends GridGraph {
   /**
    * Find the best fit line for the data points
    */
-  protected function BestFit($type, $dataset, $colour, $stroke_width, $dash)
+  protected function BestFit($type, $dataset, $colour, $stroke_width, $dash,
+    $opacity)
   {
     // only straight lines supported for now
     if($type != 'straight')
@@ -460,6 +461,8 @@ abstract class PointGraph extends GridGraph {
       $path['stroke-width'] = $stroke_width;
     if(!empty($dash))
       $path['stroke-dasharray'] = $dash;
+    if($opacity != 1)
+      $path['opacity'] = $opacity;
 
     return $this->Element('path', $path);
   }
