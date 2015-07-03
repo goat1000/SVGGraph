@@ -176,7 +176,14 @@ class DataLabels {
       // convert to string - numbers will confuse TextSize()
       $content = (string)$gobject['content'];
     } else {
-      $content = $gobject['item']->Data('label');
+      if(is_callable($this->data_label_callback)) {
+        $content = call_user_func($this->data_label_callback, $dataset,
+          $gobject['item']->key, $gobject['item']->value);
+        if(is_null($content))
+          $content = '';
+      } else {
+        $content = $gobject['item']->Data('label');
+      }
       if(is_null($content)) {
         $content = !is_null($gobject['content']) ? $gobject['content'] :
           $this->units_before_label . Graph::NumString($gobject['item']->value) .

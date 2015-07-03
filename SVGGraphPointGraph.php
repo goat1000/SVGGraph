@@ -110,7 +110,7 @@ abstract class PointGraph extends GridGraph {
     if($this->semantic_classes)
       $use['class'] = "series{$set}";
     if($this->show_tooltips)
-      $this->SetTooltip($use, $marker->item, $marker->key, $marker->value);
+      $this->SetTooltip($use, $marker->item, $set, $marker->key, $marker->value);
 
     if($this->GetLinkURL($marker->item, $marker->key)) {
       $id = $this->marker_link_ids[$id];
@@ -465,6 +465,18 @@ abstract class PointGraph extends GridGraph {
       $path['opacity'] = $opacity;
 
     return $this->Element('path', $path);
+  }
+
+  /**
+   * Override to show key and value
+   */
+  protected function FormatTooltip(&$item, $dataset, $key, $value)
+  {
+    $text = is_numeric($key) ? $this->units_before_tooltip_key .
+      Graph::NumString($key) . $this->units_tooltip_key : $key;
+    $text .= ', ' . $this->units_before_tooltip . Graph::NumString($value) .
+      $this->units_tooltip;
+    return $text;
   }
 }
 

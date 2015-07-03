@@ -73,7 +73,7 @@ class GroupedBar3DGraph extends Bar3DGraph {
               $bar['x'] + $tx, $bar['y'] + $ty, $bar['width'], $bar['height']);
 
             if($this->show_tooltips)
-              $this->SetTooltip($group, $item, $item->value);
+              $this->SetTooltip($group, $item, $j, $item->key, $item->value);
             $link = $this->GetLink($item, $k, $bar_sections);
             $this->SetStroke($group, $item, $j, 'round');
             if($this->semantic_classes)

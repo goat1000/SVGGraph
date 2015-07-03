@@ -92,7 +92,7 @@ class StackedCylinderGraph extends CylinderGraph {
             $bar['x'] + $tx, $bar['y'] + $ty, $bar['width'], $bar['height']);
 
           if($this->show_tooltips)
-            $this->SetTooltip($group, $item, $value);
+            $this->SetTooltip($group, $item, $j, $k, $value);
           $link = $this->GetLink($item, $k, $bar_sections);
           $this->SetStroke($group, $item, $j, 'round');
           if($this->semantic_classes)

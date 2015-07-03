@@ -77,7 +77,7 @@ class Bar3DGraph extends ThreeDGraph {
 
           $group = array_merge($group, $bar_style);
           if($this->show_tooltips)
-            $this->SetTooltip($group, $item, $item->value);
+            $this->SetTooltip($group, $item, 0, $item->key, $item->value);
           $this->SetStroke($group, $item, 0, 'round');
           $bars .= $this->Element('g', $group, NULL, $link);
           unset($group['id']); // make sure a new one is generated
@@ -144,6 +144,10 @@ class Bar3DGraph extends ThreeDGraph {
     if(is_null($pos) || $pos > $this->height - $this->pad_bottom)
       return '';
 
+    $side_overlay = min(1, max(0, $this->bar_side_overlay_opacity));
+    $top_overlay = min(1, max(0, $this->bar_top_overlay_opacity));
+    $front_overlay = min(1, max(0, $this->bar_front_overlay_opacity));
+
     $bar_side = '';
     $bw = $this->block_width;
     $bh = $bar['height'];
@@ -164,7 +168,16 @@ class Bar3DGraph extends ThreeDGraph {
     );
     if($this->skew_side)
       $side['fill'] = 'none';
+    if($side_overlay)
+      $side['stroke'] = 'none'; // only stroke top layer
     $bar_side .= $this->Element('path', $side);
+
+    if($side_overlay) {
+      $side['fill-opacity'] = $side_overlay;
+      $side['fill'] = $this->bar_side_overlay_colour;
+      unset($side['stroke']);
+      $bar_side .= $this->Element('path', $side);
+    }
 
     if(is_null($top)) {
       $bar_top = '';
@@ -172,10 +185,31 @@ class Bar3DGraph extends ThreeDGraph {
       $top['transform'] = "translate($bar[x],$bar[y])";
       $top['fill'] = $this->GetColour($item, $index, $dataset,
         $this->skew_top ? FALSE : TRUE);
+      if($top_overlay)
+        $top['stroke'] = 'none';
       $bar_top = $this->Element('use', $top, null, $this->empty_use ? '' : null);
+
+      if($top_overlay) {
+        unset($top['stroke']);
+        $otop = $top;
+        $otop['fill-opacity'] = $top_overlay;
+        $otop['fill'] = $this->bar_top_overlay_colour;
+        $bar_top .= $this->Element('use', $otop, null, $this->empty_use ? '' : null);
+      }
     }
 
+    if($front_overlay)
+      $bar['stroke'] = 'none';
     $rect = $this->Element('rect', $bar);
+
+    if($front_overlay) {
+      unset($bar['stroke']);
+      $obar = $bar;
+      $obar['fill-opacity'] = $front_overlay;
+      $obar['fill'] = $this->bar_front_overlay_colour;
+      $rect .= $this->Element('rect', $obar);
+    }
+
     return $rect . $bar_top . $bar_side;
   }
 

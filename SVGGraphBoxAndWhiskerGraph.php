@@ -60,7 +60,7 @@ class BoxAndWhiskerGraph extends PointGraph {
           $this->GridY($item->Data('bottom')) - $this->GridY($item->Data('top'))
         );
         if($this->show_tooltips)
-          $this->SetTooltip($g, $item, $item->value, null,
+          $this->SetTooltip($g, $item, 0, $item->key, $item->value,
             !$this->compat_events && $this->show_label);
 
         if($this->semantic_classes)

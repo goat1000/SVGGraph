@@ -26,6 +26,7 @@ class Histogram extends BarGraph {
   protected $label_centre = FALSE;
   protected $force_assoc = TRUE;
   protected $minimum_units_y = 1;
+  protected $repeated_keys = 'accept'; // allow repeated keys
 
   protected $increment = NULL;
   protected $percentage = false;
@@ -74,6 +75,9 @@ class Histogram extends BarGraph {
       $map = array();
       $start = $this->Interval($min);
       $end = $this->Interval($max, true) + $this->increment / 2;
+
+      Graph::SetNumStringOptions($this->settings['decimal'],
+        $this->settings['thousands']);
       for($i = $start; $i < $end; $i += $this->increment) {
         $key = Graph::NumString($i);
         $map[$key] = null;

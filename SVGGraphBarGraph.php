@@ -66,7 +66,7 @@ class BarGraph extends GridGraph {
           $show_label = $this->AddDataLabel(0, $bnum, $bar, $item, $bar['x'],
             $bar['y'], $bar['width'], $bar['height']);
           if($this->show_tooltips)
-            $this->SetTooltip($bar, $item, $item->value, null,
+            $this->SetTooltip($bar, $item, 0, $item->key, $item->value,
               !$this->compat_events && $show_label);
           $rect = $this->Element('rect', $bar, $bar_style);
           $bars .= $this->GetLink($item, $item->key, $rect);

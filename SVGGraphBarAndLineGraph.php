@@ -116,7 +116,7 @@ class BarAndLineGraph extends GroupedBarGraph {
                 $show_label = $this->AddDataLabel($j, $bnum, $bar, $item,
                   $bar['x'], $bar['y'], $bar['width'], $bar['height']);
                 if($this->show_tooltips)
-                  $this->SetTooltip($bar, $item, $item->value, null,
+                  $this->SetTooltip($bar, $item, $j, $item->key, $item->value,
                     !$this->compat_events && $show_label);
                 if($this->semantic_classes)
                   $bar['class'] = "series{$j}";

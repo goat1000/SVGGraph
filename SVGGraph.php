@@ -1379,30 +1379,34 @@ abstract class Graph {
    * Default tooltip contents are key and value, or whatever
    * $key is if $value is not set
    */
-  protected function SetTooltip(&$element, &$item, $key, $value = NULL,
+  protected function SetTooltip(&$element, &$item, $dataset, $key, $value = NULL,
     $duplicate = FALSE)
   {
-    // use structured data tooltips if specified
-    if(is_array($this->structure) && isset($this->structure['tooltip'])) {
-      $text = $item->Data('tooltip');
-      if(is_null($text))
-        return;
-    } else {
-      // use a sprintf format for the tooltip
-      $format = '%s, %s';
-      if(is_null($value)) {
+    if(is_callable($this->tooltip_callback)) {
+      if(is_null($value))
         $value = $key;
-        $format = '%2$s'; // value only
-      }
-      $k = is_numeric($key) ? $this->units_before_tooltip_key . 
-        Graph::NumString($key) . $this->units_tooltip_key : $key;
-      $v = is_numeric($value) ? $this->units_before_tooltip . 
-        Graph::NumString($value) . $this->units_tooltip : $value;
-      $text = sprintf($format, $k, $v);
+      $text = call_user_func($this->tooltip_callback, $dataset, $key, $value);
+    } elseif(is_array($this->structure) && isset($this->structure['tooltip'])) {
+      // use structured data tooltips if specified
+      $text = $item->Data('tooltip');
+    } else {
+      $text = $this->FormatTooltip($item, $dataset, $key, $value);
     }
+    if(is_null($text))
+      return;
     $text = addslashes(str_replace("\n", '\n', $text));
     Graph::$javascript->SetTooltip($element, $text, $duplicate);
   }
+
+  /**
+   * Default format is value only
+   */
+  protected function FormatTooltip(&$item, $dataset, $key, $value)
+  {
+    return $this->units_before_tooltip . Graph::NumString($value) .
+      $this->units_tooltip;
+  }
+
 
   /**
    * Sets the fader for an element
@@ -1612,8 +1616,8 @@ abstract class Graph {
     Graph::$precision = $this->settings['precision'];
     $old_precision = ini_set('precision', Graph::$precision);
     // set decimal and thousands for NumString
-    Graph::$decimal = $this->settings['decimal'];
-    Graph::$thousands = $this->settings['thousands'];
+    Graph::SetNumStringOptions($this->settings['decimal'],
+      $this->settings['thousands']);
 
     // display title and description if available
     $heading = '';
@@ -1792,6 +1796,15 @@ abstract class Graph {
       return $a;
     }
     return $s;
+  }
+
+  /**
+   * Sets the number format characters
+   */
+  public static function SetNumStringOptions($decimal, $thousands)
+  {
+    Graph::$decimal = $decimal;
+    Graph::$thousands = $thousands;
   }
 
   /**

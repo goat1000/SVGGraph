@@ -154,7 +154,7 @@ class PieGraph extends Graph {
 
       if($radius_x || $radius_y) {
         if($this->show_tooltips)
-          $this->SetTooltip($attr, $item, $key, $value, !$this->compat_events);
+          $this->SetTooltip($attr, $item, 0, $key, $value, !$this->compat_events);
   
         $this->CalcSlice($angle_start, $angle_end, $radius_x, $radius_y,
           $x1, $y1, $x2, $y2);

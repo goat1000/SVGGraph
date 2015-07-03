@@ -64,7 +64,7 @@ class BubbleGraph extends PointGraph {
             $x - $r, $y - $r, $r * 2, $r * 2);
 
           if($this->show_tooltips)
-            $this->SetTooltip($circle, $item, $area, null,
+            $this->SetTooltip($circle, $item, 0, $item->key, $area,
               !$this->compat_events);
           if($this->semantic_classes)
             $circle['class'] = "series0";
