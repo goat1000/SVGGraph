@@ -125,6 +125,18 @@ class BarGraph extends GridGraph {
   }
 
   /**
+   * Override to check minimum space requirement
+   */
+  protected function AddDataLabel($dataset, $index, &$element, &$item,
+    $x, $y, $w, $h, $content = NULL, $duplicate = TRUE)
+  {
+    if($h < $this->ArrayOption($this->data_label_min_space, $dataset))
+      return false;
+    return parent::AddDataLabel($dataset, $index, $element, $item, $x, $y,
+      $w, $h, $content, $duplicate);
+  }
+
+  /**
    * Returns the position for a data label
    */
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,

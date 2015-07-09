@@ -95,6 +95,7 @@ class PieGraph extends Graph {
       $this->Calc();
 
     $unit_slice = 2.0 * M_PI / $this->total;
+    $min_slice_angle = $this->ArrayOption($this->data_label_min_space, 0);
     $vcount = 0;
 
     // need to store the original position of each value, because the
@@ -149,8 +150,11 @@ class PieGraph extends Graph {
           $this->label_percent_decimals) . '%';
       $label_content = implode("\n", $parts);
 
-      $show_label = $this->AddDataLabel(0, $original_position, $attr, $item,
-        $this->x_centre, $this->y_centre, 1, 1, $label_content);
+      // add the data label if the slice angle is big enough
+      if($this->slice_info[$original_position]->Degrees() >= $min_slice_angle) {
+        $this->AddDataLabel(0, $original_position, $attr, $item,
+          $this->x_centre, $this->y_centre, 1, 1, $label_content);
+      }
 
       if($radius_x || $radius_y) {
         if($this->show_tooltips)
@@ -380,6 +384,14 @@ class SVGGraphSliceInfo {
   public function MidAngle()
   {
     return $this->start_angle + ($this->end_angle - $this->start_angle) / 2;
+  }
+
+  /**
+   * Returns the slice angle in degrees
+   */
+  public function Degrees()
+  { 
+    return rad2deg($this->end_angle - $this->start_angle);
   }
 }
 

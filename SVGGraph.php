@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.18');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.19');
 
 require_once 'SVGGraphColours.php';
 

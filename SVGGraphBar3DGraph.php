@@ -241,6 +241,18 @@ class Bar3DGraph extends ThreeDGraph {
   }
 
   /**
+   * Override to check minimum space requirement
+   */
+  protected function AddDataLabel($dataset, $index, &$element, &$item,
+    $x, $y, $w, $h, $content = NULL, $duplicate = TRUE)
+  {
+    if($h < $this->ArrayOption($this->data_label_min_space, $dataset))
+      return false;
+    return parent::AddDataLabel($dataset, $index, $element, $item, $x, $y,
+      $w, $h, $content, $duplicate);
+  }
+
+  /**
    * Return box for legend
    */
   protected function DrawLegendEntry($set, $x, $y, $w, $h)

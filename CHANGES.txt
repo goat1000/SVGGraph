@@ -1,3 +1,11 @@
+Version 2.19
+------------
+- Added histogram.
+- Added shading overlay for 3D bar sides and top.
+- Added best_fit_opacity and best_fit_above options.
+- Added semantic class for best fit lines.
+- Added tooltip and data label callback options.
+
 Version 2.18 (03/04/2015)
 ------------
 - Added bar and line graph.
