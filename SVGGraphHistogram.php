@@ -24,8 +24,6 @@ require_once 'SVGGraphBarGraph.php';
 class Histogram extends BarGraph {
 
   protected $label_centre = FALSE;
-  protected $force_assoc = TRUE;
-  protected $minimum_units_y = 1;
   protected $repeated_keys = 'accept'; // allow repeated keys
 
   protected $increment = NULL;
@@ -79,12 +77,12 @@ class Histogram extends BarGraph {
       Graph::SetNumStringOptions($this->settings['decimal'],
         $this->settings['thousands']);
       for($i = $start; $i < $end; $i += $this->increment) {
-        $key = Graph::NumString($i);
+        $key = (int)$i;
         $map[$key] = null;
       }
 
       foreach($values as $val) {
-        $k = Graph::NumString($this->Interval($val));
+        $k = (int)$this->Interval($val);
         if(!array_key_exists($k, $map))
           $map[$k] = 1;
         else
@@ -104,6 +102,15 @@ class Histogram extends BarGraph {
       // turn off structured data
       $this->structure = NULL;
       $this->structured_data = FALSE;
+
+      // set up options to make bar graph class draw the histogram properly
+      $this->minimum_units_y = 1;
+      $this->subdivision_h = $this->increment; // no subdiv below bar size
+      $this->grid_division_h = max($this->increment, $this->grid_division_h);
+
+      $amh = $this->axis_min_h;
+      if(empty($amh))
+        $this->axis_min_h = $start;
     }
     parent::Values($values);
   }
@@ -136,12 +143,23 @@ class Histogram extends BarGraph {
     $position = null;
     $zero = -0.01; // catch values close to 0
     $axis = $this->x_axes[$this->main_x_axis];
-    $offset = $axis->Zero() + ($axis->Unit() * $ikey);
+    $offset = $axis->Zero() + ($axis->Unit() * $key);
     $g_limit = $this->g_width - ($axis->Unit() / 2);
     if($offset >= $zero && floor($offset) <= $g_limit)
       $position = $this->pad_left + $offset;
 
     return $position;
+  }
+
+  /**
+   * Returns the width of a bar
+   */
+  protected function BarWidth()
+  {
+    if(is_numeric($this->bar_width) && $this->bar_width >= 1)
+      return $this->bar_width;
+    $unit_w = $this->x_axes[$this->main_x_axis]->Unit();
+    return $unit_w * $this->increment;
   }
 }
 
