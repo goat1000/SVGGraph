@@ -158,8 +158,17 @@ class Histogram extends BarGraph {
   {
     if(is_numeric($this->bar_width) && $this->bar_width >= 1)
       return $this->bar_width;
-    $unit_w = $this->x_axes[$this->main_x_axis]->Unit();
-    return $unit_w * $this->increment;
+    $unit_w = $this->increment * $this->x_axes[$this->main_x_axis]->Unit();
+    return $this->bar_space >= $unit_w ? '1' : $unit_w - $this->bar_space;
+  }
+
+  /**
+   * Returns the space before a bar
+   */
+  protected function BarSpace($bar_width)
+  {
+    $uwidth = $this->increment * $this->x_axes[$this->main_x_axis]->Unit();
+    return max(0, ($uwidth - $bar_width) / 2);
   }
 }
 

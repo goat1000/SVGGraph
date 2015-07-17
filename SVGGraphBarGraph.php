@@ -40,7 +40,7 @@ class BarGraph extends GridGraph {
     $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
     $bnum = 0;
     $bar_width = $this->BarWidth();
-    $bspace = max(0, ($this->x_axes[$this->main_x_axis]->Unit() - $bar_width) / 2);
+    $bspace = $this->BarSpace($bar_width);
     $this->ColourSetup($this->values->ItemsCount());
     $bars = '';
 
@@ -93,6 +93,14 @@ class BarGraph extends GridGraph {
       return $this->bar_width;
     $unit_w = $this->x_axes[$this->main_x_axis]->Unit();
     return $this->bar_space >= $unit_w ? '1' : $unit_w - $this->bar_space;
+  }
+
+  /**
+   * Returns the space before a bar
+   */
+  protected function BarSpace($bar_width)
+  {
+    return max(0, ($this->x_axes[$this->main_x_axis]->Unit() - $bar_width) / 2);
   }
 
   /**
