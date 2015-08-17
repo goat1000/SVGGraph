@@ -96,13 +96,23 @@ class StackedBarGraph extends BarGraph {
         if($this->show_bar_totals) {
           if($ypos) {
             $this->Bar($ypos, $bar);
+            if(is_callable($this->bar_total_callback))
+              $bar_total = call_user_func($this->bar_total_callback, $item->key,
+                $ypos);
+            else
+              $bar_total = $ypos;
             $this->AddContentLabel('totalpos', $bnum, $bar['x'], $bar['y'],
-              $bar['width'], $bar['height'], $ypos);
+              $bar['width'], $bar['height'], $bar_total);
           }
           if($yneg) {
             $this->Bar($yneg, $bar);
+            if(is_callable($this->bar_total_callback))
+              $bar_total = call_user_func($this->bar_total_callback, $item->key,
+                $yneg);
+            else
+              $bar_total = $yneg;
             $this->AddContentLabel('totalneg', $bnum, $bar['x'], $bar['y'],
-              $bar['width'], $bar['height'], $yneg);
+              $bar['width'], $bar['height'], $bar_total);
           }
         }
       }

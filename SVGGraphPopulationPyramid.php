@@ -101,13 +101,23 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
         if($this->show_bar_totals) {
           if($xpos) {
             $this->Bar($xpos, $bar);
+            if(is_callable($this->bar_total_callback))
+              $bar_total = call_user_func($this->bar_total_callback, $item->key,
+                $xpos);
+            else
+              $bar_total = $xpos;
             $this->AddContentLabel('totalpos', $bnum, $bar['x'], $bar['y'],
-              $bar['width'], $bar['height'], $xpos);
+              $bar['width'], $bar['height'], $bar_total);
           }
           if($xneg) {
             $this->Bar($xneg, $bar);
+            if(is_callable($this->bar_total_callback))
+              $bar_total = call_user_func($this->bar_total_callback, $item->key,
+                -$xneg);
+            else
+              $bar_total = -$xneg;
             $this->AddContentLabel('totalneg', $bnum, $bar['x'], $bar['y'],
-              $bar['width'], $bar['height'], -$xneg);
+              $bar['width'], $bar['height'], $bar_total);
           }
         }
       }

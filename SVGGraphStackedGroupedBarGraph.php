@@ -107,14 +107,24 @@ class StackedGroupedBarGraph extends StackedBarGraph {
               // make a dataset name for stack total
               $tds = 'totalpos-' . $start_bar;
               $this->Bar($ypos, $bar);
+              if(is_callable($this->bar_total_callback))
+                $bar_total = call_user_func($this->bar_total_callback, $item->key,
+                  $ypos);
+              else
+                $bar_total = $ypos;
               $this->AddContentLabel($tds, $bnum, $bar['x'], $bar['y'],
-                $bar['width'], $bar['height'], $ypos);
+                $bar['width'], $bar['height'], $bar_total);
             }
             if($yneg) {
               $tds = 'totalneg-' . $start_bar;
               $this->Bar($yneg, $bar);
+              if(is_callable($this->bar_total_callback))
+                $bar_total = call_user_func($this->bar_total_callback, $item->key,
+                  $yneg);
+              else
+                $bar_total = $yneg;
               $this->AddContentLabel($tds, $bnum, $bar['x'], $bar['y'],
-                $bar['width'], $bar['height'], $yneg);
+                $bar['width'], $bar['height'], $bar_total);
             }
           }
         }
@@ -182,13 +192,13 @@ class StackedGroupedBarGraph extends StackedBarGraph {
    */
   protected function GetMaxValue()
   {
-    $start = $end = 0;
     $max = NULL;
     $values = &$this->multi_graph->GetValues();
 
     // find the max for each group from the MultiGraph's structured data
-    for($i = 1; $i < count($this->groups); ++$i) {
-      $end = $this->groups[$i] - 1;
+    for($i = 0; $i < count($this->groups); ++$i) {
+      $start = $this->groups[$i];
+      $end = isset($this->groups[$i + 1]) ? $this->groups[$i + 1] - 1 : NULL;
       list($junk, $group_max) = $values->GetMinMaxSumValues($start, $end);
       if(is_null($max) || $group_max > $max)
         $max = $group_max;
@@ -202,13 +212,13 @@ class StackedGroupedBarGraph extends StackedBarGraph {
    */
   protected function GetMinValue()
   {
-    $start = $end = 0;
     $min = NULL;
     $values = &$this->multi_graph->GetValues();
 
     // find the min for each group from the MultiGraph's structured data
-    for($i = 1; $i < count($this->groups); ++$i) {
-      $end = $this->groups[$i] - 1;
+    for($i = 0; $i < count($this->groups); ++$i) {
+      $start = $this->groups[$i];
+      $end = isset($this->groups[$i + 1]) ? $this->groups[$i + 1] - 1 : NULL;
       list($group_min) = $values->GetMinMaxSumValues($start, $end);
       if(is_null($min) || $group_min < $min)
         $min = $group_min;
