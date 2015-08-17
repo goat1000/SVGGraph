@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.19');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.19.1');
 
 require_once 'SVGGraphColours.php';
 
@@ -37,8 +37,13 @@ class SVGGraph {
   {
     $this->width = $w;
     $this->height = $h;
-    if(is_array($settings))
+
+    if(is_array($settings)) {
+      // structured_data, when FALSE disables structure
+      if(isset($settings['structured_data']) && !$settings['structured_data'])
+        unset($settings['structure']);
       $this->settings = $settings;
+    }
 
     // use mbstring if available, or fall back to 1-byte char strings
     if(!function_exists('SVGGraphStrlen')) {
