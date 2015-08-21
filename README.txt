@@ -1,5 +1,5 @@
-SVGGraph Library version 2.19
-=============================
+SVGGraph Library version 2.19.1
+===============================
 
 This library provides PHP classes and functions for easily creating SVG
 graphs from data. As of version 2.0, SVGGraph works with PHP 5 only -
@@ -275,4 +275,4 @@ For more information about this software please contact the author,
 graham(at)goat1000.com or visit the website: http://www.goat1000.com/
 
 
-Copyright (C) 2009-2014 Graham Breach
+Copyright (C) 2009-2015 Graham Breach

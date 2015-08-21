@@ -1,3 +1,9 @@
+Version 2.19.1 (21/08/2015)
+--------------
+- Added bar_total_callback option.
+- Fixed stacked grouped bar graph height calculations.
+- Fixed structured_data to disabled structure when set to FALSE.
+
 Version 2.19 (17/07/2015)
 ------------
 - Added histogram.
