@@ -158,7 +158,7 @@ class SVGGraph {
   private function Setup($class)
   {
     // load the relevant class file
-    if(!class_exists($class))
+    if(!class_exists($class, FALSE))
       include 'SVGGraph' . $class . '.php';
 
     $g = new $class($this->width, $this->height, $this->settings);
