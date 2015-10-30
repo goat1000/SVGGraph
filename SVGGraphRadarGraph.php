@@ -319,6 +319,8 @@ class RadarGraph extends LineGraph {
         'd' => $this->YGrid($points),
         'fill' => $back_colour
       );
+      if($this->grid_back_opacity != 1)
+        $bpath['fill-opacity'] = $this->grid_back_opacity;
       $back = $this->Element('path', $bpath);
     }
     if($this->grid_back_stripe) {
@@ -337,6 +339,8 @@ class RadarGraph extends LineGraph {
             'd' => $this->YGrid($s_points),
             'fill-rule' => 'evenodd',
           );
+          if($this->grid_back_stripe_opacity != 1)
+            $bpath['fill-opacity'] = $this->grid_back_stripe_opacity;
           $back .= $this->Element('path', $bpath);
         }
         ++$c;

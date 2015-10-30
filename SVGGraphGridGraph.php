@@ -1628,6 +1628,8 @@ XML;
         'width' => $this->g_width, 'height' => $this->g_height,
         'fill' => $back_colour
       );
+      if($this->grid_back_opacity != 1)
+        $rect['fill-opacity'] = $this->grid_back_opacity;
       $back = $this->Element('rect', $rect);
     }
     if($this->grid_back_stripe) {
@@ -1641,6 +1643,8 @@ XML;
       $num_colours = count($colours);
       if($this->flip_axes) {
         $rect = array('y' => $this->pad_top, 'height' => $this->g_height);
+        if($this->grid_back_stripe_opacity != 1)
+          $rect['fill-opacity'] = $this->grid_back_stripe_opacity;
         $points = $this->GetGridPointsX($this->main_x_axis);
         $first = array_shift($points);
         $last_pos = $first->position;
@@ -1656,6 +1660,8 @@ XML;
         }
       } else {
         $rect = array('x' => $this->pad_left, 'width' => $this->g_width);
+        if($this->grid_back_stripe_opacity != 1)
+          $rect['fill-opacity'] = $this->grid_back_stripe_opacity;
         $points = $this->GetGridPointsY($this->main_y_axis);
         $first = array_shift($points);
         $last_pos = $first->position;

@@ -97,6 +97,8 @@ abstract class ThreeDGraph extends GridGraph {
           -$xd . " " . -$yd . "z",
         'fill' => $back_colour
       );
+      if($this->grid_back_opacity != 1)
+        $bpath['fill-opacity'] = $this->grid_back_opacity;
       $back = $this->Element('path', $bpath);
     }
     if($this->grid_back_stripe) {
@@ -122,6 +124,8 @@ abstract class ThreeDGraph extends GridGraph {
             'fill' => $this->ParseColour($colours[$c % $num_colours]),
             'd' => $pathdata
           );
+          if($this->grid_back_stripe_opacity != 1)
+            $bpath['fill-opacity'] = $this->grid_back_stripe_opacity;
           $back .= $this->Element('path', $bpath);
         } else {
           $p1 = $y;
