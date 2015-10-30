@@ -1137,7 +1137,7 @@ abstract class Graph {
    * Converts a SVGGraph colour/gradient/pattern to a SVG attribute
    */
   public function ParseColour($colour, $key = NULL, $no_gradient = FALSE,
-    $allow_pattern = FALSE)
+    $allow_pattern = FALSE, $radial_gradient = FALSE)
   {
     if(is_array($colour)) {
       if(!isset($colour['pattern']))
@@ -1151,7 +1151,7 @@ abstract class Graph {
         $err = array_diff_key($colour, array_keys(array_keys($colour)));
         if($err)
           throw new Exception('Malformed gradient/pattern');
-        $gradient_id = $this->AddGradient($colour, $key);
+        $gradient_id = $this->AddGradient($colour, $key, $radial_gradient);
         $colour = "url(#{$gradient_id})";
       }
     }
@@ -1296,9 +1296,18 @@ abstract class Graph {
   /**
    * Adds a gradient to the list, returning the element ID for use in url
    */
-  public function AddGradient($colours, $key = null)
+  public function AddGradient($colours, $key = null, $radial = FALSE)
   {
     if(is_null($key) || !isset($this->gradients[$key])) {
+
+      if($radial) {
+        // if this is a radial gradient, it must end with 'r'
+        $last = count($colours) - 1;
+        if(strlen($colours[$last]) == 1)
+          $colours[$last] = 'r';
+        else
+          $colours[] = 'r';
+      }
 
       // find out if this gradient already stored
       $hash = serialize($colours);
@@ -1325,15 +1334,24 @@ abstract class Graph {
   {
     $stops = '';
     $direction = 'v';
+    $type = 'linearGradient';
     $colours = $this->gradients[$key]['colours'];
     $id = $this->gradients[$key]['id'];
 
-    if(in_array($colours[count($colours)-1], array('h','v')))
+    if(in_array($colours[count($colours)-1], array('h','v','r')))
       $direction = array_pop($colours);
-    $x2 = $direction == 'v' ? 0 : '100%';
-    $y2 = $direction == 'h' ? 0 : '100%';
-    $gradient = array('id' => $id, 'x1' => 0, 'x2' => $x2,
-      'y1' => 0, 'y2' => $y2);
+    if($direction == 'r')
+    {
+      $type = 'radialGradient';
+      $gradient = array('id' => $id);
+    }
+    else
+    {
+      $x2 = $direction == 'v' ? 0 : '100%';
+      $y2 = $direction == 'h' ? 0 : '100%';
+      $gradient = array('id' => $id, 'x1' => 0, 'x2' => $x2,
+        'y1' => 0, 'y2' => $y2);
+    }
 
     $col_mul = 100 / (count($colours) - 1);
     $offset = 0;
@@ -1360,7 +1378,7 @@ abstract class Graph {
       $stops .= $this->Element('stop', $stop);
     }
 
-    return $this->Element('linearGradient', $gradient, NULL, $stops);
+    return $this->Element($type, $gradient, NULL, $stops);
   }
 
   /**

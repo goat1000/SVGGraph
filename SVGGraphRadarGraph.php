@@ -306,7 +306,8 @@ class RadarGraph extends LineGraph {
     $r = $this->radius;
 
     $back = $subpath = '';
-    $back_colour = $this->ParseColour($this->grid_back_colour);
+    $back_colour = $this->ParseColour($this->grid_back_colour, null, false,
+      false, true);
     $y_points = $this->GetGridPointsY(0);
     $x_points = $this->GetGridPointsX(0);
     $y_subdivs = $this->GetSubDivsY(0);
