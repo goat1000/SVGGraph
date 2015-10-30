@@ -1336,12 +1336,23 @@ abstract class Graph {
       'y1' => 0, 'y2' => $y2);
 
     $col_mul = 100 / (count($colours) - 1);
+    $offset = 0;
     foreach($colours as $pos => $colour) {
       $opacity = null;
-      if(strpos($colour, ':') !== FALSE)
-        list($colour, $opacity) = explode(':', $colour);
+      $poffset = $pos * $col_mul;
+      if(strpos($colour, ':') !== FALSE) {
+        // opacity, stop offset or both
+        $parts = explode(':', $colour);
+        if(is_numeric($parts[0])) {
+          $poffset = array_shift($parts);
+        }
+        $colour = array_shift($parts);
+        $opacity = array_shift($parts); // NULL if not set
+      }
+      // set the offset to the most meaningful number
+      $offset = min(100, max(0, $offset, $poffset));
       $stop = array(
-        'offset' => round($pos * $col_mul) . '%',
+        'offset' => $offset . '%',
         'stop-color' => $colour
       );
       if(is_numeric($opacity))
