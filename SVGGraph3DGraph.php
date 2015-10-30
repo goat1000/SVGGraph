@@ -100,27 +100,35 @@ abstract class ThreeDGraph extends GridGraph {
       $back = $this->Element('path', $bpath);
     }
     if($this->grid_back_stripe) {
+      // use array of colours if available, otherwise stripe a single colour
+      $colours = is_array($this->grid_back_stripe_colour) ?
+        $this->grid_back_stripe_colour :
+        array(NULL, $this->grid_back_stripe_colour);
       $pathdata = '';
       $c = 0;
       $p1 = null;
       $rect = array('x' => $this->pad_left, 'width' => $this->g_width);
+      $num_colours = count($colours);
       $points = $this->GetGridPointsY($this->main_y_axis);
+      $first = array_shift($points);
+      $last_pos = $first->position;
       foreach($points as $y) {
         $y = $y->position;
-        if($c % 2 == 0 && !is_null($p1)) {
-          $y1 = $p1 - $y;
-          $pathdata .= "M$xleft {$y}l{$xd} {$yd}h{$x_w}v{$y1}h" . -$x_w .
+        if(!is_null($colours[$c % $num_colours])) {
+          $y1 = $last_pos - $y;
+          $pathdata = "M$xleft {$y}l{$xd} {$yd}h{$x_w}v{$y1}h" . -$x_w .
             "l" . -$xd . " " . -$yd . "z";
+          $bpath = array(
+            'fill' => $this->ParseColour($colours[$c % $num_colours]),
+            'd' => $pathdata
+          );
+          $back .= $this->Element('path', $bpath);
         } else {
           $p1 = $y;
         }
+        $last_pos = $y;
         ++$c;
       }
-      $bpath = array(
-        'fill' => $this->grid_back_stripe_colour,
-        'd' => $pathdata
-      );
-      $back .= $this->Element('path', $bpath);
     }
     if($this->show_grid_subdivisions) {
       $subpath_h = $subpath_v = '';

@@ -1631,33 +1631,42 @@ XML;
       $back = $this->Element('rect', $rect);
     }
     if($this->grid_back_stripe) {
-      $grp = array('fill' => $this->grid_back_stripe_colour);
+      // use array of colours if available, otherwise stripe a single colour
+      $colours = is_array($this->grid_back_stripe_colour) ?
+        $this->grid_back_stripe_colour :
+        array(NULL, $this->grid_back_stripe_colour);
+      $grp = array();
       $bars = '';
       $c = 0;
+      $num_colours = count($colours);
       if($this->flip_axes) {
         $rect = array('y' => $this->pad_top, 'height' => $this->g_height);
         $points = $this->GetGridPointsX($this->main_x_axis);
+        $first = array_shift($points);
+        $last_pos = $first->position;
         foreach($points as $grid_point) {
-          if($c % 2 == 0 && isset($rect['width'])) {
-            $rect['x'] = $rect['width'];
-            $rect['width'] = $grid_point->position - $rect['width'];
+          if(!is_null($colours[$c % $num_colours])) {
+            $rect['x'] = $last_pos;
+            $rect['width'] = $grid_point->position - $last_pos;
+            $rect['fill'] = $this->ParseColour($colours[$c % $num_colours]);
             $bars .= $this->Element('rect', $rect);
-          } else {
-            $rect['width'] = $grid_point->position;
           }
+          $last_pos = $grid_point->position;
           ++$c;
         }
       } else {
         $rect = array('x' => $this->pad_left, 'width' => $this->g_width);
         $points = $this->GetGridPointsY($this->main_y_axis);
+        $first = array_shift($points);
+        $last_pos = $first->position;
         foreach($points as $grid_point) {
-          if($c % 2 == 0 && isset($rect['height'])) {
+          if(!is_null($colours[$c % $num_colours])) {
             $rect['y'] = $grid_point->position;
-            $rect['height'] -= $grid_point->position;
+            $rect['height'] = $last_pos - $grid_point->position;
+            $rect['fill'] = $this->ParseColour($colours[$c % $num_colours]);
             $bars .= $this->Element('rect', $rect);
-          } else {
-            $rect['height'] = $grid_point->position;
           }
+          $last_pos = $grid_point->position;
           ++$c;
         }
       }

@@ -321,12 +321,25 @@ class RadarGraph extends LineGraph {
       $back = $this->Element('path', $bpath);
     }
     if($this->grid_back_stripe) {
-      $bpath = array(
-        'fill' => $this->grid_back_stripe_colour,
-        'd' => $this->YGrid($y_points),
-        'fill-rule' => 'evenodd' // fill alternating 
-      );
-      $back .= $this->Element('path', $bpath);
+      // use array of colours if available, otherwise stripe a single colour
+      $colours = is_array($this->grid_back_stripe_colour) ?
+        $this->grid_back_stripe_colour :
+        array(NULL, $this->grid_back_stripe_colour);
+      $c = 0;
+      $num_colours = count($colours);
+      $num_points = count($y_points);
+      while($c < $num_points - 1) {
+        if(!is_null($colours[$c % $num_colours])) {
+          $s_points = array($y_points[$c], $y_points[$c + 1]);
+          $bpath = array(
+            'fill' => $this->ParseColour($colours[$c % $num_colours]),
+            'd' => $this->YGrid($s_points),
+            'fill-rule' => 'evenodd',
+          );
+          $back .= $this->Element('path', $bpath);
+        }
+        ++$c;
+      }
     }
     if($this->show_grid_subdivisions) {
       $subpath_h = $this->show_grid_h ? $this->YGrid($y_subdivs) : '';
