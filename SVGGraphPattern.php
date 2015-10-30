@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013 Graham Breach
+ * Copyright (C) 2013-2015 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,8 +39,8 @@ class SVGGraphPatternList {
   public function Add($pattern)
   {
     $hash = md5(serialize($pattern));
-    if(isset($pattern_map[$hash]))
-      return $pattern_map($hash);
+    if(isset($this->pattern_map[$hash]))
+      return $this->pattern_map[$hash];
 
     if(method_exists($this, $pattern['pattern'])) {
       if(!isset($pattern['size']))
