@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2015 Graham Breach
+ * Copyright (C) 2015 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,11 +20,11 @@
  */
 
 require_once 'SVGGraphMultiGraph.php';
-require_once 'SVGGraphStackedBarGraph.php';
-require_once 'SVGGraphGroupedBarGraph.php'; // for BarPosition()
-require_once 'SVGGraphData.php';
+require_once 'SVGGraphCylinderGraph.php';
+require_once 'SVGGraphStackedCylinderGraph.php';
+require_once 'SVGGraphGroupedCylinderGraph.php';
 
-class StackedGroupedBarGraph extends StackedBarGraph {
+class StackedGroupedCylinderGraph extends StackedCylinderGraph {
 
   protected $single_axis = true;
 
@@ -34,7 +34,7 @@ class StackedGroupedBarGraph extends StackedBarGraph {
   protected function Draw()
   {
     if($this->log_axis_y)
-      throw new Exception('log_axis_y not supported by StackedGroupedBarGraph');
+      throw new Exception('log_axis_y not supported by StackedGroupedCylinderGraph');
 
     $body = $this->Grid() . $this->UnderShapes();
 
@@ -43,15 +43,30 @@ class StackedGroupedBarGraph extends StackedBarGraph {
       GroupedBarGraph::BarPosition($this->bar_width, 
       $this->x_axes[$this->main_x_axis]->Unit(), $group_count, $this->bar_space,
       $this->group_space);
-    $bar_style = array();
-    $bar = array('width' => $group_width);
 
+    $bar = array('width' => $group_width);
     $bnum = 0;
     $bar_count = count($this->multi_graph);
-    $bars_shown = array_fill(0, $bar_count, 0); // for legend yes/no
+    $bars_shown = array_fill(0, $bar_count, 0);
     $bars = '';
     $this->ColourSetup($this->multi_graph->ItemsCount(-1), $bar_count);
 
+    $this->block_width = $group_width;
+    list($this->bx, $this->by) = $this->Project(-1, 0, $group_width);
+
+    // make the top ellipse, set it as a symbol for re-use
+    $top = $this->BarTop();
+
+    // get the translation for the whole bar 
+    // unit space is 1 deep * $chunk_count wide
+    list($tx, $ty) = $this->Project(0, 0, $bspace);
+    $all_group = array();
+    if($tx || $ty)
+      $all_group['transform'] = "translate($tx,$ty)";
+    if($this->semantic_classes)
+      $all_group['class'] = 'series';
+
+    $group = array();
     foreach($this->multi_graph as $itemlist) {
       $k = $itemlist[0]->key;
       $bar_pos = $this->GridPosition($k, $bnum);
@@ -62,7 +77,6 @@ class StackedGroupedBarGraph extends StackedBarGraph {
           $bar['x'] = $bspace + $bar_pos + ($l * $group_unit_width);
           $start_bar = $this->groups[$l];
           $end_bar = isset($this->groups[$l + 1]) ? $this->groups[$l + 1] : $bar_count;
-
           $ypos = $yneg = 0;
 
           // find greatest -/+ bar
@@ -75,75 +89,65 @@ class StackedGroupedBarGraph extends StackedBarGraph {
           }
           for($j = $start_bar; $j < $end_bar; ++$j) {
             $item = $itemlist[$j];
-            $this->SetStroke($bar_style, $item, $j);
-            $bar_style['fill'] = $this->GetColour($item, $bnum, $j);
 
             if(!is_null($item->value)) {
-              $this->Bar($item->value, $bar, $item->value >= 0 ? $ypos : $yneg);
+              $t = ($j == $end_bar - 1 ? $top : NULL);
+              $bar_sections = $this->Bar3D($item, $bar, $t, $bnum, $j,
+                $item->value >= 0 ? $ypos : $yneg, $this->DatasetYAxis($j));
               if($item->value < 0)
                 $yneg += $item->value;
               else
                 $ypos += $item->value;
 
-              if($bar['height'] > 0) {
-                ++$bars_shown[$j];
+              $group['fill'] = $this->GetColour($item, $bnum, $j);
+              $show_label = $this->AddDataLabel($j, $bnum, $group, $item,
+                $bar['x'] + $tx, $bar['y'] + $ty, $bar['width'], $bar['height']);
 
-                $show_label = $this->AddDataLabel($j, $bnum, $bar, $item,
-                  $bar['x'], $bar['y'], $bar['width'], $bar['height']);
-                if($this->show_tooltips)
-                  $this->SetTooltip($bar, $item, $j, $item->key, $item->value,
-                    !$this->compat_events && $show_label);
-                if($this->semantic_classes)
-                  $bar['class'] = "series{$j}";
-                $rect = $this->Element('rect', $bar, $bar_style);
-                $bars .= $this->GetLink($item, $k, $rect);
-                unset($bar['id']); // clear for next value
-              }
-            }
-            $this->bar_styles[$j] = $bar_style;
-          }
-          if($this->show_bar_totals) {
-            if($ypos) {
-              // make a dataset name for stack total
-              $tds = 'totalpos-' . $start_bar;
-              $this->Bar($ypos, $bar);
-              if(is_callable($this->bar_total_callback))
-                $bar_total = call_user_func($this->bar_total_callback, $item->key,
-                  $ypos);
-              else
-                $bar_total = $ypos;
-              $this->AddContentLabel($tds, $bnum, $bar['x'], $bar['y'],
-                $bar['width'], $bar['height'], $bar_total);
-            }
-            if($yneg) {
-              $tds = 'totalneg-' . $start_bar;
-              $this->Bar($yneg, $bar);
-              if(is_callable($this->bar_total_callback))
-                $bar_total = call_user_func($this->bar_total_callback, $item->key,
-                  $yneg);
-              else
-                $bar_total = $yneg;
-              $this->AddContentLabel($tds, $bnum, $bar['x'], $bar['y'],
-                $bar['width'], $bar['height'], $bar_total);
+              if($this->show_tooltips)
+                $this->SetTooltip($group, $item, $j, $item->key, $item->value);
+              $link = $this->GetLink($item, $k, $bar_sections);
+              $this->SetStroke($group, $item, $j, 'round');
+              if($this->semantic_classes)
+                $group['class'] = "series{$j}";
+              $bars .= $this->Element('g', $group, NULL, $link);
+              unset($group['id'], $group['class']);
+              if(!array_key_exists($j, $this->bar_styles))
+                $this->bar_styles[$j] = $group;
             }
           }
         }
       }
       ++$bnum;
     }
-    if(!$this->legend_show_empty) {
-      foreach($bars_shown as $j => $bar) {
-        if(!$bar)
-          $this->bar_styles[$j] = NULL;
-      }
-    }
 
-    if($this->semantic_classes)
-      $bars = $this->Element('g', array('class' => 'series'), NULL, $bars);
+    if(count($all_group))
+      $bars = $this->Element('g', $all_group, NULL, $bars);
     $body .= $bars;
     $body .= $this->OverShapes();
     $body .= $this->Axes();
     return $body;
+  }
+
+  /**
+   * Override AdjustAxes to change depth
+   */
+  protected function AdjustAxes(&$x_len, &$y_len)
+  {
+    /**
+     * The depth is roughly 1/$num - but it must also take into account the
+     * bar and group spacing, which is where things get messy
+     */
+    $ends = $this->GetAxisEnds();
+    $num = $ends['k_max'][0] - $ends['k_min'][0] + 1;
+
+    $block = $x_len / $num;
+    $group = count($this->groups);
+    $a = $this->bar_space;
+    $b = $this->group_space;
+    $c = (($block) - $a - ($group - 1) * $b) / $group;
+    $d = ($a + $c) / $block;
+    $this->depth = $d;
+    return parent::AdjustAxes($x_len, $y_len);
   }
 
   /**

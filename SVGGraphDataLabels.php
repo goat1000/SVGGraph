@@ -33,6 +33,7 @@ class DataLabels {
   private $directions = array();
   private $last = array();
   private $max_labels = 1000;
+  private $coords = NULL;
 
   function __construct(&$graph)
   {
@@ -93,6 +94,31 @@ class DataLabels {
   }
 
   /**
+   * Adds a user-defined label from a label option
+   */
+  public function AddUserLabel($label_array)
+  {
+    if(!isset($this->labels['_user']))
+      $this->labels['_user'] = array();
+
+    if(!isset($label_array[0]) || !isset($label_array[1]) || !isset($label_array[2]))
+      throw new Exception('Malformed label option - required fields missing');
+
+    $x = $label_array[0];
+    $y = $label_array[1];
+    $content = $label_array[2];
+    $w = 0;
+    $h = 0;
+    // merge the options with required fields
+    $this->labels['_user'][] = array_merge($label_array, array(
+      'item' => null, 'id' => null, 'content' => $content,
+      'x' => $x, 'y' => $y, 'width' => $w, 'height' => $h,
+      'fade' => null, 'click' => null,
+    ));
+  }
+
+
+  /**
    * Updates filter information from label
    */
   protected function SetupFilters($dataset, $index, $value)
@@ -130,6 +156,31 @@ class DataLabels {
       }
       $this->last[$dataset] = array($index, $value);
       $this->directions[$dataset] = $direction;
+    }
+  }
+
+
+  /**
+   * Load user-defined labels
+   */
+  public function Load(&$settings)
+  {
+    if(!is_array($settings['label']) || !isset($settings['label'][0]))
+      throw new Exception('Malformed label option');
+
+    $count = 0;
+    if(!is_array($settings['label'][0])) {
+      $this->AddUserLabel($settings['label']);
+      ++$count;
+    } else {
+      foreach($settings['label'] as $label) {
+        $this->AddUserLabel($label);
+        ++$count;
+      }
+    }
+    if($count) {
+      require_once "SVGGraphCoords.php";
+      $this->coords = new SVGGraphCoords($this->graph);
     }
   }
 
@@ -196,6 +247,8 @@ class DataLabels {
     $style = $this->graph->DataLabelStyle($dataset, $index, $gobject['item']);
     if(!is_null($gobject['item']))
       $this->ItemStyles($style, $gobject['item']);
+    elseif($dataset === '_user')
+      $this->UserStyles($style, $gobject);
 
     $type = $style['type'];
     $font_size = max(4, (float)$style['font_size']);
@@ -220,15 +273,23 @@ class DataLabels {
     $label_hp = $label_h + $space * 2;
 
     $pos = NULL;
-    // try to get position from item
-    if(!is_null($gobject['item']))
-      $pos = $gobject['item']->Data('data_label_position');
+    if($dataset === '_user') {
+      // user label, so convert coordinates
+      $pos = isset($gobject['position']) ? $gobject['position'] : 'above';
+      $xy = $this->coords->TransformCoords($gobject['x'], $gobject['y']);
+      $gobject['x'] = $xy[0];
+      $gobject['y'] = $xy[1];
+    } else {
+      // try to get position from item
+      if(!is_null($gobject['item']))
+        $pos = $gobject['item']->Data('data_label_position');
 
-    // find out from graph class where this label should go
-    if(is_null($pos))
-      $pos = $this->graph->DataLabelPosition($dataset, $index, $gobject['item'],
-        $gobject['x'], $gobject['y'], $gobject['width'], $gobject['height'],
-        $label_wp, $label_hp);
+      // find out from graph class where this label should go
+      if(is_null($pos))
+        $pos = $this->graph->DataLabelPosition($dataset, $index, $gobject['item'],
+          $gobject['x'], $gobject['y'], $gobject['width'], $gobject['height'],
+          $label_wp, $label_hp);
+    }
 
     // convert position string to an actual location
     list($x, $y, $anchor, $hpos, $vpos) = $res = Graph::RelativePosition($pos,
@@ -406,6 +467,43 @@ class DataLabels {
       if(!is_null($v))
         $style[$s] = $v;
     }
+  }
+
+  /**
+   * Styles from the label option
+   */
+  protected function UserStyles(&$style, &$label_array)
+  {
+    $options = array(
+      'type' => 'type',
+      'font' => 'font',
+      'font_size' => 'font_size',
+      'font_adjust' => 'font_adjust',
+      'font_weight' => 'font_weight',
+      'colour' => 'colour',
+      // 'altcolour' => 'colour_outside',
+      'back_colour' => 'back_colour',
+      // 'back_altcolour' => 'back_colour_outside',
+      'space' => 'space',
+      'angle' => 'angle',
+      'pad_x' => 'padding_x',
+      'pad_y' => 'padding_y',
+      'round' => 'round',
+      'stroke' => 'outline_colour',
+      'stroke_width' => 'outline_thickness',
+      'fill' => 'fill',
+      'tail_width' => 'tail_width',
+      'tail_length' => 'tail_length',
+      'shadow_opacity' => 'shadow_opacity',
+    );
+
+    if(isset($label_array['padding']))
+      $style['pad_x'] = $style['pad_y'] = $label_array['padding'];
+    foreach($options as $s => $k) {
+      if(isset($label_array[$k]))
+        $style[$s] = $label_array[$k];
+    }
+
   }
 
   /**

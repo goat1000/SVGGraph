@@ -31,7 +31,7 @@ class Bar3DGraph extends ThreeDGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
     $bar_width = $this->block_width = $this->BarWidth();
 
     // make the top parallelogram, set it as a symbol for re-use
@@ -89,7 +89,8 @@ class Bar3DGraph extends ThreeDGraph {
     if(count($all_group))
       $bars = $this->Element('g', $all_group, NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

@@ -37,7 +37,7 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
     if($this->log_axis_y)
       throw new Exception('log_axis_y not supported by HorizontalStackedBarGraph');
 
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $bar_height = $this->BarHeight();
     $bspace = max(0, ($this->y_axes[$this->main_y_axis]->Unit() - $bar_height) / 2);
@@ -130,7 +130,8 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
     if($this->semantic_classes)
       $bars = $this->Element('g', array('class' => 'series'), NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

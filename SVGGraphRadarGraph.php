@@ -40,7 +40,7 @@ class RadarGraph extends LineGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid();
+    $body = $this->Grid() . $this->UnderShapes();
 
     $attr = array('stroke' => $this->stroke_colour, 'fill' => 'none');
     $dash = is_array($this->line_dash) ?
@@ -102,6 +102,7 @@ class RadarGraph extends LineGraph {
     }
 
     $body .= $this->Element('g', $group, NULL, $this->Element('path', $attr));
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();
@@ -119,6 +120,58 @@ class RadarGraph extends LineGraph {
     if($offset >= 0 && $offset < $this->g_width)
       return $this->reverse ? -$offset : $offset;
     return NULL;
+  }
+
+  /**
+   * Returns the $x value as a grid position
+   */
+  public function GridX($x, $axis_no = NULL)
+  {
+    $p = $this->UnitsX($x, $axis_no);
+    return $p;
+  }
+
+  /**
+   * Returns the $y value as a grid position
+   */
+  public function GridY($y, $axis_no = NULL)
+  {
+    $p = $this->UnitsY($y, $axis_no);
+    return $p;
+  }
+
+  /**
+   * Convert X, Y in grid space to radial position
+   */
+  public function TransformCoords($x, $y)
+  {
+    $angle = $x / $this->g_height;
+    if($this->grid_straight) {
+      // this complicates things...
+
+      // get all the grid points, div and subdiv
+      $points = array_merge($this->GetGridPointsX(0), $this->GetSubDivsX(0));
+      $grid_angles = array();
+      foreach($points as $point) {
+        $grid_angles[] = $point->position / $this->radius;
+      }
+      sort($grid_angles);
+
+      // find angle between (sub)divisions
+      $div_angle = $grid_angles[1] - $grid_angles[0];
+
+      // use trig to find length of Y
+      $a = fmod($angle, $div_angle);
+      $t = ($div_angle / 2) - $a;
+
+      $y2 = $y * cos($div_angle / 2);
+      $y = $y2 / cos($t);
+    }
+    $angle += $this->arad;
+    $new_x = $this->xc + ($y * sin($angle));
+    $new_y = $this->yc + ($y * cos($angle));
+
+    return array($new_x, $new_y);
   }
 
   /**

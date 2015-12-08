@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.19.2');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.20');
 
 require_once 'SVGGraphColours.php';
 
@@ -1545,6 +1545,13 @@ abstract class Graph {
    */
   protected function DrawDataLabels()
   {
+    if(isset($this->settings['label'])) {
+      if(!isset($this->data_labels)) {
+        include_once 'SVGGraphDataLabels.php';
+        $this->data_labels = new DataLabels($this);
+      }
+      $this->data_labels->Load($this->settings);
+    }
     if(isset($this->data_labels))
       return $this->data_labels->GetLabels();
     return '';
@@ -1562,6 +1569,27 @@ abstract class Graph {
     return $pos;
   }
 
+
+  public function LoadShapes()
+  {
+    include_once 'SVGGraphShape.php';
+    $this->shapes = new SVGGraphShapeList($this);
+
+    $this->shapes->Load($this->settings);
+  }
+
+  public function UnderShapes()
+  {
+    if(!isset($this->shapes) && isset($this->settings['shape'])) {
+      $this->LoadShapes();
+    }
+    return isset($this->shapes) ? $this->shapes->Draw(SVGG_SHAPE_BELOW) : '';
+  }
+
+  public function OverShapes()
+  {
+    return isset($this->shapes) ? $this->shapes->Draw(SVGG_SHAPE_ABOVE) : '';
+  }
 
   /**
    * Returns TRUE if the position is inside the item
@@ -1684,6 +1712,8 @@ abstract class Graph {
       $svg['viewBox'] = "0 0 {$this->width} {$this->height}";
       $svg['width'] = $svg['height'] = '100%';
     }
+    if($this->svg_class)
+      $svg['class'] = $this->svg_class;
 
     if(!$defer_javascript) {
       $js = $this->FetchJavascript();

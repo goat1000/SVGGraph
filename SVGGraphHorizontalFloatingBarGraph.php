@@ -29,7 +29,7 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $bar_height = $this->BarHeight();
     $bar_style = array();
@@ -74,7 +74,9 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
 
     if($this->semantic_classes)
       $series = $this->Element('g', array('class' => 'series'), NULL, $series);
-    $body .= $series . $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $series;
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

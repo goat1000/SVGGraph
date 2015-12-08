@@ -27,7 +27,7 @@ class GroupedBar3DGraph extends Bar3DGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $chunk_count = count($this->multi_graph);
     list($chunk_width, $bspace, $chunk_unit_width) =
@@ -91,7 +91,8 @@ class GroupedBar3DGraph extends Bar3DGraph {
     if(count($all_group))
       $bars = $this->Element('g', $all_group, NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

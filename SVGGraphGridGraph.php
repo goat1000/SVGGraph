@@ -1792,14 +1792,33 @@ XML;
   }
 
   /**
-   * Returns the $x value as a grid position
+   * Returns an X unit value as a SVG distance
    */
-  protected function GridX($x, $axis_no = NULL)
+  public function UnitsX($x, $axis_no = NULL)
   {
     if(is_null($axis_no) || is_null($this->x_axes[$axis_no]))
       $axis_no = $this->main_x_axis;
     $axis = $this->x_axes[$axis_no];
-    $p = $axis->Position($x);
+    return $axis->Position($x);
+  }
+
+  /**
+   * Returns a Y unit value as a SVG distance
+   */
+  public function UnitsY($y, $axis_no = NULL)
+  {
+    if(is_null($axis_no) || is_null($this->y_axes[$axis_no]))
+      $axis_no = $this->main_y_axis;
+    $axis = $this->y_axes[$axis_no];
+    return $axis->Position($y);
+  }
+
+  /**
+   * Returns the $x value as a grid position
+   */
+  public function GridX($x, $axis_no = NULL)
+  {
+    $p = $this->UnitsX($x, $axis_no);
     if(!is_null($p))
       return $this->pad_left + $p;
     return null;
@@ -1808,12 +1827,9 @@ XML;
   /**
    * Returns the $y value as a grid position
    */
-  protected function GridY($y, $axis_no = NULL)
+  public function GridY($y, $axis_no = NULL)
   {
-    if(is_null($axis_no) || is_null($this->y_axes[$axis_no]))
-      $axis_no = $this->main_y_axis;
-    $axis = $this->y_axes[$axis_no];
-    $p = $axis->Position($y);
+    $p = $this->UnitsY($y, $axis_no);
     if(!is_null($p))
       return $this->height - $this->pad_bottom - $p;
     return null;
@@ -2084,6 +2100,18 @@ XML;
       $h = 0;
       return "M$x {$y}h$w";
     }
+  }
+
+  public function UnderShapes()
+  {
+    $content = parent::UnderShapes();
+    return $content . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+  }
+
+  public function OverShapes()
+  {
+    $content = parent::OverShapes();
+    return $content . $this->Guidelines(SVGG_GUIDELINE_ABOVE);
   }
 
   /**

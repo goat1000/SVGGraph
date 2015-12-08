@@ -110,7 +110,7 @@ class PieGraph extends Graph {
     if($this->sort)
       uasort($values, 'pie_rsort');
 
-    $body = '';
+    $body = $this->UnderShapes();
     $slice = 0;
     $slices = array();
     $slice_no = 0;
@@ -183,6 +183,7 @@ class PieGraph extends Graph {
       $series = $this->Element('g', array('class' => 'series'), NULL, $series);
     $body .= $series;
 
+    $body .= $this->OverShapes();
     $extras = $this->PieExtras();
     return $body . $extras;
   }

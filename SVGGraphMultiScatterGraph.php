@@ -32,7 +32,7 @@ class MultiScatterGraph extends PointGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     // a scatter graph without markers is empty!
     if($this->marker_size == 0)
@@ -83,7 +83,7 @@ class MultiScatterGraph extends PointGraph {
         $best_fit_above = $this->Element('g', $cls, NULL, $best_fit_above);
     }
     $body .= $best_fit_below;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();

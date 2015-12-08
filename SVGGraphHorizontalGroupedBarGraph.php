@@ -30,7 +30,7 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $chunk_count = count($this->multi_graph);
     list($chunk_height, $bspace, $chunk_unit_height) =
@@ -86,7 +86,8 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
     if($this->semantic_classes)
       $bars = $this->Element('g', array('class' => 'series'), NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

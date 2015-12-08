@@ -1,5 +1,5 @@
-SVGGraph Library version 2.19.1
-===============================
+SVGGraph Library version 2.20
+=============================
 
 This library provides PHP classes and functions for easily creating SVG
 graphs from data. As of version 2.0, SVGGraph works with PHP 5 only -
@@ -67,9 +67,15 @@ At the moment these types of graph are supported by SVGGraph:
 
  GroupedBar3DGraph - a 3D bar graph version of the grouped bar graph;
 
+ StackedGroupedBar3DGraph - a 3D bar graph version of the stacked grouped bar
+                            graph;
+
  StackedCylinderGraph - a cylinder-bar version of the stacked bar graph;
 
  GroupedCylinderGraph - a cylinder-bar version of the grouped bar graph;
+
+ StackedGroupedCylinderGraph - a cylinder-bar version of the stacked grouped
+                               bar graph;
 
  DonutGraph - a pie graph with a hole in the middle;
 

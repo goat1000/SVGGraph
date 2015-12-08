@@ -31,7 +31,7 @@ class MultiLineGraph extends LineGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $plots = '';
     $y_axis_pos = $this->height - $this->pad_bottom - 
@@ -65,7 +65,7 @@ class MultiLineGraph extends LineGraph {
     $this->ClipGrid($group);
 
     $body .= $this->Element('g', $group, NULL, $plots);
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();

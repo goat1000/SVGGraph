@@ -36,7 +36,7 @@ class StackedLineGraph extends MultiLineGraph {
     if($this->log_axis_y)
       throw new Exception('log_axis_y not supported by StackedLineGraph');
 
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $plots = array();
     $chunk_count = count($this->multi_graph);
@@ -135,7 +135,7 @@ class StackedLineGraph extends MultiLineGraph {
       $all_plots = implode($plots);
     }
     $body .= $this->Element('g', $group, NULL, $all_plots);
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();

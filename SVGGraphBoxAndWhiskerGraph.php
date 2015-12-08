@@ -31,7 +31,7 @@ class BoxAndWhiskerGraph extends PointGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $bar_width = $this->BarWidth();
     $x_axis = $this->x_axes[$this->main_x_axis];
@@ -81,7 +81,9 @@ class BoxAndWhiskerGraph extends PointGraph {
 
     if($this->semantic_classes)
       $series = $this->Element('g', array('class' => 'series'), NULL, $series);
-    $body .= $series . $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $series;
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     $body .= $this->DrawMarkers();
     return $body;
   }

@@ -38,11 +38,14 @@ abstract class PointGraph extends GridGraph {
    */
   protected function CrossHairs()
   {
+    return '';
+    /* disabled for now - prevents linked shapes working
     $rect = array(
       'width' => $this->width, 'height' => $this->height,
       'opacity' => 0.0, 'cursor' => 'crosshair'
     );
     return $this->Element('rect', $rect);
+    */
   }
 
 

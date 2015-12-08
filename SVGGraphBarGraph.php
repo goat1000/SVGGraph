@@ -37,7 +37,7 @@ class BarGraph extends GridGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
     $bnum = 0;
     $bar_width = $this->BarWidth();
     $bspace = $this->BarSpace($bar_width);
@@ -79,7 +79,7 @@ class BarGraph extends GridGraph {
     if($this->semantic_classes)
       $bars = $this->Element('g', array('class' => 'series'), NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     return $body;
   }

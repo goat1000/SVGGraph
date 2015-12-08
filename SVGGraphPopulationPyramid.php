@@ -35,7 +35,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     if($this->log_axis_y)
       throw new Exception('log_axis_y not supported by PopulationPyramid');
 
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $bar_height = $this->BarHeight();
     $bar_style = array();
@@ -133,7 +133,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     if($this->semantic_classes)
       $bars = $this->Element('g', array('class' => 'series'), NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

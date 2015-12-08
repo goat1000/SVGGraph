@@ -36,7 +36,7 @@ class StackedBarGraph extends BarGraph {
     if($this->log_axis_y)
       throw new Exception('log_axis_y not supported by StackedBarGraph');
 
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
     $bar_style = array();
     $bar_width = $this->BarWidth();
     $bspace = max(0, ($this->x_axes[$this->main_x_axis]->Unit() - $bar_width) / 2);
@@ -128,7 +128,8 @@ class StackedBarGraph extends BarGraph {
     if($this->semantic_classes)
       $bars = $this->Element('g', array('class' => 'series'), NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

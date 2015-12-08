@@ -1,3 +1,17 @@
+Version 2.20 (05/12/2015)
+------------
+- Added stacked grouped 3D bar graph and stacked grouped cylinder graph.
+- Added shape options.
+- Added custom label options.
+- Added svg_class option.
+- Added grid_back_opacity and grid_back_stripe_opacity options.
+- Added multiple colour stripe support to grid_back_stripe_colour option.
+- Added gradient stop support to gradients.
+- Added radial gradient support for radar graph backgrounds.
+- Fixed pattern definitions not being reused.
+- Fixed javascript crosshair coordinates jumping around.
+- Fixed problems with autoloading graph classes.
+
 Version 2.19.1 (21/08/2015)
 --------------
 - Added bar_total_callback option.

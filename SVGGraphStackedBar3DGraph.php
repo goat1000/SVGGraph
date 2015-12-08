@@ -32,7 +32,7 @@ class StackedBar3DGraph extends Bar3DGraph {
     if($this->log_axis_y)
       throw new Exception('log_axis_y not supported by StackedBar3DGraph');
 
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     $bar_width = $this->block_width = $this->BarWidth();
     $bar = array('width' => $bar_width);
@@ -112,7 +112,8 @@ class StackedBar3DGraph extends Bar3DGraph {
     if(count($all_group))
       $bars = $this->Element('g', $all_group, NULL, $bars);
     $body .= $bars;
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 

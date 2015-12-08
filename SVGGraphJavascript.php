@@ -552,11 +552,14 @@ JAVASCRIPT;
       $font_size = max(3, (int)$this->crosshairs_text_font_size);
       $pad = max(0, (int)$this->crosshairs_text_padding);
       $space = max(0, (int)$this->crosshairs_text_space);
+      // calculate these here to save doing it in JS
+      $pad_space = $pad + $space;
+      $space2 = $space * 2;
       $fn = <<<JAVASCRIPT
 function showCoords(de,x,y,bb,on) {
   var gx = getData(de, 'gridx'), gy = getData(de, 'gridy'),
     textList = getData(de,'chtext'), group, i, x1, y1, xz, yz, xp, yp,
-    textNode, rect, gbb, tbb, ti, ds, ybase, xbase, lgmin, lgmax, lgmul;
+    textNode, rect, tbb, ti, ds, ybase, xbase, lgmin, lgmax, lgmul;
   for(i = 0; i < textList.childNodes.length; ++i) {
     if(textList.childNodes[i].nodeName == 'svggraph:chtextitem') {
       ti = textList.childNodes[i];
@@ -572,7 +575,6 @@ function showCoords(de,x,y,bb,on) {
         yp = gy.getAttributeNS(null, 'precision');
         xbase = gx.getAttributeNS(null, 'base');
         ybase = gy.getAttributeNS(null, 'base');
-        gbb = group.getBBox();
         if(xbase) {
           lgmin = Math.log(xz)/Math.log(xbase);
           lgmax = Math.log(gx.getAttributeNS(null, 'scale'))/Math.log(xbase);
@@ -593,12 +595,12 @@ function showCoords(de,x,y,bb,on) {
         setattr(textNode, 'y', 0 + 'px');
         tbb = textNode.getBBox();
         ds = tbb.height + tbb.y;
-        x1 = x + bb.x + {$pad} + {$space};
-        y1 = y + bb.y - {$pad} - {$space} - ds;
+        x1 = x + bb.x + {$pad_space};
+        y1 = y + bb.y - {$pad_space} - ds;
         if(x1 + tbb.width + {$pad} > bb.x + bb.width)
-          x1 -= gbb.width + ({$space} * 2);
+          x1 -= group.getBBox().width + {$space2};
         if(y1 - tbb.height - {$pad} < bb.y)
-          y1 += gbb.height + ({$space} * 2);
+          y1 = y + bb.y + tbb.height + {$pad_space} - ds;
         setattr(textNode, 'x', x1 + 'px');
         setattr(textNode, 'y', y1 + 'px');
         tbb = textNode.getBBox();

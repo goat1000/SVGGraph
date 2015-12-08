@@ -29,7 +29,7 @@ class MultiRadarGraph extends RadarGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid();
+    $body = $this->Grid() . $this->UnderShapes();
 
     $plots = '';
     $y_axis = $this->y_axes[$this->main_y_axis];
@@ -95,6 +95,7 @@ class MultiRadarGraph extends RadarGraph {
     if($this->semantic_classes)
       $group['class'] = "series";
     $body .= $this->Element('g', $group, NULL, $plots);
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();

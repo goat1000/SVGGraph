@@ -32,7 +32,7 @@ class LineGraph extends PointGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
     $this->ColourSetup($this->values->ItemsCount());
 
     $bnum = 0;
@@ -59,7 +59,7 @@ class LineGraph extends PointGraph {
     if($this->semantic_classes)
       $group['class'] = 'series';
     $body .= $this->Element('g', $group, NULL, $graph_line);
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE);
+    $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->CrossHairs();
     $body .= $this->DrawMarkers();

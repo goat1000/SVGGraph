@@ -33,12 +33,15 @@ class BarAndLineGraph extends GroupedBarGraph {
   public function __construct($w, $h, $settings = NULL)
   {
     parent::__construct($w, $h, $settings);
+
+    // prevent repeated labels
+    unset($settings['label']);
     $this->linegraph = new LineGraph($w, $h, $settings);
   }
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
 
     // LineGraph has not been initialised, need to copy in details
     $copy = array('colours', 'links', 'x_axes', 'y_axes', 'main_x_axis', 
@@ -152,7 +155,8 @@ class BarAndLineGraph extends GroupedBarGraph {
       }
     }
 
-    $body .= $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
 
     // add in the markers created by line graph
     $body .= $this->linegraph->DrawMarkers();

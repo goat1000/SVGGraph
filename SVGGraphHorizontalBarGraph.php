@@ -39,7 +39,7 @@ class HorizontalBarGraph extends GridGraph {
 
   protected function Draw()
   {
-    $body = $this->Grid() . $this->Guidelines(SVGG_GUIDELINE_BELOW);
+    $body = $this->Grid() . $this->UnderShapes();
     $bar_height = $this->BarHeight();
     $bspace = max(0, ($this->y_axes[$this->main_y_axis]->Unit() - $bar_height) / 2);
     $this->ColourSetup($this->values->ItemsCount());
@@ -78,7 +78,9 @@ class HorizontalBarGraph extends GridGraph {
 
     if($this->semantic_classes)
       $series = $this->Element('g', array('class' => 'series'), NULL, $series);
-    $body .= $series . $this->Guidelines(SVGG_GUIDELINE_ABOVE) . $this->Axes();
+    $body .= $series;
+    $body .= $this->OverShapes();
+    $body .= $this->Axes();
     return $body;
   }
 
