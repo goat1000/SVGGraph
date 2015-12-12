@@ -93,8 +93,9 @@ class SVGGraphCoords {
       // value is in grid units
       $this->ValueAxis($value, $axis);
       if(is_numeric($value)) {
-        return $axis == 'x' ? $this->graph->UnitsX($value) :
-          $this->graph->UnitsY($value);
+        return $axis == 'x' ?
+          $this->graph->UnitsX($value) - $this->graph->UnitsX(0):
+          $this->graph->UnitsY($value) - $this->graph->UnitsY(0);
       } else {
         return 0;
       }
