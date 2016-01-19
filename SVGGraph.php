@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2015 Graham Breach
+ * Copyright (C) 2009-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.20');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.20.1');
 
 require_once 'SVGGraphColours.php';
 
@@ -1142,7 +1142,7 @@ abstract class Graph {
     if(is_array($colour)) {
       if(!isset($colour['pattern']))
         $allow_pattern = FALSE;
-      if($no_gradient && !$allow_pattern) {
+      if(count($colour) < 2 || ($no_gradient && !$allow_pattern)) {
         $colour = $this->SolidColour($colour);
       } elseif(isset($colour['pattern'])) {
         $pattern_id = $this->AddPattern($colour);
