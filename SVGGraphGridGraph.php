@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2015 Graham Breach
+ * Copyright (C) 2009-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -62,6 +62,7 @@ abstract class GridGraph extends Graph {
   private $label_right_offset;
   private $label_top_offset;
   private $grid_limit;
+  private $grid_clip_id;
 
   /**
    * Modifies the graph padding to allow room for labels
@@ -1754,10 +1755,22 @@ XML;
   }
 
   /**
-   * Returns a clipping path for the grid
+   * Sets the clipping path for the grid
    */
   protected function ClipGrid(&$attr)
   {
+    $clip_id = $this->GridClipPath();
+    $attr['clip-path'] = "url(#{$clip_id})";
+  }
+
+  /**
+   * Returns the ID of the grid clipping path
+   */
+  public function GridClipPath()
+  {
+    if(isset($this->grid_clip_id))
+      return $this->grid_clip_id;
+
     $rect = array(
       'x' => $this->pad_left, 'y' => $this->pad_top,
       'width' => $this->width - $this->pad_left - $this->pad_right,
@@ -1766,7 +1779,7 @@ XML;
     $clip_id = $this->NewID();
     $this->defs[] = $this->Element('clipPath', array('id' => $clip_id),
       NULL, $this->Element('rect', $rect));
-    $attr['clip-path'] = "url(#{$clip_id})";
+    return ($this->grid_clip_id = $clip_id);
   }
 
   /**

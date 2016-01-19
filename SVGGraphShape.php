@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015 Graham Breach
+ * Copyright (C) 2015-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -93,8 +93,13 @@ class SVGGraphShapeList {
       if(isset($shape_array['depth'])) {
         if($shape_array['depth'] == 'above')
           $depth = SVGG_SHAPE_ABOVE;
-        unset($shape_array['depth']);
       }
+      if(isset($shape_array['clip_to_grid']) && $shape_array['clip_to_grid'] &&
+        method_exists($this->graph, 'GridClipPath')) {
+        $clip_id = $this->graph->GridClipPath();
+        $shape_array['clip-path'] = "url(#{$clip_id})";
+      }
+      unset($shape_array['depth'], $shape_array['clip_to_grid']);
       $this->shapes[] = new $class_map[$shape]($shape_array, $depth);
     } else {
       throw new Exception("Unknown shape [{$shape}]");
@@ -162,7 +167,8 @@ abstract class SVGGraphShape {
       $this->link = $this->attrs['xlink:href'];
     if(isset($this->attrs['target']))
       $this->link_target = $this->attrs['target'];
-    unset($this->attrs['href'], $this->attrs['xlink:href'], $this->attrs['target']);
+    unset($this->attrs['href'], $this->attrs['xlink:href'],
+      $this->attrs['target']);
   }
 
   /**
