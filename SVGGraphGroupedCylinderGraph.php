@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2015 Graham Breach
+ * Copyright (C) 2013-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,7 +31,7 @@ class GroupedCylinderGraph extends CylinderGraph {
 
     $chunk_count = count($this->multi_graph);
     list($chunk_width, $bspace, $chunk_unit_width) =
-      GroupedBarGraph::BarPosition($this->bar_width, 
+      GroupedBarGraph::BarPosition($this->bar_width, $this->bar_width_min,
       $this->x_axes[$this->main_x_axis]->Unit(), $chunk_count, $this->bar_space,
       $this->group_space);
     $bar = array('width' => $chunk_width);

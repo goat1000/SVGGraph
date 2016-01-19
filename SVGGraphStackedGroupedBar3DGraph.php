@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015 Graham Breach
+ * Copyright (C) 2015-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,7 +40,7 @@ class StackedGroupedBar3DGraph extends StackedBar3DGraph {
 
     $group_count = count($this->groups);
     list($group_width, $bspace, $group_unit_width) =
-      GroupedBarGraph::BarPosition($this->bar_width, 
+      GroupedBarGraph::BarPosition($this->bar_width, $this->bar_width_min,
       $this->x_axes[$this->main_x_axis]->Unit(), $group_count, $this->bar_space,
       $this->group_space);
 

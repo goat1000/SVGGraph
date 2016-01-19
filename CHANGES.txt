@@ -1,3 +1,10 @@
+Version 2.20.1 (19/01/2016)
+--------------
+- Added bar_width_min option.
+- Added clip_to_grid option for shapes.
+- Fixed shape units calculations when axes not starting in bottom left.
+- Fixed error when gradient array contains a single colour.
+
 Version 2.20 (05/12/2015)
 ------------
 - Added stacked grouped 3D bar graph and stacked grouped cylinder graph.

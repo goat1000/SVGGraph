@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2015 Graham Breach
+ * Copyright (C) 2011-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,7 +34,7 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
 
     $chunk_count = count($this->multi_graph);
     list($chunk_height, $bspace, $chunk_unit_height) =
-      GroupedBarGraph::BarPosition($this->bar_width, 
+      GroupedBarGraph::BarPosition($this->bar_width, $this->bar_width_min,
       $this->y_axes[$this->main_y_axis]->Unit(), $chunk_count, $this->bar_space,
       $this->group_space);
     $bar_style = array();
