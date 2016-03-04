@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2015 Graham Breach
+ * Copyright (C) 2011-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -56,32 +56,9 @@ class MultiScatterGraph extends PointGraph {
         }
         ++$bnum;
       }
-
-      // draw the best-fit line for this data set
-      if($this->best_fit) {
-        $bftype = $this->ArrayOption($this->best_fit, $i);
-        $colour = $this->ArrayOption($this->best_fit_colour, $i);
-        $stroke_width = $this->ArrayOption($this->best_fit_width, $i);
-        $dash = $this->ArrayOption($this->best_fit_dash, $i);
-        $opacity = $this->ArrayOption($this->best_fit_opacity, $i);
-        $above = $this->ArrayOption($this->best_fit_above, $i);
-
-        $best_fit = $this->BestFit($bftype, $i, $colour, $stroke_width, $dash,
-          $opacity);
-        if($above)
-          $best_fit_above .= $best_fit;
-        else
-          $best_fit_below .= $best_fit;
-      }
     }
 
-    if($this->semantic_classes) {
-      $cls = array('class' => 'bestfit');
-      if(!empty($best_fit_below))
-        $best_fit_below = $this->Element('g', $cls, NULL, $best_fit_below);
-      if(!empty($best_fit_above))
-        $best_fit_above = $this->Element('g', $cls, NULL, $best_fit_above);
-    }
+    list($best_fit_above, $best_fit_below) = $this->BestFitLines();
     $body .= $best_fit_below;
     $body .= $this->OverShapes();
     $body .= $this->Axes();

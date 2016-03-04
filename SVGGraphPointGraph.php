@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2015 Graham Breach
+ * Copyright (C) 2010-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -164,8 +164,10 @@ abstract class PointGraph extends GridGraph {
     }
 
     // check for image marker
-    if(strncmp($type, 'image:', 6) == 0)
-      list($type, $image_path) = explode(':', $type);
+    if(strncmp($type, 'image:', 6) == 0) {
+      $image_path = SVGGraphSubstr($type, 6, NULL, $this->encoding);
+      $type = 'image';
+    }
 
     $a = $size; // will be repeated a lot, and 'a' is smaller
     $element = 'path';
@@ -387,22 +389,117 @@ abstract class PointGraph extends GridGraph {
   }
 
   /**
-   * Find the best fit line for the data points
+   * Returns a pair of best fit lines, above and below
    */
-  protected function BestFit($type, $dataset, $colour, $stroke_width, $dash,
-    $opacity)
+  protected function BestFitLines()
   {
+    $lines_above = $lines_below = '';
+    foreach($this->markers as $dataset => $mset) {
+
+      $start = null;
+      $end = null;
+      $range = $this->ArrayOption($this->best_fit_range, $dataset);
+      if(!is_array($range))
+        $range = $this->best_fit_range;
+      if(is_array($range)) {
+        if(count($range) !== 2)
+          throw new Exception('Best fit range must contain start and end values');
+        $start = array_shift($range);
+        $end = array_shift($range);
+
+        if(!is_null($start) && !is_numeric($start))
+          throw new Exception('Best fit range start not numeric or NULL');
+        if(!is_null($end) && !is_numeric($end))
+          throw new Exception('Best fit range end not numeric or NULL');
+        if(!is_null($start) && !is_null($end) && $end <= $start)
+          throw new Exception('Best fit range start >= end');
+      }
+
+      $bftype = $this->ArrayOption($this->best_fit, $dataset);
+      $project = $this->ArrayOption($this->best_fit_project, $dataset);
+      $project_start = $project == 'start' || $project == 'both';
+      $project_end = $project == 'end' || $project == 'both';
+      list($best_fit, $projection) = $this->BestFit($bftype, $dataset, $start,
+        $end, $project_start, $project_end);
+
+      if($best_fit !== '') {
+        $colour = $this->ArrayOption($this->best_fit_colour, $dataset);
+        $stroke_width = $this->ArrayOption($this->best_fit_width, $dataset);
+        $dash = $this->ArrayOption($this->best_fit_dash, $dataset);
+        $opacity = $this->ArrayOption($this->best_fit_opacity, $dataset);
+        $above = $this->ArrayOption($this->best_fit_above, $dataset);
+        $path = array(
+          'd' => $best_fit,
+          'stroke' => empty($colour) ? '#000' : $colour,
+        );
+        if($stroke_width != 1 && $stroke_width > 0)
+          $path['stroke-width'] = $stroke_width;
+        if(!empty($dash))
+          $path['stroke-dasharray'] = $dash;
+        if($opacity != 1)
+          $path['opacity'] = $opacity;
+
+        $line = $this->Element('path', $path);
+
+        if($projection !== '') {
+          $path['d'] = $projection;
+          $p_colour = $this->ArrayOption($this->best_fit_project_colour, $dataset);
+          $p_stroke_width = $this->ArrayOption($this->best_fit_project_width, $dataset);
+          $p_dash = $this->ArrayOption($this->best_fit_project_dash, $dataset);
+          $p_opacity = $this->ArrayOption($this->best_fit_project_opacity, $dataset);
+
+          if(!empty($p_colour))
+            $path['stroke'] = $p_colour;
+          if($p_stroke_width > 0)
+            $path['stroke-width'] = $p_stroke_width;
+          if(!empty($p_dash))
+            $path['stroke-dasharray'] = $p_dash;
+          if($p_opacity > 0)
+            $path['opacity'] = $p_opacity;
+
+          $line .= $this->Element('path', $path);
+        }
+        if($above)
+          $lines_above .= $line;
+        else
+          $lines_below .= $line;
+      }
+    }
+    if($this->semantic_classes) {
+      $cls = array('class' => 'bestfit');
+      if(!empty($lines_below))
+        $lines_below = $this->Element('g', $cls, NULL, $lines_below);
+      if(!empty($lines_above))
+        $lines_above = $this->Element('g', $cls, NULL, $lines_above);
+    }
+    return array($lines_above, $lines_below);
+  }
+
+  /**
+   * Find the best fit line for the data points
+   * Returns array of two paths: best fit and projection
+   */
+  protected function BestFit($type, $dataset, $start, $end, $project_start,
+    $project_end)
+  {
+    $line = array('', '');
+
     // only straight lines supported for now
     if($type != 'straight')
-      return '';
+      return $line;
 
     // use markers for data
     if(!isset($this->markers[$dataset]))
-      return '';
+      return $line;
 
     $sum_x = $sum_y = $sum_x2 = $sum_xy = 0;
     $count = 0;
+    $assoc = $this->values->AssociativeKeys();
     foreach($this->markers[$dataset] as $k => $v) {
+      if(!is_null($start) && $start > ($assoc ? $k : $v->key))
+        continue;
+      if(!is_null($end) && $end < ($assoc ? $k : $v->key))
+        continue;
       $x = $v->x - $this->pad_left;
       $y = $this->height - $this->pad_bottom - $v->y;
 
@@ -413,61 +510,91 @@ abstract class PointGraph extends GridGraph {
       ++$count;
     }
 
-    // can't draw a line through less than 2 points
+    // can't draw a line through fewer than 2 points
     if($count < 2)
-      return '';
+      return $line;
     $mean_x = $sum_x / $count;
     $mean_y = $sum_y / $count;
-    $x_max = $this->width - $this->pad_left - $this->pad_right;
-    $y_max = $this->height - $this->pad_bottom - $this->pad_top;
+
+    // initialize min and max points of line
+    $x_min = is_null($start) ? 0 : max($this->UnitsX($start), 0);
+    $x_max = is_null($end) ? $this->g_width :
+      min($this->UnitsX($end), $this->g_width);
+    $y_min = 0;
+    $y_max = $this->g_height;
 
     if($sum_x2 == $sum_x * $mean_x) {
       // line is vertical!
-      $x1 = $this->GridX($mean_x);
-      $x2 = $x1 = $mean_x;
-      $y1 = 0;
-      $y2 = $y_max;
+      $coords = array(
+        'x2' => $mean_x,
+        'x1' => $mean_x,
+        'y1' => $y_min,
+        'y2' => $y_max
+      );
     } else {
       $slope = ($sum_xy - $sum_x * $mean_y) / ($sum_x2 - $sum_x * $mean_x);
       $y_int = $mean_y - $slope * $mean_x;
+      $coords = $this->BoxLine($x_min, $x_max, $y_min, $y_max, $slope, $y_int);
 
-      $x1 = 0;
-      $y1 = $slope * $x1 + $y_int;
-      $x2 = $x_max;
-      $y2 = $slope * $x2 + $y_int;
-      
-      if($y1 < 0) {
-        $x1 = -$y_int / $slope;
-        $y1 = 0;
-      } elseif($y1 > $y_max) {
-        $x1 = ($y_max - $y_int) / $slope;
-        $y1 = $y_max;
+      if($project_end) {
+        $pcoords = $this->BoxLine($coords['x2'], $this->g_width, $y_min, $y_max,
+          $slope, $y_int);
+        if(!is_null($pcoords)) {
+          $x1 = $pcoords['x1'] + $this->pad_left;
+          $x2 = $pcoords['x2'] + $this->pad_left;
+          $y1 = $this->height - $this->pad_bottom - $pcoords['y1'];
+          $y2 = $this->height - $this->pad_bottom - $pcoords['y2'];
+          $line[1] .= "M$x1 {$y1}L$x2 $y2";
+        }
       }
-
-      if($y2 < 0) {
-        $x2 = - $y_int / $slope;
-        $y2 = 0;
-      } elseif($y2 > $y_max) {
-        $x2 = ($y_max - $y_int) / $slope;
-        $y2 = $y_max;
+      if($project_start) {
+        $pcoords = $this->BoxLine(0, $coords['x1'], $y_min, $y_max,
+          $slope, $y_int);
+        if(!is_null($pcoords)) {
+          $x1 = $pcoords['x1'] + $this->pad_left;
+          $x2 = $pcoords['x2'] + $this->pad_left;
+          $y1 = $this->height - $this->pad_bottom - $pcoords['y1'];
+          $y2 = $this->height - $this->pad_bottom - $pcoords['y2'];
+          $line[1] .= "M$x1 {$y1}L$x2 $y2";
+        }
       }
     }
-    $x1 += $this->pad_left;
-    $x2 += $this->pad_left;
-    $y1 = $this->height - $this->pad_bottom - $y1;
-    $y2 = $this->height - $this->pad_bottom - $y2;
-    $path = array(
-      'd' => "M$x1 {$y1}L$x2 $y2",
-      'stroke' => empty($colour) ? '#000' : $colour,
-    );
-    if($stroke_width != 1 && $stroke_width > 0)
-      $path['stroke-width'] = $stroke_width;
-    if(!empty($dash))
-      $path['stroke-dasharray'] = $dash;
-    if($opacity != 1)
-      $path['opacity'] = $opacity;
+    $x1 = $coords['x1'] + $this->pad_left;
+    $x2 = $coords['x2'] + $this->pad_left;
+    $y1 = $this->height - $this->pad_bottom - $coords['y1'];
+    $y2 = $this->height - $this->pad_bottom - $coords['y2'];
+    $line[0] = "M$x1 {$y1}L$x2 $y2";
+    return $line;
+  }
 
-    return $this->Element('path', $path);
+  /**
+   * Returns the coordinates of a line that passes through a box
+   */
+  protected function BoxLine($x_min, $x_max, $y_min, $y_max, $slope, $y_int)
+  {
+    $x1 = $x_min;
+    $y1 = $slope * $x1 + $y_int;
+    $x2 = $x_max;
+    $y2 = $slope * $x2 + $y_int;
+
+    if($y1 < 0) {
+      $x1 = -$y_int / $slope;
+      $y1 = $y_min;
+    } elseif($y1 > $y_max) {
+      $x1 = ($y_max - $y_int) / $slope;
+      $y1 = $y_max;
+    }
+
+    if($y2 < 0) {
+      $x2 = - $y_int / $slope;
+      $y2 = $y_min;
+    } elseif($y2 > $y_max) {
+      $x2 = ($y_max - $y_int) / $slope;
+      $y2 = $y_max;
+    }
+    if($x1 == $x2 && $y1 == $y2)
+      return NULL;
+    return compact('x1','y1','x2','y2');
   }
 
   /**
