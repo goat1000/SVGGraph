@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2015 Graham Breach
+ * Copyright (C) 2014-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ class PolarAreaGraph extends PieGraph {
   protected $slice_angle;
   protected $radius_factor_x;
   protected $radius_factor_y;
+  protected $repeated_keys = 'error';
 
   /**
    * Sets up the polar graph details
