@@ -92,8 +92,8 @@ class BarGraph extends GridGraph {
     if(is_numeric($this->bar_width) && $this->bar_width >= 1)
       return $this->bar_width;
     $unit_w = $this->x_axes[$this->main_x_axis]->Unit();
-    $bw = $this->bar_space >= $unit_w ? 1 : $unit_w - $this->bar_space;
-    return max($bw, $this->bar_width_min);
+    $bw = $unit_w - $this->bar_space;
+    return max(1, $bw, $this->bar_width_min);
   }
 
   /**

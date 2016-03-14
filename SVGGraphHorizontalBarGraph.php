@@ -92,8 +92,8 @@ class HorizontalBarGraph extends GridGraph {
     if(is_numeric($this->bar_width) && $this->bar_width >= 1)
       return $this->bar_width;
     $unit_h = $this->y_axes[$this->main_y_axis]->Unit();
-    $bh = $this->bar_space >= $unit_h ? 1 : $unit_h - $this->bar_space;
-    return max($bh, $this->bar_width_min);
+    $bh = $unit_h - $this->bar_space;
+    return max(1, $bh, $this->bar_width_min);
   }
 
   /**
