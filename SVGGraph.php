@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.20.1');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.21');
 
 require_once 'SVGGraphColours.php';
 
@@ -910,22 +910,25 @@ abstract class Graph {
   }
 
   /**
-   * Returns a text element, with tspans for subsequent lines
+   * Returns a text element, with tspans for multiple lines
    */
   public function Text($text, $line_spacing, $attribs, $styles = NULL)
   {
-    $lines = explode("\n", $text);
-    $content = array_shift($lines);
-    $content = ($content == '' ? ' ' : htmlspecialchars($content,
-      ENT_COMPAT, $this->encoding));
+    if(strpos($text, "\n") === FALSE) {
+      $content = ($text == '' ? ' ' : htmlspecialchars($text,
+        ENT_COMPAT, $this->encoding));
+    } else {
+      $lines = explode("\n", $text);
+      $content = '';
+      $tspan = array('x' => $attribs['x'], 'dy' => 0);
+      foreach($lines as $line) {
+        // blank tspan elements collapse to nothing, so insert a space
+        $line = ($line == '' ? ' ' : htmlspecialchars($line, ENT_COMPAT,
+          $this->encoding));
 
-    foreach($lines as $line) {
-      // blank tspan elements collapse to nothing, so insert a space
-      $line = ($line == '' ? ' ' : htmlspecialchars($line, ENT_COMPAT,
-        $this->encoding));
-      $content .= $this->Element('tspan',
-        array('x' => $attribs['x'], 'dy' => $line_spacing),
-        NULL, $line);
+        $content .= $this->Element('tspan', $tspan, NULL, $line);
+        $tspan['dy'] = $line_spacing;
+      }
     }
     return $this->Element('text', $attribs, $styles, $content); 
   }

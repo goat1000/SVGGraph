@@ -1,3 +1,12 @@
+Version 2.21 (17/03/2016)
+------------
+- Added best-fit line support to line graphs.
+- Added best_fit_range option for limiting best-fit line.
+- Added best_fit_project options for projecting beyond best-fit range.
+- Merged code to allow repeated keys in pie graphs.
+- Fixed displaying image markers with absolute links.
+- Fixed minimum fallback bar width to 1 pixel.
+
 Version 2.20.1 (19/01/2016)
 --------------
 - Added bar_width_min option.
