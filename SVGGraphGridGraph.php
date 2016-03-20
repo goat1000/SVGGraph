@@ -486,7 +486,7 @@ abstract class GridGraph extends Graph {
       if($this->DatasetYAxis($i) == $axis)
         $min[] = $this->values->GetMinValue($i);
     }
-    return min($min);
+    return empty($min) ? NULL : min($min);
   }
 
   /**
@@ -504,7 +504,7 @@ abstract class GridGraph extends Graph {
       if($this->DatasetYAxis($i) == $axis)
         $max[] = $this->values->GetMaxValue($i);
     }
-    return max($max);
+    return empty($max) ? NULL : max($max);
   }
 
   /**
