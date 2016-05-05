@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2015 Graham Breach
+ * Copyright (C) 2011-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -57,6 +57,7 @@ class MultiRadarGraph extends RadarGraph {
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
 
+      $marker_points = array();
       foreach($this->multi_graph[$i] as $item) {
         $point_pos = $this->GridPosition($item->key, $bnum);
         if(!is_null($item->value) && !is_null($point_pos)) {
@@ -70,9 +71,7 @@ class MultiRadarGraph extends RadarGraph {
 
             // no need to repeat same L command
             $cmd = $cmd == 'M' ? 'L' : '';
-            $marker_id = $this->MarkerLabel($i, $bnum, $item, $x, $y);
-            $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
-            $this->AddMarker($x, $y, $item, $extra, $i);
+            $marker_points[$bnum] = compact('x', 'y', 'item');
           }
         }
         ++$bnum;
@@ -80,9 +79,14 @@ class MultiRadarGraph extends RadarGraph {
 
       if($path != '') {
         $attr['stroke'] = $this->GetColour(null, 0, $i, true);
-        $this->line_styles[] = $attr;
-        $this->fill_styles[] = $fill_style;
         $path .= "z";
+        $this->curr_line_style = $attr;
+        $this->curr_fill_style = $fill_style;
+        foreach($marker_points as $bnum => $m) {
+          $marker_id = $this->MarkerLabel($i, $bnum, $m['item'], $m['x'], $m['y']);
+          $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
+          $this->AddMarker($m['x'], $m['y'], $m['item'], $extra, $i);
+        }
         $attr['d'] = $path;
         if($this->semantic_classes)
           $attr['class'] = "series{$i}";

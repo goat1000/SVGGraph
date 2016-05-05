@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2015 Graham Breach
+ * Copyright (C) 2011-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,7 +47,6 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
     $bnum = 0;
     $b_start = $this->height - $this->pad_bottom - ($this->bar_space / 2);
     $chunk_count = count($this->multi_graph);
-    $bars_shown = array_fill(0, $chunk_count, 0);
     $this->ColourSetup($this->multi_graph->ItemsCount(-1), $chunk_count);
 
     $bars = '';
@@ -79,8 +78,6 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
               $xpos += $item->value;
 
             if($bar['width'] > 0) {
-              ++$bars_shown[$j];
-
               $show_label = $this->AddDataLabel($j, $bnum, $bar, $item,
                 $bar['x'], $bar['y'], $bar['width'], $bar['height']);
               if($this->show_tooltips)
@@ -93,7 +90,7 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
               unset($bar['id']); // clear ID for next generated value
             }
           }
-          $this->bar_styles[$j] = $bar_style;
+          $this->SetLegendEntry($j, $bnum, $item, $bar_style);
         }
         if($this->show_bar_totals) {
           if($xpos) {
@@ -119,12 +116,6 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
         }
       }
       ++$bnum;
-    }
-    if(!$this->legend_show_empty) {
-      foreach($bars_shown as $j => $bar) {
-        if(!$bar)
-          $this->bar_styles[$j] = NULL;
-      }
     }
 
     if($this->semantic_classes)

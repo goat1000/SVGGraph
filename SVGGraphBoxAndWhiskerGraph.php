@@ -27,7 +27,6 @@ class BoxAndWhiskerGraph extends PointGraph {
   protected $require_structured = array('top', 'bottom', 'wtop', 'wbottom');
   private $min_value = null;
   private $max_value = null;
-  private $box_styles = array();
 
   protected function Draw()
   {
@@ -35,7 +34,6 @@ class BoxAndWhiskerGraph extends PointGraph {
 
     $bar_width = $this->BarWidth();
     $x_axis = $this->x_axes[$this->main_x_axis];
-    $box_style = array();
 
     $bspace = max(0, ($this->x_axes[$this->main_x_axis]->Unit() - $bar_width) / 2);
     $bnum = 0;
@@ -46,9 +44,10 @@ class BoxAndWhiskerGraph extends PointGraph {
 
       if(!is_null($item->value) && !is_null($bar_pos)) {
 
-        $box_style['fill'] = $this->GetColour($item, $bnum);
+        $box_style = array('fill' => $this->GetColour($item, $bnum));
         $this->SetStroke($box_style, $item);
-        $style = array();
+        $this->SetLegendEntry(0, $bnum, $item, $box_style);
+
         $shape = $this->WhiskerBox($bspace + $bar_pos, $bar_width,
           $item->value, $item->Data('top'), $item->Data('bottom'),
           $item->Data('wtop'), $item->Data('wbottom'));
@@ -67,7 +66,6 @@ class BoxAndWhiskerGraph extends PointGraph {
           $g['class'] = "series0";
         $group = $this->Element('g', array_merge($g, $box_style), null, $shape);
         $series .= $this->GetLink($item, $item->key, $group);
-        $this->box_styles[$bnum] = $box_style;
 
         // add outliers as markers
         $x = $bar_pos + $x_axis->Unit() / 2;
@@ -166,13 +164,10 @@ class BoxAndWhiskerGraph extends PointGraph {
   /**
    * Return box for legend
    */
-  public function DrawLegendEntry($set, $x, $y, $w, $h)
+  public function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!isset($this->box_styles[$set]))
-      return '';
-
     $box = array('x' => $x, 'y' => $y, 'width' => $w, 'height' => $h);
-    return $this->Element('rect', $box, $this->box_styles[$set]);
+    return $this->Element('rect', $box, $entry->style);
   }
 
   /**

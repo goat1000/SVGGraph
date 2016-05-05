@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2015 Graham Breach
+ * Copyright (C) 2012-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -102,8 +102,7 @@ class StackedBar3DGraph extends Bar3DGraph {
             $group['class'] = "series{$j}";
           $bars .= $this->Element('g', $group, NULL, $link);
           unset($group['id'], $group['class']);
-          if(!array_key_exists($j, $this->bar_styles))
-            $this->bar_styles[$j] = $group;
+          $this->SetLegendEntry($j, $bnum, $item, $group);
         }
       }
       ++$bnum;

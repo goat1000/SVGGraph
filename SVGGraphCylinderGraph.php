@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2015 Graham Breach
+ * Copyright (C) 2012-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,6 @@ require_once 'SVGGraphBar3DGraph.php';
 
 class CylinderGraph extends Bar3DGraph {
 
-  protected $bar_styles = array();
   protected $label_centre = true;
   protected $transform;
   protected $tx;

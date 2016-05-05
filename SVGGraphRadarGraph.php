@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2015 Graham Breach
+ * Copyright (C) 2012-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -58,17 +58,18 @@ class RadarGraph extends LineGraph {
     $path = '';
     if($this->fill_under) {
       $attr['fill'] = $this->GetColour(null, 0);
-      $this->fill_styles[0] = array(
+      $this->curr_fill_style = array(
         'fill' => $attr['fill'],
         'stroke' => $attr['fill']
       );
       if($this->fill_opacity < 1.0) {
         $attr['fill-opacity'] = $this->fill_opacity;
-        $this->fill_styles[0]['fill-opacity'] = $this->fill_opacity;
+        $this->curr_fill_style['fill-opacity'] = $this->fill_opacity;
       }
     }
 
     $y_axis = $this->y_axes[$this->main_y_axis];
+    $marker_points = array();
     foreach($this->values[0] as $item) {
       $point_pos = $this->GridPosition($item->key, $bnum);
       if(!is_null($item->value) && !is_null($point_pos)) {
@@ -81,9 +82,7 @@ class RadarGraph extends LineGraph {
 
           // no need to repeat same L command
           $cmd = $cmd == 'M' ? 'L' : '';
-          $marker_id = $this->MarkerLabel(0, $bnum, $item, $x, $y);
-          $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
-          $this->AddMarker($x, $y, $item, $extra);
+          $marker_points[$bnum] = compact('x', 'y', 'item');
         }
       }
       ++$bnum;
@@ -91,7 +90,12 @@ class RadarGraph extends LineGraph {
 
     $path .= "z";
 
-    $this->line_styles[0] = $attr;
+    $this->curr_line_style = $attr;
+    foreach($marker_points as $bnum => $m) {
+      $marker_id = $this->MarkerLabel(0, $bnum, $m['item'], $m['x'], $m['y']);
+      $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
+      $this->AddMarker($m['x'], $m['y'], $m['item'], $extra);
+    }
     $attr['d'] = $path;
     $group = array();
 

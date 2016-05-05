@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.21');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.22');
 
 require_once 'SVGGraphColours.php';
 
@@ -226,6 +226,7 @@ abstract class Graph {
   protected $require_structured = false;
   protected $require_integer_keys = true;
   protected $multi_graph = NULL;
+  protected $legend = NULL;
 
   public function __construct($w, $h, $settings = NULL)
   {
@@ -380,6 +381,7 @@ abstract class Graph {
   public function DrawGraph()
   {
     $canvas_id = $this->NewID();
+    $this->InitLegend();
 
     $contents = $this->Canvas($canvas_id);
     $contents .= $this->DrawTitle();
@@ -405,194 +407,36 @@ abstract class Graph {
     return $this->back_matter;
   }
 
+
+  /**
+   * Sets up the legend class
+   */
+  protected function InitLegend()
+  {
+    // see if the legend is needed
+    if(!$this->show_legend || (empty($this->legend_entries) &&
+      (!isset($this->structure) || !isset($this->structure['legend_text'])))) {
+      $this->legend = NULL;
+      return;
+    }
+    require_once 'SVGGraphLegend.php';
+    $this->legend = new SVGGraphLegend($this, $this->legend_reverse);
+  }
+
   /**
    * Draws the legend
    */
   protected function DrawLegend()
   {
-    if(empty($this->legend_entries))
+    if(is_null($this->legend))
       return '';
-
-    // need to find the actual number of entries in the legend
-    $entry_count = 0;
-    $longest = 0;
-    foreach($this->legend_entries as $key => $value) {
-      $entry = $this->DrawLegendEntry($key, 0, 0, 20, 20);
-      if($entry != '') {
-        ++$entry_count;
-        if(SVGGraphStrlen($value, $this->encoding) > $longest)
-          $longest = SVGGraphStrlen($value, $this->encoding);
-      }
-    }
-    if(!$entry_count)
-      return '';
-
-    $title = '';
-    $title_width = $entries_x = 0;
-    $text_columns = $entry_columns = array();
-
-    $start_y = $this->legend_padding;
-    $w = $this->legend_entry_width;
-    $x = 0;
-    $entry_height = max($this->legend_font_size, $this->legend_entry_height);
-    $text_y_offset = $entry_height / 2 + $this->legend_font_size / 2;
-
-    // make room for title
-    if($this->legend_title != '') {
-      $title_font = $this->GetFirst($this->legend_title_font,
-        $this->legend_font);
-      $title_font_size = $this->GetFirst($this->legend_title_font_size,
-        $this->legend_font_size);
-      $title_font_adjust = $this->GetFirst($this->legend_title_font_adjust,
-        $this->legend_font_adjust);
-      $title_colour = $this->GetFirst($this->legend_title_colour,
-        $this->legend_colour);
-
-      $start_y += $title_font_size + $this->legend_padding;
-      $title_width = $this->legend_padding * 2 +
-        $title_font_size * $title_font_adjust * 
-        SVGGraphStrlen($this->legend_title, $this->encoding);
-    }
-
-    $columns = max(1, min(ceil($this->legend_columns), $entry_count));
-    $per_column = ceil($entry_count / $columns);
-    $columns = ceil($entry_count / $per_column);
-    $column = 0;
-
-    $text = array('x' => 0);
-    $legend_entries = $this->legend_reverse ?
-      array_reverse($this->legend_entries, true) : $this->legend_entries;
-
-    $column_entry = 0;
-    $y = $start_y;
-    foreach($legend_entries as $key => $value) {
-      if(!empty($value)) {
-        $entry = $this->DrawLegendEntry($key, $x, $y, $w, $entry_height);
-        if(!empty($entry)) {
-          $text['y'] = $y + $text_y_offset;
-          if(isset($text_columns[$column]))
-            $text_columns[$column] .= $this->Element('text', $text, NULL, $value);
-          else
-            $text_columns[$column] = $this->Element('text', $text, NULL, $value);
-          if(isset($entry_columns[$column]))
-            $entry_columns[$column] .= $entry;
-          else
-            $entry_columns[$column] = $entry;
-          $y += $entry_height + $this->legend_padding;
-
-          if(++$column_entry == $per_column) {
-            $column_entry = 0;
-            $y = $start_y;
-            ++$column;
-          }
-        }
-      }
-    }
-    // if there's nothing to go in the legend, stop now
-    if(empty($entry_columns))
-      return '';
-
-    $text_space = $longest * $this->legend_font_size * 
-      $this->legend_font_adjust;
-    if($this->legend_text_side == 'left') {
-      $text_x_offset = $text_space + $this->legend_padding;
-      $entries_x_offset = $text_space + $this->legend_padding * 2;
-    } else {
-      $text_x_offset = $w + $this->legend_padding * 2;
-      $entries_x_offset = $this->legend_padding;
-    }
-    $longest_width = $this->legend_padding * (2 * $columns + 1) +
-      ($this->legend_entry_width + $text_space) * $columns;
-    $column_width = $this->legend_padding * 2 + $this->legend_entry_width +
-      $text_space;
-    $width = max($title_width, $longest_width);
-    $height = $start_y + $per_column * ($entry_height + $this->legend_padding);
-
-    // centre the entries if the title makes the box bigger
-    if($width > $longest_width) {
-      $offset = ($width - $longest_width) / 2;
-      $entries_x_offset += $offset;
-      $text_x_offset += $offset;
-    }
-
-    $text_group = array('transform' => "translate($text_x_offset,0)");
-    if($this->legend_text_side == 'left')
-      $text_group['text-anchor'] = 'end';
-    $entries_group = array('transform' => "translate($entries_x_offset,0)");
-
-    $parts = '';
-    foreach($entry_columns as $col) {
-      $parts .= $this->Element('g', $entries_group, null, $col);
-      $entries_x_offset += $column_width;
-      $entries_group['transform'] = "translate($entries_x_offset,0)";
-    }
-    foreach($text_columns as $col) {
-      $parts .= $this->Element('g', $text_group, null, $col);
-      $text_x_offset += $column_width;
-      $text_group['transform'] = "translate($text_x_offset,0)";
-    }
-
-    // create box and title
-    $box = array(
-      'fill' => $this->ParseColour($this->legend_back_colour),
-      'width' => $width,
-      'height' => $height,
-    );
-    if($this->legend_round > 0)
-      $box['rx'] = $box['ry'] = $this->legend_round;
-    if($this->legend_stroke_width) {
-      $box['stroke-width'] = $this->legend_stroke_width;
-      $box['stroke'] = $this->legend_stroke_colour;
-    }
-    $rect = $this->Element('rect', $box);
-    if($this->legend_title != '') {
-      $text['x'] = $width / 2;
-      $text['y'] = $this->legend_padding + $title_font_size;
-      $text['text-anchor'] = 'middle';
-      if($title_font != $this->legend_font)
-        $text['font-family'] = $title_font;
-      if($title_font_size != $this->legend_font_size)
-        $text['font-size'] = $title_font_size;
-      if($this->legend_title_font_weight != $this->legend_font_weight)
-        $text['font-weight'] = $this->legend_title_font_weight;
-      if($title_colour != $this->legend_colour)
-        $text['fill'] = $title_colour;
-      $title = $this->Element('text', $text, NULL, $this->legend_title);
-    }
-
-    // create group to contain whole legend
-    list($left, $top) = $this->ParsePosition($this->legend_position,
-      $width, $height);
-
-    $group = array(
-      'font-family' => $this->legend_font,
-      'font-size' => $this->legend_font_size,
-      'fill' => $this->legend_colour,
-      'transform' => "translate($left,$top)",
-    );
-    if($this->legend_font_weight != 'normal')
-      $group['font-weight'] = $this->legend_font_weight;
-
-    // add shadow if not completely transparent
-    if($this->legend_shadow_opacity > 0) {
-      $box['x'] = $box['y'] = 2 + ($this->legend_stroke_width / 2);
-      $box['fill'] = '#000';
-      $box['opacity'] = $this->legend_shadow_opacity;
-      unset($box['stroke'], $box['stroke-width']);
-      $rect = $this->Element('rect', $box) . $rect;
-    }
-
-    if($this->legend_autohide)
-      $this->AutoHide($group);
-    if($this->legend_draggable)
-      $this->SetDraggable($group);
-    return $this->Element('g', $group, NULL, $rect . $title . $parts);
+    return $this->legend->Draw();
   }
 
   /**
    * Parses a position string, returning x and y coordinates
    */
-  protected function ParsePosition($pos, $w = 0, $h = 0, $pad = 0)
+  public function ParsePosition($pos, $w = 0, $h = 0, $pad = 0)
   {
     $inner = true;
     $parts = preg_split('/\s+/', $pos);
@@ -731,11 +575,20 @@ abstract class Graph {
     return array($x, $y, $text_align, $hpos, $vpos);
   }
 
+  /**
+   * Sets the style info for the legend
+   */
+  protected function SetLegendEntry($dataset, $index, $item, $style_info)
+  {
+    if(is_null($this->legend))
+      return;
+    $this->legend->SetEntry($dataset, $index, $item, $style_info);
+  }
 
   /**
    * Subclasses must draw the entry, if they can
    */
-  protected function DrawLegendEntry($key, $x, $y, $w, $h)
+  protected function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
     return '';
   }
@@ -914,17 +767,22 @@ abstract class Graph {
    */
   public function Text($text, $line_spacing, $attribs, $styles = NULL)
   {
+    // strip special characters
+    $text = htmlspecialchars($text, ENT_COMPAT, $this->encoding);
+
+    // put entities back in
+    $text = preg_replace('/&amp;(amp|#x[a-f0-9]+|#\d+);/', '&$1;', $text);
+
     if(strpos($text, "\n") === FALSE) {
-      $content = ($text == '' ? ' ' : htmlspecialchars($text,
-        ENT_COMPAT, $this->encoding));
+      $content = ($text == '' ? ' ' : $text);
     } else {
       $lines = explode("\n", $text);
       $content = '';
       $tspan = array('x' => $attribs['x'], 'dy' => 0);
       foreach($lines as $line) {
         // blank tspan elements collapse to nothing, so insert a space
-        $line = ($line == '' ? ' ' : htmlspecialchars($line, ENT_COMPAT,
-          $this->encoding));
+        if($line == '')
+          $line = ' ';
 
         $content .= $this->Element('tspan', $tspan, NULL, $line);
         $tspan['dy'] = $line_spacing;
@@ -944,7 +802,7 @@ abstract class Graph {
     if(is_int($text)) {
       $len = $text;
     } else {
-      // replace all entities with an underscore
+      // replace all entities with an underscore (just for measurement)
       $text = preg_replace('/&[^;]+;/', '_', $text);
       if($line_spacing > 0) {
         $len = 0;
@@ -1179,7 +1037,7 @@ abstract class Graph {
   /**
    * Returns the first non-empty argument
    */
-  protected static function GetFirst()
+  public static function GetFirst()
   {
     $opts = func_get_args();
     foreach($opts as $opt)
@@ -1190,7 +1048,7 @@ abstract class Graph {
   /**
    * Returns an option from array, or non-array option
    */
-  protected static function ArrayOption($o, $i)
+  public static function ArrayOption($o, $i)
   {
     return is_array($o) ? $o[$i % count($o)] : $o;
   }
@@ -1396,7 +1254,7 @@ abstract class Graph {
   /**
    * Makes an item draggable
    */
-  protected function SetDraggable(&$element)
+  public function SetDraggable(&$element)
   {
     $this->LoadJavascript();
     Graph::$javascript->SetDraggable($element);
@@ -1405,7 +1263,7 @@ abstract class Graph {
   /**
    * Makes something auto-hide
    */
-  protected function AutoHide(&$element)
+  public function AutoHide(&$element)
   {
     $this->LoadJavascript();
     Graph::$javascript->AutoHide($element);

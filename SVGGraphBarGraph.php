@@ -23,7 +23,6 @@ require_once 'SVGGraphGridGraph.php';
 
 class BarGraph extends GridGraph {
 
-  protected $bar_styles = array();
   protected $label_centre = TRUE;
 
   public function __construct($w, $h, $settings = NULL)
@@ -54,8 +53,7 @@ class BarGraph extends GridGraph {
       if($this->legend_show_empty || $item->value != 0) {
         $bar_style = array('fill' => $this->GetColour($item, $bnum));
         $this->SetStroke($bar_style, $item);
-      } else {
-        $bar_style = NULL;
+        $this->SetLegendEntry(0, $bnum, $item, $bar_style);
       }
 
       if(!is_null($item->value) && !is_null($bar_pos)) {
@@ -72,7 +70,6 @@ class BarGraph extends GridGraph {
           $bars .= $this->GetLink($item, $item->key, $rect);
         }
       }
-      $this->bar_styles[] = $bar_style;
       ++$bnum;
     }
 
@@ -200,13 +197,10 @@ class BarGraph extends GridGraph {
   /**
    * Return box for legend
    */
-  protected function DrawLegendEntry($set, $x, $y, $w, $h)
+  public function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!isset($this->bar_styles[$set]))
-      return '';
-
     $bar = array('x' => $x, 'y' => $y, 'width' => $w, 'height' => $h);
-    return $this->Element('rect', $bar, $this->bar_styles[$set]);
+    return $this->Element('rect', $bar, $entry->style);
   }
 
 }

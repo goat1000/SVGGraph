@@ -111,8 +111,11 @@ class StackedGroupedCylinderGraph extends StackedCylinderGraph {
                 $group['class'] = "series{$j}";
               $bars .= $this->Element('g', $group, NULL, $link);
               unset($group['id'], $group['class']);
-              if(!array_key_exists($j, $this->bar_styles))
-                $this->bar_styles[$j] = $group;
+
+              // set up legend
+              $cstyle = array('fill' => $this->GetColour($item, $bnum, $j));
+              $this->SetStroke($cstyle, $item, $j);
+              $this->SetLegendEntry($j, $bnum, $item, $cstyle);
             }
           }
         }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2015 Graham Breach
+ * Copyright (C) 2013-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,6 @@ class BubbleGraph extends PointGraph {
   protected $repeated_keys = 'accept';
   protected $require_structured = array('area');
   protected $require_integer_keys = false;
-  protected $bubble_styles = array();
 
   protected function Draw()
   {
@@ -71,7 +70,7 @@ class BubbleGraph extends PointGraph {
           $bubble = $this->Element('circle', array_merge($circle, $circle_style));
           $series .= $this->GetLink($item, $item->key, $bubble);
 
-          $this->bubble_styles[] = $circle_style;
+          $this->SetLegendEntry(0, $bnum, $item, $circle_style);
         }
       }
       ++$bnum;
@@ -101,17 +100,14 @@ class BubbleGraph extends PointGraph {
   /**
    * Return bubble for legend
    */
-  public function DrawLegendEntry($set, $x, $y, $w, $h)
+  public function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!array_key_exists($set, $this->bubble_styles))
-      return '';
-
     $bubble = array(
       'cx' => $x + $w / 2,
       'cy' => $y + $h / 2,
       'r' => min($w, $h) / 2
     );
-    return $this->Element('circle', array_merge($bubble, $this->bubble_styles[$set]));
+    return $this->Element('circle', array_merge($bubble, $entry->style));
   }
 }
 

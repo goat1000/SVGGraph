@@ -170,5 +170,17 @@ class Histogram extends BarGraph {
     $uwidth = $this->increment * $this->x_axes[$this->main_x_axis]->Unit();
     return max(0, ($uwidth - $bar_width) / 2);
   }
+
+  /**
+   * Override to prevent drawing an entry past the last bar
+   */
+  protected function SetLegendEntry($dataset, $index, $item, $style_info)
+  {
+    // the last entry is a blank to wangle the numbering
+    if($item->key >= $this->GetMaxKey())
+      return;
+    parent::SetLegendEntry($dataset, $index, $item, $style_info);
+  }
+
 }
 

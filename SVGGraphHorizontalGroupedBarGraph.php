@@ -42,12 +42,10 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
     $this->ColourSetup($this->multi_graph->ItemsCount(-1), $chunk_count);
 
     $bnum = 0;
-    $bars_shown = array_fill(0, $chunk_count, 0);
     $bars = '';
     foreach($this->multi_graph as $itemlist) {
       $k = $itemlist[0]->key;
       $bar_pos = $this->GridPosition($k, $bnum);
-
       if(!is_null($bar_pos)) {
         for($j = 0; $j < $chunk_count; ++$j) {
           $bar['y'] = $bar_pos - $bspace - $chunk_height - 
@@ -58,8 +56,6 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
           $this->Bar($item->value, $bar);
 
           if($bar['width'] > 0) {
-            ++$bars_shown[$j];
-
             $show_label = $this->AddDataLabel($j, $bnum, $bar, $item,
               $bar['x'], $bar['y'], $bar['width'], $bar['height']);
             if($this->show_tooltips)
@@ -71,16 +67,10 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
             $bars .= $this->GetLink($item, $k, $rect);
             unset($bar['id']); // clear ID for next generated value
           }
-          $this->bar_styles[$j] = $bar_style;
+          $this->SetLegendEntry($j, $bnum, $item, $bar_style);
         }
       }
       ++$bnum;
-    }
-    if(!$this->legend_show_empty) {
-      foreach($bars_shown as $j => $bar) {
-        if(!$bar)
-          $this->bar_styles[$j] = NULL;
-      }
     }
 
     if($this->semantic_classes)

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015 Graham Breach
+ * Copyright (C) 2015-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -49,18 +49,20 @@ class SVGGraphCoords {
   }
 
   /**
-   * splits $value, removing leading char and updating $axis
+   * splits $value, removing leading char and updating $axis, $axis_no
    */
-  private function ValueAxis(&$value, &$axis)
+  private function ValueAxis(&$value, &$axis, &$axis_no)
   {
-    // strip leading u or g
-    $value = substr($value, 1);
-    $last = substr($value, -1);
-    if($last == 'x' || $last == 'y') {
-      // axis given, strip last char
-      $axis = $last;
-      $value = substr($value, 0, -1);
+    if(preg_match('/^[ug](.*?)(([xy])(\d?))?$/', $value, $matches)) {
+      $value = $matches[1];
+      if(count($matches) == 5) {
+        $axis = $matches[3];
+        $axis_no = is_numeric($matches[4]) ? $matches[4] : NULL;
+      }
+      return;
     }
+    // if the regex failed (?!) just strip leading u or g
+    $value = substr($value, 1);
   }
 
   /**
@@ -84,35 +86,33 @@ class SVGGraphCoords {
       return $value;
     $value = strtolower($value);
     $first = substr($value, 0, 1);
-    $grid_graph = method_exists($this->graph, 'GridX');
+    $grid = false;
 
-    if(!$grid_graph && ($first == 'u' || $first == 'g'))
-      throw new Exception('Invalid dimensions (non-grid graph)');
+    if($first == 'u' || $first == 'g') {
+      if(!method_exists($this->graph, 'GridX'))
+        throw new Exception('Invalid dimensions (non-grid graph)');
 
-    if($first == 'u') {
-      // value is in grid units
-      $this->ValueAxis($value, $axis);
-      if(is_numeric($value)) {
-        return $axis == 'x' ?
-          $this->graph->UnitsX($value) - $this->graph->UnitsX(0):
-          $this->graph->UnitsY($value) - $this->graph->UnitsY(0);
-      } else {
+      $this->ValueAxis($value, $axis, $axis_no);
+
+      if($first == 'u') {
+        // value is in grid units
+        if(is_numeric($value)) {
+          return $axis == 'x' ?
+            $this->graph->UnitsX($value, $axis_no) - $this->graph->UnitsX(0, $axis_no):
+            $this->graph->UnitsY($value, $axis_no) - $this->graph->UnitsY(0, $axis_no);
+        }
         return 0;
       }
-    }
 
-    $grid = false;
-    if($first == 'g') {
       // value is a grid position
-      $this->ValueAxis($value, $axis);
       $grid = true;
     }
 
     $trans = 0;
     if(is_numeric($value)) {
       if($grid) {
-        $trans = $axis == 'x' ? $this->graph->GridX($value) :
-          $this->graph->GridY($value);
+        $trans = $axis == 'x' ? $this->graph->GridX($value, $axis_no) :
+          $this->graph->GridY($value, $axis_no);
       } else {
         $trans = $value;
       }

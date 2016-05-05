@@ -27,8 +27,8 @@ require_once 'SVGGraphPointGraph.php';
 class LineGraph extends PointGraph {
 
   protected $require_integer_keys = false;
-  protected $line_styles = array();
-  protected $fill_styles = array();
+  protected $curr_line_style = NULL;
+  protected $curr_fill_style = NULL;
 
   protected function Draw()
   {
@@ -105,14 +105,11 @@ class LineGraph extends PointGraph {
 
       // no need to repeat same L command
       $cmd = $cmd == 'M' ? 'L' : '';
-      $marker_id = $this->MarkerLabel($dataset, $index, $item, $x, $y);
-      $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
-      $this->AddMarker($x, $y, $item, $extra, $dataset);
       $last_x = $x;
     }
     $attr['stroke'] = $stroke_colour ? $this->stroke_colour :
       $this->GetColour(null, 0, $dataset, true);
-    $this->line_styles[$dataset] = $attr;
+    $this->curr_line_style = $attr;
     $attr['d'] = $path;
     if($this->semantic_classes)
       $attr['class'] = "series{$dataset}";
@@ -133,29 +130,48 @@ class LineGraph extends PointGraph {
       $graph_line = $this->Element('path', $fill_style) . $graph_line;
 
       unset($fill_style['d'], $fill_style['class']);
-      $this->fill_styles[$dataset] = $fill_style;
+      $this->curr_fill_style = $fill_style;
+    } else {
+      $this->curr_fill_style = NULL;
     }
 
+    // add markers (and therefore legend entries too)
+    foreach($points as $point) {
+      list($x, $y, $item, $dataset, $index) = $point;
+
+      $marker_id = $this->MarkerLabel($dataset, $index, $item, $x, $y);
+      $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
+      $this->AddMarker($x, $y, $item, $extra, $dataset);
+    }
     return $graph_line;
+  }
+
+  /**
+   * Override to add the line info and marker at the same time
+   */
+  protected function SetLegendEntry($dataset, $index, $item, $style_info)
+  {
+    $style_info['line_style'] = $this->curr_line_style;
+    $style_info['fill_style'] = $this->curr_fill_style;
+    parent::SetLegendEntry($dataset, $index, $item, $style_info);
   }
 
   /**
    * Return line and marker for legend
    */
-  public function DrawLegendEntry($set, $x, $y, $w, $h)
+  public function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!isset($this->line_styles[$set]))
+    if(!isset($entry->style['line_style']))
       return '';
-
-    $marker = parent::DrawLegendEntry($set, $x, $y, $w, $h);
+    $marker = parent::DrawLegendEntry($x, $y, $w, $h, $entry);
     $h1 = $h/2;
     $y += $h1;
-    $line = $this->line_styles[$set];
+    $line = $entry->style['line_style'];
     $line['d'] = "M$x {$y}l$w 0";
     $graph_line = $this->Element('path', $line);
 
-    if($this->ArrayOption($this->fill_under,$set)) {
-      $fill = $this->fill_styles[$set];
+    if(!is_null($entry->style['fill_style'])) {
+      $fill = $entry->style['fill_style'];
       $fill['d'] = "M$x {$y}l$w 0 0 $h1 -$w 0z";
       $graph_line = $this->Element('path', $fill) . $graph_line;
     }

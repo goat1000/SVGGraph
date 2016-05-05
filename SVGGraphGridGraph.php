@@ -1809,7 +1809,11 @@ XML;
    */
   public function UnitsX($x, $axis_no = NULL)
   {
-    if(is_null($axis_no) || is_null($this->x_axes[$axis_no]))
+    if(is_null($axis_no))
+      $axis_no = $this->main_x_axis;
+    if(!isset($this->x_axes[$axis_no]))
+      throw new Exception("Axis x$axis_no does not exist");
+    if(is_null($this->x_axes[$axis_no]))
       $axis_no = $this->main_x_axis;
     $axis = $this->x_axes[$axis_no];
     return $axis->Position($x);
@@ -1820,7 +1824,11 @@ XML;
    */
   public function UnitsY($y, $axis_no = NULL)
   {
-    if(is_null($axis_no) || is_null($this->y_axes[$axis_no]))
+    if(is_null($axis_no))
+      $axis_no = $this->main_y_axis;
+    if(!isset($this->y_axes[$axis_no]))
+      throw new Exception("Axis y$axis_no does not exist");
+    if(is_null($this->y_axes[$axis_no]))
       $axis_no = $this->main_y_axis;
     $axis = $this->y_axes[$axis_no];
     return $axis->Position($y);

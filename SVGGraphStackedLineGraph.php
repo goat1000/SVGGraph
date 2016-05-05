@@ -76,12 +76,8 @@ class StackedLineGraph extends MultiLineGraph {
 
           // no need to repeat same L command
           $cmd = $cmd == 'M' ? 'L' : '';
-          if(!is_null($item->value)) {
-            $marker_id = $this->MarkerLabel($i, $bnum, $item, $x, $y);
-            $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
-            $this->AddMarker($x, $y, $item, $extra, $i);
+          if(!is_null($item->value))
             ++$point_count;
-          }
         }
         ++$bnum;
       }
@@ -118,8 +114,26 @@ class StackedLineGraph extends MultiLineGraph {
 
         $plots[] = $graph_line;
         unset($attr['d'], $attr['class'], $fill_style['class']);
-        $this->line_styles[] = $attr;
-        $this->fill_styles[] = $fill_style;
+
+        // add the markers and associated legend entries
+        $this->curr_line_style = $attr;
+        $this->curr_fill_style = $fill_style;
+        $bnum = 0;
+        foreach($this->multi_graph[$i] as $item) {
+          $x = $this->GridPosition($item->key, $bnum);
+          // key might not be an integer, so convert to string for $stack
+          $strkey = "{$item->key}";
+          if(!is_null($x)) {
+            $y = $this->GridY($stack[$strkey]);
+
+            if(!is_null($item->value)) {
+              $marker_id = $this->MarkerLabel($i, $bnum, $item, $x, $y);
+              $extra = empty($marker_id) ? NULL : array('id' => $marker_id);
+              $this->AddMarker($x, $y, $item, $extra, $i);
+            }
+          }
+          ++$bnum;
+        }
       }
     }
 

@@ -24,7 +24,6 @@ require_once 'SVGGraph3DGraph.php';
 class Bar3DGraph extends ThreeDGraph {
 
   protected $label_centre = true;
-  protected $bar_styles = array();
   protected $bx;
   protected $by;
   protected $block_width;
@@ -61,10 +60,8 @@ class Bar3DGraph extends ThreeDGraph {
       if($this->legend_show_empty || !is_null($item->value)) {
         $bar_style = array('fill' => $this->GetColour($item, $bnum));
         $this->SetStroke($bar_style, $item);
-      } else {
-        $bar_style = NULL;
+        $this->SetLegendEntry(0, $bnum, $item, $bar_style);
       }
-      $this->bar_styles[] = $bar_style;
 
       if(!is_null($item->value) && !is_null($bar_pos)) {
         $bar['x'] = $bspace + $bar_pos;
@@ -257,14 +254,10 @@ class Bar3DGraph extends ThreeDGraph {
   /**
    * Return box for legend
    */
-  protected function DrawLegendEntry($set, $x, $y, $w, $h)
+  public function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!isset($this->bar_styles[$set]))
-      return '';
-
     $bar = array('x' => $x, 'y' => $y, 'width' => $w, 'height' => $h);
-    return $this->Element('rect', $bar, $this->bar_styles[$set]);
+    return $this->Element('rect', $bar, $entry->style);
   }
-
 }
 

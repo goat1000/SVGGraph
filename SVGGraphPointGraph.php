@@ -57,7 +57,13 @@ abstract class PointGraph extends GridGraph {
     $m = new Marker($x, $y, $item, $extra);
     if($this->SpecialMarker($set, $item))
       $m->id = $this->CreateSingleMarker($set, $item);
+
     $this->markers[$set][] = $m;
+    $index = count($this->markers[$set]) - 1;
+
+    // index 0 for now
+    $legend_info = array('dataset' => $set, 'index' => $index);
+    $this->SetLegendEntry($set, $index, $item, $legend_info);
   }
 
   /**
@@ -132,15 +138,25 @@ abstract class PointGraph extends GridGraph {
   /**
    * Return a centred marker for the given set
    */
-  public function DrawLegendEntry($set, $x, $y, $w, $h)
+  public function DrawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!array_key_exists($set, $this->marker_ids))
+    if(!isset($entry->style['dataset']))
       return '';
 
+    $dataset = $entry->style['dataset'];
+    $index = $entry->style['index'];
+    $marker = $this->markers[$dataset][$index];
+    $id = isset($marker->id) ? $marker->id : $this->marker_ids[$dataset];
+
+    // if the standard marker is unused, must be a link marker
+    if(!isset($this->marker_used[$id]))
+      $id = $this->marker_link_ids[$id];
+
+    // use data stored with legend to look up marker
     $use = array(
       'x' => $x + $w/2,
       'y' => $y + $h/2,
-      'xlink:href' => '#' . $this->marker_ids[$set]
+      'xlink:href' => '#' . $id
     );
     return $this->Element('use', $use, null, $this->empty_use ? '' : null);
   }

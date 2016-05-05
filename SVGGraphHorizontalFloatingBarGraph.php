@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2015 Graham Breach
+ * Copyright (C) 2013-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,7 +32,6 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
     $body = $this->Grid() . $this->UnderShapes();
 
     $bar_height = $this->BarHeight();
-    $bar_style = array();
     $bar = array('height' => $bar_height);
 
     $bspace = max(0, ($this->y_axes[$this->main_y_axis]->Unit() - $bar_height) / 2);
@@ -51,8 +50,9 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
         $this->Bar($value, $bar, $start);
 
         if($bar['width'] > 0) {
-          $bar_style['fill'] = $this->GetColour($item, $bnum);
+          $bar_style = array('fill' => $this->GetColour($item, $bnum));
           $this->SetStroke($bar_style, $item);
+          $this->SetLegendEntry(0, $bnum, $item, $bar_style);
           $show_label = $this->AddDataLabel(0, $bnum, $bar, $item,
             $bar['x'], $bar['y'], $bar['width'], $bar['height']);
 
@@ -64,9 +64,6 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
           $rect = $this->Element('rect', $bar, $bar_style);
           $series .= $this->GetLink($item, $item->key, $rect);
           unset($bar['id']); // clear for next value
-
-          if(!isset($this->bar_styles[$bnum]))
-            $this->bar_styles[$bnum] = $bar_style;
         }
       }
       ++$bnum;

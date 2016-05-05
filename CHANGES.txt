@@ -1,3 +1,11 @@
+Version 2.22 (05/05/2016)
+------------
+- Added support for legend entries from structured data.
+- Added show_legend option (default true) for disabling legend.
+- Added support for multiple lines of text in legend entries and title.
+- Added support for using coordinates from second Y-axis in shapes and labels.
+- Fixed hex and decimal entities being escaped in text.
+
 Version 2.21 (17/03/2016)
 ------------
 - Added best-fit line support to line graphs.

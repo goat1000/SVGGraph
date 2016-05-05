@@ -80,8 +80,7 @@ class GroupedBar3DGraph extends Bar3DGraph {
               $group['class'] = "series{$j}";
             $bars .= $this->Element('g', $group, NULL, $link);
             unset($group['id'], $group['class']);
-            if(!array_key_exists($j, $this->bar_styles))
-              $this->bar_styles[$j] = $group;
+            $this->SetLegendEntry($j, $bnum, $item, $group);
           }
         }
       }

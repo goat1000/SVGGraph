@@ -234,20 +234,6 @@ abstract class SVGGraphShape {
     return $graph->Element($this->element, $attributes);
   }
 
-  /**
-   * splits $value, removing leading char and updating $axis
-   */
-  private function ValueAxis(&$value, &$axis)
-  {
-    // strip leading u or g
-    $value = substr($value, 1);
-    $last = substr($value, -1);
-    if($last == 'x' || $last == 'y') {
-      // axis given, strip last char
-      $axis = $last;
-      $value = substr($value, 0, -1);
-    }
-  }
 }
 
 class SVGGraphCircle extends SVGGraphShape {

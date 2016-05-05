@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2015 Graham Breach
+ * Copyright (C) 2013-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,7 +38,6 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $body = $this->Grid() . $this->UnderShapes();
 
     $bar_height = $this->BarHeight();
-    $bar_style = array();
     $bar = array('height' => $bar_height);
 
     $bnum = 0;
@@ -74,8 +73,10 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
             $value = -$item->value;
             $this->neg_datasets[] = $j;
           }
-          $bar_style['fill'] = $this->GetColour($item, $bnum, $j);
+          $bar_style = array('fill' => $this->GetColour($item, $bnum, $j));
           $this->SetStroke($bar_style, $item, $j);
+          $this->SetLegendEntry($j, $bnum, $item, $bar_style);
+
           $this->Bar($value, $bar, $value >= 0 ? $xpos : $xneg);
           if($value < 0)
             $xneg += $value;
@@ -96,7 +97,6 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
             $bars .= $this->GetLink($item, $k, $rect);
             unset($bar['id']);
           }
-          $this->bar_styles[$j] = $bar_style;
         }
         if($this->show_bar_totals) {
           if($xpos) {
@@ -122,12 +122,6 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
         }
       }
       ++$bnum;
-    }
-    if(!$this->legend_show_empty) {
-      foreach($bars_shown as $j => $bar) {
-        if(!$bar)
-          $this->bar_styles[$j] = NULL;
-      }
     }
 
     if($this->semantic_classes)
