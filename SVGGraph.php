@@ -1518,6 +1518,20 @@ abstract class Graph {
   }
 
   /**
+   * Builds and returns the body of the graph
+   */
+  private function BuildGraph()
+  {
+    $this->CheckValues($this->values);
+
+    if($this->show_tooltips)
+      $this->LoadJavascript();
+
+    // body content comes from the subclass
+    return $this->DrawGraph();
+  }
+
+  /**
    * Returns the SVG document
    */
   public function Fetch($header = TRUE, $defer_javascript = TRUE)
@@ -1549,19 +1563,17 @@ abstract class Graph {
     if($this->description)
       $heading .= $this->Element('desc', NULL, NULL, $this->description);
 
-    try {
-      $this->CheckValues($this->values);
-
-      if($this->show_tooltips)
-        $this->LoadJavascript();
-
-      // get the body content from the subclass
-      $body = $this->DrawGraph();
-    } catch(Exception $e) {
-      $err = $e->getMessage();
-      if($this->exception_details)
-        $err .= " [" . basename($e->getFile()) . ' #' . $e->getLine() . ']';
-      $body = $this->ErrorText($err);
+    if($this->exception_throw) {
+      $body = $this->BuildGraph();
+    } else {
+      try {
+        $body = $this->BuildGraph();
+      } catch(Exception $e) {
+        $err = $e->getMessage();
+        if($this->exception_details)
+          $err .= " [" . basename($e->getFile()) . ' #' . $e->getLine() . ']';
+        $body = $this->ErrorText($err);
+      }
     }
 
     $svg = array(
@@ -1632,15 +1644,16 @@ abstract class Graph {
     $defer_javascript = FALSE)
   {
     $mime_header = 'Content-type: image/svg+xml; charset=UTF-8';
-    try {
-      $content = $this->Fetch($header, $defer_javascript);
-      if($content_type)
-        header($mime_header);
-      echo $content;
-    } catch(Exception $e) {
-      if($content_type)
-        header($mime_header);
-      $this->ErrorText($e);
+    if($content_type)
+      header($mime_header);
+    if($this->exception_throw) {
+      echo $this->Fetch($header, $defer_javascript);
+    } else {
+      try {
+        echo $this->Fetch($header, $defer_javascript);
+      } catch(Exception $e) {
+        $this->ErrorText($e);
+      }
     }
   }
 
