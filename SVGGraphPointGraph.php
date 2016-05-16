@@ -146,7 +146,12 @@ abstract class PointGraph extends GridGraph {
     $dataset = $entry->style['dataset'];
     $index = $entry->style['index'];
     $marker = $this->markers[$dataset][$index];
-    $id = isset($marker->id) ? $marker->id : $this->marker_ids[$dataset];
+    if(isset($marker->id))
+      $id = $marker->id;
+    elseif(isset($this->marker_ids[$dataset]))
+      $id = $this->marker_ids[$dataset];
+    else
+      return ''; // no marker!
 
     // if the standard marker is unused, must be a link marker
     if(!isset($this->marker_used[$id]))
