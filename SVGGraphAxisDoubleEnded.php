@@ -35,7 +35,7 @@ class AxisDoubleEnded extends Axis{
     if($min_val < 0)
       throw new Exception('Negative value for double-ended axis');
     parent::__construct($length / 2, $max_val, $min_val, $min_unit, $fit,
-      $units_before, $units_after, $decimal_digits, $label_callback);
+      $units_before, $units_after, $decimal_digits, $label_callback, false);
   }
 
   /**

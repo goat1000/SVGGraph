@@ -271,10 +271,12 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
 
     if(!is_numeric($this->grid_division_v))
       $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
-        $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback);
+        $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
+        $this->values);
     else
       $y_axis = new AxisFixed($y_len, $max_v, $min_v, $this->grid_division_v,
-        $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback);
+        $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
+        $this->values);
 
     $y_axis->Reverse(); // because axis starts at bottom
     return array(array($x_axis), array($y_axis));

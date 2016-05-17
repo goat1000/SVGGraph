@@ -631,6 +631,7 @@ abstract class GridGraph extends Graph {
         $x_text_callback = $this->GetFirst(
           $this->ArrayOption($this->axis_text_callback_y, $i),
           $this->axis_text_callback);
+        $x_values = false;
       } else {
         $max_h = $ends['k_max'][$i];
         $min_h = $ends['k_min'][$i];
@@ -644,6 +645,7 @@ abstract class GridGraph extends Graph {
         $x_text_callback = $this->GetFirst(
           $this->ArrayOption($this->axis_text_callback_x, $i),
           $this->axis_text_callback);
+        $x_values = $this->multi_graph ? $this->multi_graph : $this->values;
       }
 
       if(!is_numeric($max_h) || !is_numeric($min_h))
@@ -656,10 +658,12 @@ abstract class GridGraph extends Graph {
           $grid_division);
       elseif(!is_numeric($grid_division))
         $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_fit,
-          $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback);
+          $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
+          $x_values);
       else
         $x_axis = new AxisFixed($x_len, $max_h, $min_h, $grid_division,
-          $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback);
+          $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
+          $x_values);
       $x_axes[] = $x_axis;
     }
 
@@ -690,7 +694,7 @@ abstract class GridGraph extends Graph {
         $y_text_callback = $this->GetFirst(
           $this->ArrayOption($this->axis_text_callback_x, $i),
           $this->axis_text_callback);
-
+        $y_values = $this->multi_graph ? $this->multi_graph : $this->values;
       } else {
         $max_v = $ends['v_max'][$i];
         $min_v = $ends['v_min'][$i];
@@ -704,6 +708,7 @@ abstract class GridGraph extends Graph {
         $y_text_callback = $this->GetFirst(
           $this->ArrayOption($this->axis_text_callback_y, $i),
           $this->axis_text_callback);
+        $y_values = false;
       }
 
       if(!is_numeric($max_v) || !is_numeric($min_v))
@@ -716,10 +721,12 @@ abstract class GridGraph extends Graph {
           $grid_division);
       elseif(!is_numeric($grid_division))
         $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
-          $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback);
+          $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
+          $y_values);
       else
         $y_axis = new AxisFixed($y_len, $max_v, $min_v, $grid_division,
-          $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback);
+          $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
+          $y_values);
 
       $y_axis->Reverse(); // because axis starts at bottom
 
@@ -1015,12 +1022,6 @@ abstract class GridGraph extends Graph {
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $x = $grid_point->position;
-      if(!$this->flip_axes) {
-        // if the key is different to value, use it
-        $k = $this->GetKey($grid_point->value);
-        if($k !== $grid_point->value)
-          $key = $k;
-      }
 
       // don't draw 0 over the axis line
       if($inside && !$label_centre_x && $key == '0')
@@ -1081,12 +1082,6 @@ abstract class GridGraph extends Graph {
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $y = $grid_point->position;
-      if($this->flip_axes) {
-        // if the key is different to value, use it
-        $k = $this->GetKey($grid_point->value);
-        if($k !== $grid_point->value)
-          $key = $k;
-      }
 
       // don't draw 0 over the axis line
       if($inside && !$label_centre_y && !$axis_no && $key == '0')

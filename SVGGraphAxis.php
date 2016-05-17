@@ -38,9 +38,10 @@ class Axis {
   protected $rounded_up = false;
   protected $direction = 1;
   protected $label_callback = false;
+  protected $values = false;
 
   public function __construct($length, $max_val, $min_val, $min_unit, $fit,
-    $units_before, $units_after, $decimal_digits, $label_callback)
+    $units_before, $units_after, $decimal_digits, $label_callback, $values)
   {
     if($max_val <= $min_val && $min_unit == 0)
       throw new Exception('Zero length axis (min >= max)');
@@ -53,6 +54,7 @@ class Axis {
     $this->units_after = $units_after;
     $this->decimal_digits = $decimal_digits;
     $this->label_callback = $label_callback;
+    $this->values = $values;
   }
 
   /**
@@ -297,6 +299,32 @@ class Axis {
   }
 
   /**
+   * Returns the text for a grid point
+   */
+  protected function GetText($value)
+  {
+    $text = $value;
+
+    // try structured data first
+    if($this->values && $this->values->GetData($value, 'axis_text', $text))
+      return $text;
+
+    // if there is a callback, use it
+    if(is_callable($this->label_callback)) {
+      $text = call_user_func($this->label_callback, $value);
+    } else {
+      // use the key if it is not the same as the value
+      $key = $this->values ? $this->values->GetKey($value) : $value;
+      if($key !== $value)
+        $text = $key;
+      else
+        $text = $this->units_before . Graph::NumString($value,
+          $this->decimal_digits) . $this->units_after;
+    }
+    return $text;
+  }
+
+  /**
    * Returns the grid points as an array of GridPoints
    */
   public function GetGridPoints($min_space, $start)
@@ -312,14 +340,8 @@ class Axis {
     }
 
     while($pos < $dlength) {
-      // convert to string to use as array key
       $value = ($pos - $this->zero) / $this->unit_size;
-      if(is_callable($this->label_callback)) {
-        $text = call_user_func($this->label_callback, $value);
-      } else {
-        $text = $this->units_before .
-          Graph::NumString($value, $this->decimal_digits) . $this->units_after;
-      }
+      $text = $this->GetText($value);
       $position = $start + ($this->direction * $pos);
       $points[] = new GridPoint($position, $text, $value);
       $pos = ++$c * $spacing;
@@ -328,12 +350,7 @@ class Axis {
     if($this->uneven) {
       $pos = $this->length - $this->zero;
       $value = $pos / $this->unit_size;
-      if(is_callable($this->label_callback)) {
-        $text = call_user_func($this->label_callback, $value);
-      } else {
-        $text = $this->units_before .
-          Graph::NumString($value, $this->decimal_digits) . $this->units_after;
-      }
+      $text = $this->GetText($value);
       $position = $start + ($this->direction * $this->length);
       $points[] = new GridPoint($position, $text, $value);
     }

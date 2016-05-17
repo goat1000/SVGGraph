@@ -236,5 +236,14 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
   {
     return $this->values;
   }
+
+  /**
+   * Pass through to the structured data values
+   */
+  public function GetData($index, $name, &$value, $dataset = 0)
+  {
+    // base class doesn't support this, so always return false
+    return $this->values->GetData($index, $name, $value, $dataset = 0);
+  }
 }
 

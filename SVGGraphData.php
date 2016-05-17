@@ -205,6 +205,15 @@ class SVGGraphData implements Countable, ArrayAccess, Iterator {
     // return the min and max
     return array($this->GetMinValue(), $this->GetMaxValue());
   }
+
+  /**
+   * Returns TRUE if the item exists, setting the $value
+   */
+  public function GetData($index, $name, &$value, $dataset = 0)
+  {
+    // base class doesn't support this, so always return false
+    return false;
+  }
 }
 
 /**

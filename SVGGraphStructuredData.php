@@ -26,7 +26,6 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
 
   private $datasets = 0;
   private $key_field = 0;
-  private $axis_text_field = null;
   private $dataset_fields = array();
   private $data;
   private $force_assoc = false;
@@ -114,8 +113,6 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
     $this->datasets = count($this->dataset_fields);
     $this->force_assoc = $force_assoc;
     $this->assoc_test = $integer_keys ? 'is_int' : 'is_numeric';
-    if(isset($structure['axis_text']))
-      $this->axis_text_field = $structure['axis_text'];
 
     if($this->AssociativeKeys()) {
       // reindex the array to 0, 1, 2, ...
@@ -307,22 +304,16 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
   }
 
   /**
-   * Returns the key (or axis text) at a given index/key
+   * Returns the key at a given index
    */
   public function GetKey($index, $dataset = 0)
   {
-    if(is_null($this->axis_text_field) && !$this->AssociativeKeys())
+    if(!$this->AssociativeKeys())
       return $index;
     $index = (int)round($index);
-    if($this->AssociativeKeys()) {
-      $item = $this->iterators[$dataset]->GetItemByIndex($index);
-    } else {
-      $item = $this->iterators[$dataset]->GetItemByKey($index);
-    }
+    $item = $this->iterators[$dataset]->GetItemByIndex($index);
     if(is_null($item))
       return null;
-    if($this->axis_text_field)
-      return $item->RawData($this->axis_text_field);
     return $item->key;
   }
 
@@ -445,6 +436,28 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
     if($blen > 0 && SVGGraphSubstr($label, 0, $blen, $enc) == $before)
       $label = SVGGraphSubstr($label, $blen, NULL, $enc);
     return $label;
+  }
+
+  /**
+   * Returns TRUE if the data field exists, setting $value
+   */
+  public function GetData($index, $name, &$value)
+  {
+    if(!isset($this->structure[$name]))
+      return false;
+
+    $index = (int)round($index);
+    $dataset = 0;
+    if($this->AssociativeKeys()) {
+      $item = $this->iterators[$dataset]->GetItemByIndex($index);
+    } else {
+      $item = $this->iterators[$dataset]->GetItemByKey($index);
+    }
+    $field = $this->structure[$name];
+    if(is_null($item) || !$item->RawDataExists($field))
+      return false;
+    $value = $item->RawData($field);
+    return true;
   }
 }
 
@@ -581,6 +594,14 @@ class SVGGraphStructuredDataItem {
     }
 
     return isset($this->item[$item_field]) ? $this->item[$item_field] : null;
+  }
+
+  /**
+   * Check if extra data field exists
+   */
+  public function RawDataExists($field)
+  {
+    return isset($this->item[$field]);
   }
 
   /**
