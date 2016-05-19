@@ -596,10 +596,6 @@ class RadarGraph extends LineGraph {
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $x = $grid_point->position - $this->pad_left;
-      // if the key is different to value, use it
-      $k = $this->GetKey($grid_point->value);
-      if($k !== $grid_point->value)
-        $key = $k;
       if(SVGGraphStrlen($key, $this->encoding) > 0 && ++$p < $count) {
         $a = $this->arad + $direction * $x / $this->radius;
         $s = sin($a);
