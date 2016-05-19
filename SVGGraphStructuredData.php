@@ -38,9 +38,6 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
   private $min_keys = array();
   private $max_values = array();
   private $min_values = array();
-  private $before_label = '';
-  private $after_label = '';
-  private $encoding = 'UTF-8';
   public $error = null;
 
   public function __construct(&$data, $force_assoc, $structure, $repeated_keys,
@@ -60,12 +57,6 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
       $this->key_field = $structure['key'];
       $this->dataset_fields = is_array($structure['value']) ?
         $structure['value'] : array($structure['value']);
-      if(isset($structure['_before']))
-        $this->before_label = $structure['_before'];
-      if(isset($structure['_after']))
-        $this->after_label = $structure['_after'];
-      if(isset($structure['_encoding']))
-        $this->encoding = $structure['_encoding'];
     } else {
       // find key and datasets
       $keys = array_keys($data[0]);
@@ -418,24 +409,6 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
     if(!count($min_stack))
       return array(NULL, NULL);
     return array(min($min_stack), max($max_stack));
-  }
-
-  /**
-   * Strips units from before and after label
-   */
-  protected function StripLabel($label)
-  {
-    $before = $this->before_label;
-    $after = $this->after_label;
-    $enc = $this->encoding;
-    $llen = SVGGraphStrlen($label, $enc);
-    $blen = SVGGraphStrlen($before, $enc);
-    $alen = SVGGraphStrlen($after, $enc);
-    if($alen > 0 && SVGGraphSubstr($label, $llen - $alen, $alen, $enc) == $after)
-      $label = SVGGraphSubstr($label, 0, $llen - $alen, $enc);
-    if($blen > 0 && SVGGraphSubstr($label, 0, $blen, $enc) == $before)
-      $label = SVGGraphSubstr($label, $blen, NULL, $enc);
-    return $label;
   }
 
   /**

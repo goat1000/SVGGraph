@@ -320,11 +320,6 @@ abstract class Graph {
     if($this->structured_data || is_array($this->structure)) {
       $this->structured_data = true;
       require_once 'SVGGraphStructuredData.php';
-      if(is_array($this->structure)) {
-        $this->structure['_before'] = $this->units_before_x;
-        $this->structure['_after'] = $this->units_x;
-        $this->structure['_encoding'] = $this->encoding;
-      }
       $this->values = new SVGGraphStructuredData($new_values,
         $this->force_assoc, $this->structure, $this->repeated_keys,
         $this->require_integer_keys, $this->require_structured);

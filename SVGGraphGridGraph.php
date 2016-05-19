@@ -655,7 +655,7 @@ abstract class GridGraph extends Graph {
         $x_axis = new AxisLog($x_len, $max_h, $min_h, $x_min_unit, $x_fit,
           $x_units_before, $x_units_after, $x_decimal_digits,
           $this->ArrayOption($this->log_axis_y_base, $i),
-          $grid_division);
+          $grid_division, $x_text_callback);
       elseif(!is_numeric($grid_division))
         $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_fit,
           $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
@@ -718,7 +718,7 @@ abstract class GridGraph extends Graph {
         $y_axis = new AxisLog($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
           $y_units_before, $y_units_after, $y_decimal_digits,
           $this->ArrayOption($this->log_axis_y_base, $i),
-          $grid_division);
+          $grid_division, $y_text_callback);
       elseif(!is_numeric($grid_division))
         $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
           $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,

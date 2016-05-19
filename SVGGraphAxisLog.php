@@ -38,7 +38,7 @@ class AxisLog extends Axis {
 
   public function __construct($length, $max_val, $min_val,
     $min_unit, $fit, $units_before, $units_after, $decimal_digits,
-    $base, $divisions)
+    $base, $divisions, $label_callback)
   {
     if($min_val == 0 || $max_val == 0)
       throw new Exception('0 value on log axis');
@@ -51,6 +51,7 @@ class AxisLog extends Axis {
     $this->units_before = $units_before;
     $this->units_after = $units_after;
     $this->decimal_digits = $decimal_digits;
+    $this->label_callback = $label_callback;
     if(is_numeric($base) && $base > 1) {
       $this->base = $base * 1.0;
       $this->int_base = $this->base == floor($this->base);
@@ -99,22 +100,19 @@ class AxisLog extends Axis {
     $l = $this->lgmin;
     while($l <= $this->lgmax) {
       $val = pow($this->base, $l) * ($this->negative ? -1 : 1);
-      // convert to string to use as array key
-      $point = $this->units_before .
-        Graph::NumString($val, $this->decimal_digits) . $this->units_after;
+      $text = $this->GetText($val);
       $pos = $this->Position($val);
       $position = $start + ($this->direction * $pos);
-      $points[] = new GridPoint($position, $point, $val);
+      $points[] = new GridPoint($position, $text, $val);
 
       // add in divisions between powers
       if($l < $this->lgmax) {
         foreach($spoints as $l1) {
           $val = pow($this->base, $l + $l1) * ($this->negative ? -1 : 1);
-          $point = $this->units_before .
-            Graph::NumString($val, $this->decimal_digits) . $this->units_after;
+          $text = $this->GetText($val);
           $pos = $this->Position($val);
           $position = $start + ($this->direction * $pos);
-          $points[] = new GridPoint($position, $point, $val);
+          $points[] = new GridPoint($position, $text, $val);
         }
       }
       ++$l;
