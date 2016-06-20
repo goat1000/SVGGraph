@@ -91,8 +91,9 @@ class BarAndLineGraph extends GroupedBarGraph {
     // draw bars, store line points
     $points = array();
     foreach($this->multi_graph as $itemlist) {
-      $k = $itemlist[0]->key;
-      $bar_pos = $this->GridPosition($k, $bnum);
+      $item = $itemlist[0];
+      $k = $item->key;
+      $bar_pos = $this->GridPosition($item, $bnum);
       if(!is_null($bar_pos)) {
         for($j = 0, $b = 0; $j < $chunk_count; ++$j) {
           $y_axis = $this->DatasetYAxis($j);

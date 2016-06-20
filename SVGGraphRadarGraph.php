@@ -71,7 +71,7 @@ class RadarGraph extends LineGraph {
     $y_axis = $this->y_axes[$this->main_y_axis];
     $marker_points = array();
     foreach($this->values[0] as $item) {
-      $point_pos = $this->GridPosition($item->key, $bnum);
+      $point_pos = $this->GridPosition($item, $bnum);
       if(!is_null($item->value) && !is_null($point_pos)) {
         $val = $y_axis->Position($item->value);
         if(!is_null($val)) {
@@ -116,11 +116,11 @@ class RadarGraph extends LineGraph {
   /**
    * Finds the grid position for radar graphs, returns NULL if not on graph
    */
-  protected function GridPosition($key, $ikey)
+  protected function GridPosition($item, $ikey)
   {
-    $gkey = $this->values->AssociativeKeys() ? $ikey : $key;
+    $gkey = $this->values->AssociativeKeys() ? $ikey : $item->key;
     $axis = $this->x_axes[$this->main_x_axis];
-    $offset = $axis->Zero() + ($axis->Unit() * $gkey);
+    $offset = $axis->Position($gkey);
     if($offset >= 0 && $offset < $this->g_width)
       return $this->reverse ? -$offset : $offset;
     return NULL;
@@ -217,7 +217,7 @@ class RadarGraph extends LineGraph {
     if($this->show_axis_text_h) {
       $x_axis = $x_axes[0];
       $offset = 0;
-      $points = $x_axis->GetGridPoints($min_space_h, 0);
+      $points = $x_axis->GetGridPoints(0);
       $positions = $this->XAxisTextPositions($points, $offset,
         $div_size['b'], $this->axis_text_angle_h, $inside_x);
       foreach($positions as $p) {
@@ -251,10 +251,7 @@ class RadarGraph extends LineGraph {
         $inside_y = ('inside' == $this->GetFirst(
           $this->ArrayOption($this->axis_text_position_v, $axis_no),
           $this->axis_text_position));
-        $min_space_v = $this->GetFirst(
-          $this->ArrayOption($this->minimum_grid_spacing_v, $axis_no),
-          $this->minimum_grid_spacing);
-        $points = $y_axis->GetGridPoints($min_space_v, 0);
+        $points = $y_axis->GetGridPoints(0);
         $positions = $this->YAxisTextPositions($points,
           $div_size['l'],
           $offset, $this->ArrayOption($this->axis_text_angle_v, $axis_no),
@@ -784,10 +781,7 @@ class RadarGraph extends LineGraph {
    */
   protected function GetGridPointsY($axis)
   {
-    $min_space_v = $this->GetFirst(
-      $this->ArrayOption($this->minimum_grid_spacing_v, $axis),
-      $this->minimum_grid_spacing);
-    $points = $this->y_axes[$axis]->GetGridPoints($min_space_v, 0);
+    $points = $this->y_axes[$axis]->GetGridPoints(0);
     foreach($points as $k => $p)
       $points[$k]->position = -$p->position;
     return $points;

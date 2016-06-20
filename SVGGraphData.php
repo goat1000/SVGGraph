@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2014 Graham Breach
+ * Copyright (C) 2013-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,14 +27,14 @@ class SVGGraphData implements Countable, ArrayAccess, Iterator {
   private $datasets = 0;
   private $data;
   private $assoc = null;
-  private $iterators = array();
+  private $datetime = null;
   private $min_value = array();
   private $max_value = array();
   private $min_key = array();
   private $max_key = array();
   public $error = null;
 
-  public function __construct(&$data, $force_assoc)
+  public function __construct(&$data, $force_assoc, $datetime_keys)
   {
     if(empty($data[0])) {
       $this->error = 'No data';
@@ -44,8 +44,13 @@ class SVGGraphData implements Countable, ArrayAccess, Iterator {
     $this->datasets = count($data);
     if($force_assoc)
       $this->assoc = true;
-    for($i = 0; $i < $this->datasets; ++$i) {
-      $this->iterators[$i] = new SVGGraphDataIterator($this->data, $i);
+    if($datetime_keys) {
+      if($this->Rekey('SVGGraphDateConvert')) {
+        $this->datetime = true;
+        $this->assoc = false;
+      } else {
+        $this->error = 'Too many date/time conversion errors';
+      }
     }
   }
 
@@ -72,7 +77,7 @@ class SVGGraphData implements Countable, ArrayAccess, Iterator {
   
   public function offsetGet($offset)
   {
-    return $this->iterators[$offset];
+    return new SVGGraphDataIterator($this->data, $offset);
   }
 
   /**
@@ -209,10 +214,41 @@ class SVGGraphData implements Countable, ArrayAccess, Iterator {
   /**
    * Returns TRUE if the item exists, setting the $value
    */
-  public function GetData($index, $name, &$value, $dataset = 0)
+  public function GetData($index, $name, &$value)
   {
     // base class doesn't support this, so always return false
     return false;
+  }
+
+  /**
+   * Transforms the keys using a callback function
+   */
+  public function Rekey($callback)
+  {
+    $new_data = array();
+    $count = $invalid = 0;
+    for($d = 0; $d < $this->datasets; ++$d) {
+      $new_data[$d] = array();
+      foreach($this->data[$d] as $key => $value) {
+        $new_key = call_user_func($callback, $key);
+
+        // if the callback returns NULL, skip the value
+        if(!is_null($new_key)) {
+          $new_data[$d][$new_key] = $value;
+        } else {
+          ++$invalid;
+        }
+      }
+      ++$count;
+    }
+    // if too many invalid, probably a format error
+    if($count && $invalid / $count > 0.05)
+      return false;
+    $this->data = $new_data;
+    // forget previous min/max
+    $this->min_key = array();
+    $this->max_key = array();
+    return true;
   }
 }
 

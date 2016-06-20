@@ -45,7 +45,7 @@ class MultiScatterGraph extends PointGraph {
       $bnum = 0;
       $axis = $this->DatasetYAxis($i);
       foreach($this->multi_graph[$i] as $item) {
-        $x = $this->GridPosition($item->key, $bnum);
+        $x = $this->GridPosition($item, $bnum);
         if(!is_null($item->value) && !is_null($x)) {
           $y = $this->GridY($item->value, $axis);
           if(!is_null($y)) {
@@ -76,7 +76,7 @@ class MultiScatterGraph extends PointGraph {
     parent::Values($values);
     if(!$this->values->error)
       $this->multi_graph = new MultiGraph($this->values, $this->force_assoc,
-        $this->require_integer_keys);
+        $this->datetime_keys, $this->require_integer_keys);
   }
 
   /**

@@ -20,8 +20,6 @@
  */
 
 require_once 'SVGGraphAxis.php';
-require_once 'SVGGraphAxisFixed.php';
-require_once 'SVGGraphAxisLog.php';
 
 define("SVGG_GUIDELINE_ABOVE", 1);
 define("SVGG_GUIDELINE_BELOW", 0);
@@ -244,9 +242,6 @@ abstract class GridGraph extends Graph {
    */
   protected function FindAxisTextBBox($length_x, $length_y, $x_axes, $y_axes)
   {
-    $min_space_h = $this->GetFirst($this->minimum_grid_spacing_h,
-      $this->minimum_grid_spacing);
-
     // initialise maxima and minima
     $min_x = $this->width;
     $min_y = $this->height;
@@ -270,7 +265,7 @@ abstract class GridGraph extends Graph {
         $x_axis->Bar();
         $offset = 0.5 * $x_axis->Unit();
       }
-      $points = $x_axis->GetGridPoints($min_space_h, 0);
+      $points = $x_axis->GetGridPoints(0);
       $positions = $this->XAxisTextPositions($points, $offset,
         $div_size['b'], $this->axis_text_angle_h, $inside_x);
       foreach($positions as $p) {
@@ -309,10 +304,7 @@ abstract class GridGraph extends Graph {
           $y_axis->Bar();
           $offset = -0.5 * $y_axis->Unit();
         }
-        $min_space_v = $this->GetFirst(
-          $this->ArrayOption($this->minimum_grid_spacing_v, $axis_no),
-          $this->minimum_grid_spacing);
-        $points = $y_axis->GetGridPoints($min_space_v, 0);
+        $points = $y_axis->GetGridPoints(0);
         $positions = $this->YAxisTextPositions($points,
           $div_size[$right ? 'r' : 'l'],
           $offset, $this->ArrayOption($this->axis_text_angle_v, $axis_no),
@@ -538,7 +530,7 @@ abstract class GridGraph extends Graph {
       // validate
       if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
         $fixed_max < $fixed_min)
-        throw new Exception('Invalid Y axis options: min > max');
+        throw new Exception("Invalid Y axis options: min > max ({$fixed_min} > {$fixed_max})");
 
       if(is_numeric($fixed_min)) {
         $v_min[] = $fixed_min;
@@ -566,28 +558,51 @@ abstract class GridGraph extends Graph {
         $v_max[] = max($maxv_list);
       }
       if($v_max[$i] < $v_min[$i])
-        throw new Exception('Invalid Y axis: min > max');
+        throw new Exception("Invalid Y axis: min > max ({$v_min[$i]} > {$v_max[$i]})");
     }
 
     for($i = 0; $i < $x_axis_count; ++$i) {
       $fixed_max = $this->ArrayOption($x_max_fixed, $i);
       $fixed_min = $this->ArrayOption($x_min_fixed, $i);
 
-      // validate
-      if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
-        $fixed_max < $fixed_min)
-        throw new Exception('Invalid X axis options: min > max');
+      if($this->datetime_keys) {
+        // 0 is 1970-01-01, not a useful minimum
+        if(empty($fixed_max)) {
+          $k_max[] = $this->GetAxisMaxKey($i);
+        } else {
+          $d = SVGGraphDateConvert($fixed_max);
+          // subtract a se
+          if(!is_null($d))
+            $k_max[] = $d - 1;
+          else
+            throw new Exception("Could not convert [{$fixed_max}] to datetime");
+        }
+        if(empty($fixed_min)) {
+          $k_min[] = $this->GetAxisMinKey($i);
+        } else {
+          $d = SVGGraphDateConvert($fixed_min);
+          if(!is_null($d))
+            $k_min[] = $d;
+          else
+            throw new Exception("Could not convert [{$fixed_min}] to datetime");
+        }
+      } else {
+        // validate
+        if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
+          $fixed_max < $fixed_min)
+          throw new Exception("Invalid X axis options: min > max ({$fixed_min} > {$fixed_max})");
 
-      if(is_numeric($fixed_max))
-        $k_max[] = $fixed_max;
-      else
-        $k_max[] = max(0, $this->GetAxisMaxKey($i), (float)$this->max_guide['x']);
-      if(is_numeric($fixed_min))
-        $k_min[] = $fixed_min;
-      else
-        $k_min[] = min(0, $this->GetAxisMinKey($i), (float)$this->min_guide['x']);
+        if(is_numeric($fixed_max))
+          $k_max[] = $fixed_max;
+        else
+          $k_max[] = max(0, $this->GetAxisMaxKey($i), (float)$this->max_guide['x']);
+        if(is_numeric($fixed_min))
+          $k_min[] = $fixed_min;
+        else
+          $k_min[] = min(0, $this->GetAxisMinKey($i), (float)$this->min_guide['x']);
+      }
       if($k_max[$i] < $k_min[$i])
-        throw new Exception('Invalid X axis: min > max');
+        throw new Exception("Invalid X axis: min > max ({$k_min[$i]} > {$k_max[$i]})");
     }
     return compact('v_max', 'v_min', 'k_max', 'k_min');
   }
@@ -601,21 +616,19 @@ abstract class GridGraph extends Graph {
     if($this->values->AssociativeKeys())
       $this->units_x = $this->units_before_x = null;
 
-    // make sure minimum_grid_spacing options are arrays
-    $mgsv = $this->minimum_grid_spacing_v;
-    if(!is_array($mgsv))
-      $this->minimum_grid_spacing_v = array();
-
     $x_axes = array();
     $x_axis_count = $this->XAxisCount();
     for($i = 0; $i < $x_axis_count; ++$i) {
 
+      $x_min_space = $this->GetFirst(
+        $this->ArrayOption($this->minimum_grid_spacing_h, $i),
+        $this->minimum_grid_spacing);
       $grid_division = $this->ArrayOption($this->grid_division_h, $i);
       if(is_numeric($grid_division)) {
         if($grid_division <= 0)
           throw new Exception('Invalid grid division');
         // if fixed grid spacing is specified, make the min spacing 1 pixel
-        $this->minimum_grid_spacing_h = 1;
+        $this->minimum_grid_spacing_h = $x_min_space = 1;
       }
 
       if($this->flip_axes) {
@@ -651,19 +664,26 @@ abstract class GridGraph extends Graph {
       if(!is_numeric($max_h) || !is_numeric($min_h))
         throw new Exception('Non-numeric min/max');
 
-      if($this->ArrayOption($this->log_axis_y, $i) && $this->flip_axes)
-        $x_axis = new AxisLog($x_len, $max_h, $min_h, $x_min_unit, $x_fit,
-          $x_units_before, $x_units_after, $x_decimal_digits,
+      if($this->datetime_keys && !$this->flip_axes) {
+        require_once 'SVGGraphAxisDateTime.php';
+        $x_axis = new AxisDateTime($x_len, $max_h, $min_h, $x_min_space,
+          $grid_division, $this->settings);
+      } elseif($this->ArrayOption($this->log_axis_y, $i) && $this->flip_axes) {
+        require_once 'SVGGraphAxisLog.php';
+        $x_axis = new AxisLog($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
+          $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
           $this->ArrayOption($this->log_axis_y_base, $i),
           $grid_division, $x_text_callback);
-      elseif(!is_numeric($grid_division))
-        $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_fit,
-          $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
-          $x_values);
-      else
+      } elseif(!is_numeric($grid_division)) {
+        $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
+          $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
+          $x_text_callback, $x_values);
+      } else {
+        require_once 'SVGGraphAxisFixed.php';
         $x_axis = new AxisFixed($x_len, $max_h, $min_h, $grid_division,
           $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
           $x_values);
+      }
       $x_axes[] = $x_axis;
     }
 
@@ -671,14 +691,21 @@ abstract class GridGraph extends Graph {
     $y_axis_count = $this->YAxisCount();
     for($i = 0; $i < $y_axis_count; ++$i) {
 
+      $y_min_space = $this->GetFirst(
+        $this->ArrayOption($this->minimum_grid_spacing_v, $i),
+        $this->minimum_grid_spacing);
+      // make sure minimum_grid_spacing option array
+      if(!is_array($this->minimum_grid_spacing_v))
+        $this->minimum_grid_spacing_v = array();
+
       $grid_division = $this->ArrayOption($this->grid_division_v, $i);
       if(is_numeric($grid_division)) {
         if($grid_division <= 0)
           throw new Exception('Invalid grid division');
         // if fixed grid spacing is specified, make the min spacing 1 pixel
-        $this->minimum_grid_spacing_v[$i] = 1;
+        $this->minimum_grid_spacing_v[$i] = $y_min_space = 1;
       } elseif(!isset($this->minimum_grid_spacing_v[$i])) {
-        $this->minimum_grid_spacing_v[$i] = $mgsv;
+        $this->minimum_grid_spacing_v[$i] = $y_min_space;
       }
 
       if($this->flip_axes) {
@@ -714,19 +741,26 @@ abstract class GridGraph extends Graph {
       if(!is_numeric($max_v) || !is_numeric($min_v))
         throw new Exception('Non-numeric min/max');
 
-      if($this->ArrayOption($this->log_axis_y, $i) && !$this->flip_axes)
-        $y_axis = new AxisLog($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
-          $y_units_before, $y_units_after, $y_decimal_digits,
+      if($this->datetime_keys && $this->flip_axes) {
+        require_once 'SVGGraphAxisDateTime.php';
+        $y_axis = new AxisDateTime($y_len, $max_v, $min_v, $y_min_space,
+          $grid_division, $this->settings);
+      } elseif($this->ArrayOption($this->log_axis_y, $i) && !$this->flip_axes) {
+        require_once 'SVGGraphAxisLog.php';
+        $y_axis = new AxisLog($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
+          $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
           $this->ArrayOption($this->log_axis_y_base, $i),
           $grid_division, $y_text_callback);
-      elseif(!is_numeric($grid_division))
-        $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
-          $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
-          $y_values);
-      else
+      } elseif(!is_numeric($grid_division)) {
+        $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
+          $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
+          $y_text_callback, $y_values);
+      } else {
+        require_once 'SVGGraphAxisFixed.php';
         $y_axis = new AxisFixed($y_len, $max_v, $min_v, $grid_division,
           $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
           $y_values);
+      }
 
       $y_axis->Reverse(); // because axis starts at bottom
 
@@ -783,14 +817,8 @@ abstract class GridGraph extends Graph {
 
     $y_axis = $this->y_axes[$this->main_y_axis];
     $x_axis = $this->x_axes[$this->main_x_axis];
-    $min_space_v = $this->GetFirst(
-      $this->ArrayOption($this->minimum_grid_spacing_v, $this->main_y_axis),
-      $this->minimum_grid_spacing);
-    $min_space_h = $this->GetFirst(
-      $this->ArrayOption($this->minimum_grid_spacing_h, $this->main_x_axis),
-      $this->minimum_grid_spacing);
-    $y_points = $y_axis->GetGridPoints($min_space_v, $grid_bottom);
-    $x_points = $x_axis->GetGridPoints($min_space_h, $grid_left);
+    $y_points = $y_axis->GetGridPoints($grid_bottom);
+    $x_points = $x_axis->GetGridPoints($grid_left);
 
     if($this->flip_axes) {
       $this->grid_limit = $this->label_centre ?
@@ -808,11 +836,7 @@ abstract class GridGraph extends Graph {
    */
   protected function GetGridPointsY($axis)
   {
-    $min_space_v = $this->GetFirst(
-      $this->ArrayOption($this->minimum_grid_spacing_v, $axis),
-      $this->minimum_grid_spacing);
-    return $this->y_axes[$axis]->GetGridPoints($min_space_v,
-      $this->height - $this->pad_bottom);
+    return $this->y_axes[$axis]->GetGridPoints($this->height - $this->pad_bottom);
   }
 
   /**
@@ -820,10 +844,7 @@ abstract class GridGraph extends Graph {
    */
   protected function GetGridPointsX($axis)
   {
-    $min_space_h = $this->GetFirst(
-      $this->ArrayOption($this->minimum_grid_spacing_h, $axis),
-      $this->minimum_grid_spacing);
-    return $this->x_axes[$axis]->GetGridPoints($min_space_h, $this->pad_left);
+    return $this->x_axes[$axis]->GetGridPoints($this->pad_left);
   }
 
   /**
@@ -989,8 +1010,6 @@ abstract class GridGraph extends Graph {
   {
     $positions = array();
     $x_prev = -$this->width;
-    $min_space = $this->GetFirst($this->minimum_grid_spacing_h,
-      $this->minimum_grid_spacing);
     $count = count($points);
     $label_centre_x = $this->label_centre && !$this->flip_axes;
     $font_size = $this->GetFirst($this->axis_font_size_h, $this->axis_font_size);
@@ -1027,8 +1046,7 @@ abstract class GridGraph extends Graph {
       if($inside && !$label_centre_x && $key == '0')
         $key = '';
 
-      if(SVGGraphStrlen($key, $this->encoding) > 0 && $x - $x_prev >= $min_space
-         &&  (++$p < $count || !$label_centre_x)) {
+      if(SVGGraphStrlen($key, $this->encoding) > 0 && (++$p < $count || !$label_centre_x)) {
         $position['x'] = $x + $xoff;
         if($angle != 0) {
           $position['x'] -= $x_rotate_offset;
@@ -1054,9 +1072,6 @@ abstract class GridGraph extends Graph {
   protected function YAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside, $axis_no)
   {
     $y_prev = $this->height;
-    $min_space = $this->GetFirst(
-      $this->ArrayOption($this->minimum_grid_spacing_v, $axis_no),
-      $this->minimum_grid_spacing);
     $font_size = $this->GetFirst(
       $this->ArrayOption($this->axis_font_size_v, $axis_no),
       $this->axis_font_size);
@@ -1087,8 +1102,7 @@ abstract class GridGraph extends Graph {
       if($inside && !$label_centre_y && !$axis_no && $key == '0')
         $key = '';
 
-      if(SVGGraphStrlen($key, $this->encoding) && $y_prev - $y >= $min_space &&
-        (++$p < $count || !$label_centre_y)) {
+      if(SVGGraphStrlen($key, $this->encoding) && (++$p < $count || !$label_centre_y)) {
         $position['y'] = $y + $text_centre + $yoff;
         if($angle != 0) {
           $rcx = $position['x'] + $x_rotate_offset;
@@ -1779,17 +1793,16 @@ XML;
 
   /**
    * Returns the grid position for a bar or point, or NULL if not on grid
-   * $key  = actual value array index
-   * $ikey = integer position in array
+   * $item  = data item
+   * $index = integer position in array
    */
-  protected function GridPosition($key, $ikey)
+  protected function GridPosition($item, $index)
   {
     $position = null;
-    $gkey = $this->values->AssociativeKeys() ? $ikey : $key;
-    $zero = -0.01; // catch values close to 0
     $axis = $this->flip_axes ? $this->y_axes[$this->main_y_axis] :
       $this->x_axes[$this->main_x_axis];
-    $offset = $axis->Zero() + ($axis->Unit() * $gkey);
+    $offset = $axis->Position($index, $item);
+    $zero = -0.01; // catch values close to 0
     if($offset >= $zero && floor($offset) <= $this->grid_limit) {
       if($this->flip_axes)
         $position = $this->height - $this->pad_bottom - $offset;

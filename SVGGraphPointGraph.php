@@ -598,20 +598,22 @@ abstract class PointGraph extends GridGraph {
     $x2 = $x_max;
     $y2 = $slope * $x2 + $y_int;
 
-    if($y1 < 0) {
-      $x1 = -$y_int / $slope;
-      $y1 = $y_min;
-    } elseif($y1 > $y_max) {
-      $x1 = ($y_max - $y_int) / $slope;
-      $y1 = $y_max;
-    }
+    if($slope != 0) {
+      if($y1 < 0) {
+        $x1 = -$y_int / $slope;
+        $y1 = $y_min;
+      } elseif($y1 > $y_max) {
+        $x1 = ($y_max - $y_int) / $slope;
+        $y1 = $y_max;
+      }
 
-    if($y2 < 0) {
-      $x2 = - $y_int / $slope;
-      $y2 = $y_min;
-    } elseif($y2 > $y_max) {
-      $x2 = ($y_max - $y_int) / $slope;
-      $y2 = $y_max;
+      if($y2 < 0) {
+        $x2 = - $y_int / $slope;
+        $y2 = $y_min;
+      } elseif($y2 > $y_max) {
+        $x2 = ($y_max - $y_int) / $slope;
+        $y2 = $y_max;
+      }
     }
     if($x1 == $x2 && $y1 == $y2)
       return NULL;

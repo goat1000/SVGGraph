@@ -138,12 +138,12 @@ class Histogram extends BarGraph {
   /**
    * Override because of the shifted numbering
    */
-  protected function GridPosition($key, $ikey)
+  protected function GridPosition($item, $ikey)
   {
     $position = null;
     $zero = -0.01; // catch values close to 0
     $axis = $this->x_axes[$this->main_x_axis];
-    $offset = $axis->Zero() + ($axis->Unit() * $key);
+    $offset = $axis->Position($item->key);
     $g_limit = $this->g_width - ($axis->Unit() / 2);
     if($offset >= $zero && floor($offset) <= $g_limit)
       $position = $this->pad_left + $offset;

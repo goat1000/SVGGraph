@@ -47,7 +47,7 @@ class HorizontalBarGraph extends GridGraph {
     $series = '';
     foreach($this->values[0] as $item) {
       $bar = array('height' => $bar_height);
-      $bar_pos = $this->GridPosition($item->key, $bnum);
+      $bar_pos = $this->GridPosition($item, $bnum);
       if($this->legend_show_empty || $item->value != 0) {
         $bar_style = array('fill' => $this->GetColour($item, $bnum));
         $this->SetStroke($bar_style, $item);

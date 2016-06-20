@@ -55,7 +55,7 @@ class Bar3DGraph extends ThreeDGraph {
       $group['class'] = 'series0';
     }
     foreach($this->values[0] as $item) {
-      $bar_pos = $this->GridPosition($item->key, $bnum);
+      $bar_pos = $this->GridPosition($item, $bnum);
 
       if($this->legend_show_empty || !is_null($item->value)) {
         $bar_style = array('fill' => $this->GetColour($item, $bnum));

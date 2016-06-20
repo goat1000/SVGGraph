@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2014 Graham Breach
+ * Copyright (C) 2011-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
   private $values;
   private $datasets = 0;
   private $force_assoc;
+  private $datetime_keys;
   private $max_key = null;
   private $min_key = null;
   private $max_value = null;
@@ -35,10 +36,11 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
   private $item_cache = array();
   private $item_cache_pos = -1;
 
-  public function __construct($values, $force_assoc, $int_keys)
+  public function __construct($values, $force_assoc, $datetime_keys, $int_keys)
   {
     $this->values =& $values;
     $this->force_assoc = $force_assoc;
+    $this->datetime_keys = $datetime_keys;
     $keys = array();
 
     // convert unstructured data to structured
@@ -54,9 +56,17 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
       $new_data = array_values($new_data);
       require_once('SVGGraphStructuredData.php');
       $this->values = new SVGGraphStructuredData($new_data, $force_assoc,
-        null, false, $int_keys, null);
+        $datetime_keys, null, false, $int_keys, null);
     }
     $this->datasets = count($this->values);
+  }
+
+  /**
+   * Pass all unhandled functions through to the structured data instance
+   */
+  public function __call($name, $arguments)
+  {
+    return call_user_func_array(array($this->values, $name), $arguments);
   }
 
   /**
@@ -125,14 +135,6 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
   {
     // use -1 for all items
     return $this->values->ItemsCount(-1);
-  }
-
-  /**
-   * Returns the key for an item
-   */
-  public function GetKey($index)
-  {
-    return $this->values->GetKey($index);
   }
 
   /**
@@ -240,10 +242,10 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
   /**
    * Pass through to the structured data values
    */
-  public function GetData($index, $name, &$value, $dataset = 0)
+  public function GetData($index, $name, &$value)
   {
-    // base class doesn't support this, so always return false
-    return $this->values->GetData($index, $name, $value, $dataset);
+    // the reference means __call can't handle this
+    return $this->values->GetData($index, $name, $value);
   }
 }
 

@@ -22,7 +22,6 @@
 require_once 'SVGGraphMultiGraph.php';
 require_once 'SVGGraphHorizontalStackedBarGraph.php';
 require_once 'SVGGraphAxisDoubleEnded.php';
-require_once 'SVGGraphAxisFixedDoubleEnded.php';
 require_once 'SVGGraphData.php';
 
 class PopulationPyramid extends HorizontalStackedBarGraph {
@@ -49,8 +48,9 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $bars = '';
 
     foreach($this->multi_graph as $itemlist) {
-      $k = $itemlist[0]->key;
-      $bar_pos = $this->GridPosition($k, $bnum);
+      $item = $itemlist[0];
+      $k = $item->key;
+      $bar_pos = $this->GridPosition($item, $bnum);
       if(!is_null($bar_pos)) {
         $bar['y'] = $bar_pos - $bspace - $bar_height;
         $xpos = $xneg = 0;
@@ -160,7 +160,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     parent::Values($values);
     if(!$this->values->error)
       $this->multi_graph = new MultiGraph($this->values, $this->force_assoc,
-        $this->require_integer_keys);
+        $this->datetime_keys, $this->require_integer_keys);
   }
 
   /**
@@ -261,22 +261,33 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
       !is_numeric($max_v) || !is_numeric($min_v))
       throw new Exception('Non-numeric min/max');
 
-    if(!is_numeric($this->grid_division_h))
-      $x_axis = new AxisDoubleEnded($x_len, $max_h, $min_h, $x_min_unit, $x_fit,
-        $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback);
-    else
+    if(!is_numeric($this->grid_division_h)) {
+      $x_min_space = $this->GetFirst(
+        $this->ArrayOption($this->minimum_grid_spacing_h, 0),
+        $this->minimum_grid_spacing);
+      $x_axis = new AxisDoubleEnded($x_len, $max_h, $min_h, $x_min_unit,
+        $x_min_space, $x_fit, $x_units_before, $x_units_after,
+        $x_decimal_digits, $x_text_callback);
+    } else {
+      require_once 'SVGGraphAxisFixedDoubleEnded.php';
       $x_axis = new AxisFixedDoubleEnded($x_len, $max_h, $min_h, 
         $this->grid_division_h, $x_units_before, $x_units_after,
         $x_decimal_digits, $x_text_callback);
+    }
 
-    if(!is_numeric($this->grid_division_v))
-      $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_fit,
-        $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
-        $this->values);
-    else
+    if(!is_numeric($this->grid_division_v)) {
+      $y_min_space = $this->GetFirst(
+        $this->ArrayOption($this->minimum_grid_spacing_v, 0),
+        $this->minimum_grid_spacing);
+      $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
+        $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
+        $y_text_callback, $this->values);
+    } else {
+      require_once 'SVGGraphAxisFixed.php';
       $y_axis = new AxisFixed($y_len, $max_v, $min_v, $this->grid_division_v,
         $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
         $this->values);
+    }
 
     $y_axis->Reverse(); // because axis starts at bottom
     return array(array($x_axis), array($y_axis));

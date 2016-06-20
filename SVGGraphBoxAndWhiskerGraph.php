@@ -40,7 +40,7 @@ class BoxAndWhiskerGraph extends PointGraph {
     $this->ColourSetup($this->values->ItemsCount());
     $series = '';
     foreach($this->values[0] as $item) {
-      $bar_pos = $this->GridPosition($item->key, $bnum);
+      $bar_pos = $this->GridPosition($item, $bnum);
 
       if(!is_null($item->value) && !is_null($bar_pos)) {
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2015 Graham Breach
+ * Copyright (C) 2011-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,7 @@ class Axis {
   protected $min_value;
   protected $unit_size;
   protected $min_unit;
+  protected $min_space;
   protected $fit;
   protected $zero;
   protected $units_before;
@@ -40,8 +41,8 @@ class Axis {
   protected $label_callback = false;
   protected $values = false;
 
-  public function __construct($length, $max_val, $min_val, $min_unit, $fit,
-    $units_before, $units_after, $decimal_digits, $label_callback, $values)
+  public function __construct($length, $max_val, $min_val, $min_unit, $min_space,
+    $fit, $units_before, $units_after, $decimal_digits, $label_callback, $values)
   {
     if($max_val <= $min_val && $min_unit == 0)
       throw new Exception('Zero length axis (min >= max)');
@@ -49,6 +50,7 @@ class Axis {
     $this->max_value = $max_val;
     $this->min_value = $min_val;
     $this->min_unit = $min_unit;
+    $this->min_space = $min_space;
     $this->fit = $fit;
     $this->units_before = $units_before;
     $this->units_after = $units_after;
@@ -164,11 +166,12 @@ class Axis {
   /**
    * Returns the grid spacing
    */
-  protected function Grid($min)
+  protected function Grid()
   {
+    $min_space = $this->min_space;
     $this->uneven = false;
     $negative = $this->min_value < 0;
-    $min_sub = max($min, $this->length / 200);
+    $min_sub = max($min_space, $this->length / 200);
 
     if($this->min_value == $this->max_value)
       $this->max_value += $this->min_unit;
@@ -197,14 +200,14 @@ class Axis {
 
     // guard this loop in case the numbers are too awkward to fit
     $guard = 10;
-    while($grid < $min && --$guard) {
+    while($grid < $min_space && --$guard) {
       $this->find_division($this->length, $min_sub, $count, $neg_count,
         $magnitude);
       $grid = $this->length / $count;
     }
     if($guard == 0) {
       // could not find a division
-      while($grid < $min && $count > 1) {
+      while($grid < $min_space && $count > 1) {
         $count *= 0.5;
         $neg_count *= 0.5;
         $magnitude *= 2;
@@ -213,7 +216,7 @@ class Axis {
       }
 
     } elseif(!$this->fit && $magnitude > $this->min_unit &&
-      $grid / $min > 2) {
+      $grid / $min_space > 2) {
       // division still seems a bit coarse
       $this->sub_division($this->length, $min_sub, $count, $neg_count,
         $magnitude);
@@ -233,7 +236,7 @@ class Axis {
   public function Unit()
   {
     if(!isset($this->unit_size))
-      $this->Grid(1);
+      $this->Grid();
 
     return $this->unit_size;
   }
@@ -244,7 +247,7 @@ class Axis {
   public function Zero()
   {
     if(!isset($this->zero))
-      $this->Grid(1);
+      $this->Grid();
 
     return $this->zero;
   }
@@ -260,8 +263,12 @@ class Axis {
   /**
    * Returns the position of a value on the axis
    */
-  public function Position($value)
+  public function Position($index, $item = NULL)
   {
+    if(is_null($item) || $this->values->AssociativeKeys())
+      $value = $index;
+    else
+      $value = $item->key;
     return $this->Zero() + ($value * $this->Unit());
   }
 
@@ -327,9 +334,9 @@ class Axis {
   /**
    * Returns the grid points as an array of GridPoints
    */
-  public function GetGridPoints($min_space, $start)
+  public function GetGridPoints($start)
   {
-    $spacing = $this->Grid($min_space);
+    $spacing = $this->Grid();
     $c = $pos = 0;
     $dlength = $this->length + $spacing * 0.5;
     $points = array();
@@ -376,7 +383,6 @@ class Axis {
       return $subdivs;
 
     $c = $pos1 = $pos2 = 0;
-    $this;
     $pos1 = $c * $this->grid_spacing;
     while($pos1 + $spacing < $this->length) {
       $d = 1;

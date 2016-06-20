@@ -40,7 +40,7 @@ class BubbleGraph extends PointGraph {
     $series = '';
     foreach($this->values[0] as $item) {
       $area = $item->Data('area');
-      $point_pos = $this->GridPosition($item->key, $bnum);
+      $point_pos = $this->GridPosition($item, $bnum);
       if(!is_null($item->value) && !is_null($point_pos)) {
         $x = $point_pos;
         $y = $this->GridY($item->value);

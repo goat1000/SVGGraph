@@ -43,7 +43,7 @@ class LineGraph extends PointGraph {
 
     $points = array();
     foreach($this->values[0] as $item) {
-      $x = $this->GridPosition($item->key, $bnum);
+      $x = $this->GridPosition($item, $bnum);
       if(!is_null($item->value) && !is_null($x)) {
         $y = $this->GridY($item->value);
         $points[] = array($x, $y, $item, 0, $bnum);

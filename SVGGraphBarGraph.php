@@ -49,7 +49,7 @@ class BarGraph extends GridGraph {
       $bar = array('width' => $bar_width);
       if($this->semantic_classes)
         $bar['class'] = 'series0';
-      $bar_pos = $this->GridPosition($item->key, $bnum);
+      $bar_pos = $this->GridPosition($item, $bnum);
       if($this->legend_show_empty || $item->value != 0) {
         $bar_style = array('fill' => $this->GetColour($item, $bnum));
         $this->SetStroke($bar_style, $item);

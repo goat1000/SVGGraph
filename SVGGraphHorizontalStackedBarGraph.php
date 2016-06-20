@@ -51,8 +51,9 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
 
     $bars = '';
     foreach($this->multi_graph as $itemlist) {
-      $k = $itemlist[0]->key;
-      $bar_pos = $this->GridPosition($k, $bnum);
+      $item = $itemlist[0];
+      $k = $item->key;
+      $bar_pos = $this->GridPosition($item, $bnum);
       if(!is_null($bar_pos)) {
         $bar['y'] = $bar_pos - $bspace - $bar_height;
         $xpos = $xneg = 0;
@@ -220,7 +221,7 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
     parent::Values($values);
     if(!$this->values->error)
       $this->multi_graph = new MultiGraph($this->values, $this->force_assoc,
-        $this->require_integer_keys);
+        $this->datetime_keys, $this->require_integer_keys);
   }
 
   /**

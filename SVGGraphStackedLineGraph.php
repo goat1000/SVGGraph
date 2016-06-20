@@ -58,7 +58,7 @@ class StackedLineGraph extends MultiLineGraph {
       $bottom = array();
       $point_count = 0;
       foreach($this->multi_graph[$i] as $item) {
-        $x = $this->GridPosition($item->key, $bnum);
+        $x = $this->GridPosition($item, $bnum);
         // key might not be an integer, so convert to string for $stack
         $strkey = "{$item->key}";
         if(!isset($stack[$strkey]))
@@ -120,7 +120,7 @@ class StackedLineGraph extends MultiLineGraph {
         $this->curr_fill_style = $fill_style;
         $bnum = 0;
         foreach($this->multi_graph[$i] as $item) {
-          $x = $this->GridPosition($item->key, $bnum);
+          $x = $this->GridPosition($item, $bnum);
           // key might not be an integer, so convert to string for $stack
           $strkey = "{$item->key}";
           if(!is_null($x)) {

@@ -46,7 +46,7 @@ class MultiLineGraph extends LineGraph {
       $points = array();
       $axis = $this->DatasetYAxis($i);
       foreach($this->multi_graph[$i] as $item) {
-        $x = $this->GridPosition($item->key, $bnum);
+        $x = $this->GridPosition($item, $bnum);
         if(!is_null($x) && !is_null($item->value)) {
           $y = $this->GridY($item->value, $axis);
           $points[] = array($x, $y, $item, $i, $bnum);
@@ -83,7 +83,7 @@ class MultiLineGraph extends LineGraph {
     parent::Values($values);
     if(!$this->values->error)
       $this->multi_graph = new MultiGraph($this->values, $this->force_assoc,
-        $this->require_integer_keys);
+        $this->datetime_keys, $this->require_integer_keys);
   }
 }
 

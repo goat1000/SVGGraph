@@ -31,7 +31,8 @@ class AxisFixedDoubleEnded extends AxisDoubleEnded {
   public function __construct($length, $max_val, $min_val, $step,
     $units_before, $units_after, $decimal_digits, $label_callback)
   {
-    parent::__construct($length, $max_val, $min_val, 1, false, $units_before,
+    // min_unit = 1, min_space = 1, fit = false
+    parent::__construct($length, $max_val, $min_val, 1, 1, false, $units_before,
       $units_after, $decimal_digits, $label_callback);
     $this->step = $step;
   }
@@ -40,14 +41,11 @@ class AxisFixedDoubleEnded extends AxisDoubleEnded {
    * Calculates a grid based on min, max and step
    * min and max will be adjusted to fit step
    */
-  protected function Grid($min, $round_up = false)
+  protected function Grid()
   {
     // if min and max are the same side of 0, only adjust one of them
     if($this->max_value * $this->min_value >= 0) {
       $count = $this->max_value - $this->min_value;
-      // $round_up means bars, so add space for the bar
-      if($round_up)
-        ++$count;
       if(abs($this->max_value) >= abs($this->min_value)) {
         $this->max_value = $this->min_value +
           $this->step * ceil($count / $this->step);

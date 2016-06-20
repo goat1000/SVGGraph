@@ -36,8 +36,8 @@ class AxisLog extends Axis {
   protected $lgmul;
   protected $int_base = true;
 
-  public function __construct($length, $max_val, $min_val,
-    $min_unit, $fit, $units_before, $units_after, $decimal_digits,
+  public function __construct($length, $max_val, $min_val, $min_unit,
+    $min_space, $fit, $units_before, $units_after, $decimal_digits,
     $base, $divisions, $label_callback)
   {
     if($min_val == 0 || $max_val == 0)
@@ -48,6 +48,7 @@ class AxisLog extends Axis {
       throw new Exception('Zero length axis (min >= max)');
     $this->length = $length;
     $this->min_unit = $min_unit;
+    $this->min_space = $min_space;
     $this->units_before = $units_before;
     $this->units_after = $units_after;
     $this->decimal_digits = $decimal_digits;
@@ -68,6 +69,11 @@ class AxisLog extends Axis {
 
     $this->lgmin = floor(log($min_val, $this->base));
     $this->lgmax = ceil(log($max_val, $this->base));
+
+    // if all the values are the same, and a power of the base
+    if($this->lgmax <= $this->lgmin)
+      --$this->lgmin;
+
     $this->lgmul = $this->length / ($this->lgmax - $this->lgmin);
     $this->min_value = pow($this->base, $this->lgmin);
     $this->max_value = pow($this->base, $this->lgmax);
@@ -77,10 +83,10 @@ class AxisLog extends Axis {
    * Returns the grid points as an associative array:
    * array($value => $position)
    */
-  public function GetGridPoints($min_space, $start)
+  public function GetGridPoints($start)
   {
     $points = array();
-    $max_div = $this->length / $min_space;
+    $max_div = $this->length / $this->min_space;
     $pow_div = $this->lgmax - $this->lgmin;
 
     $div = 1;
@@ -90,7 +96,7 @@ class AxisLog extends Axis {
     if($this->divisions)
       $this->grid_split = $this->divisions;
     else
-      $this->grid_split = $this->FindDivision($this->grid_space, $min_space);
+      $this->grid_split = $this->FindDivision($this->grid_space, $this->min_space);
 
     if($this->grid_split) {
       for($l = $this->grid_split; $l < $this->base; $l += $this->grid_split)
@@ -151,8 +157,12 @@ class AxisLog extends Axis {
    * Returns the position of a value on the axis, or NULL if the position is
    * not possible
    */
-  public function Position($value)
+  public function Position($index, $item = NULL)
   {
+    if(is_null($item) || $this->values->AssociativeKeys())
+      $value = $index;
+    else
+      $value = $item->key;
     if($this->negative) {
       if($value >= 0)
         return null;

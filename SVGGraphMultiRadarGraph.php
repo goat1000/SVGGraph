@@ -59,7 +59,7 @@ class MultiRadarGraph extends RadarGraph {
 
       $marker_points = array();
       foreach($this->multi_graph[$i] as $item) {
-        $point_pos = $this->GridPosition($item->key, $bnum);
+        $point_pos = $this->GridPosition($item, $bnum);
         if(!is_null($item->value) && !is_null($point_pos)) {
           $val = $y_axis->Position($item->value);
           if(!is_null($val)) {
@@ -114,7 +114,7 @@ class MultiRadarGraph extends RadarGraph {
     parent::Values($values);
     if(!$this->values->error)
       $this->multi_graph = new MultiGraph($this->values, $this->force_assoc,
-        $this->require_integer_keys);
+        $this->datetime_keys, $this->require_integer_keys);
   }
 }
 

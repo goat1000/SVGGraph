@@ -320,12 +320,13 @@ abstract class Graph {
     if($this->structured_data || is_array($this->structure)) {
       $this->structured_data = true;
       require_once 'SVGGraphStructuredData.php';
-      $this->values = new SVGGraphStructuredData($new_values,
-        $this->force_assoc, $this->structure, $this->repeated_keys,
+      $this->values = new SVGGraphStructuredData($new_values, $this->force_assoc,
+        $this->datetime_keys, $this->structure, $this->repeated_keys,
         $this->require_integer_keys, $this->require_structured);
     } else {
       require_once 'SVGGraphData.php';
-      $this->values = new SVGGraphData($new_values, $this->force_assoc);
+      $this->values = new SVGGraphData($new_values, $this->force_assoc,
+        $this->datetime_keys);
       if(!$this->values->error && !empty($this->require_structured))
         $this->values->error = get_class($this) . ' requires structured data';
     }
@@ -1753,5 +1754,18 @@ abstract class Graph {
     }
     return $min;
   }
+}
+
+
+/**
+  * Converts a string key to a unix timestamp, or NULL if invalid
+  */
+function SVGGraphDateConvert($k)
+{
+  $dt = date_create($k);
+  if($dt === FALSE)
+    return NULL;
+  // this works in 64-bit on 32-bit systems, getTimestamp() doesn't
+  return $dt->format('U');
 }
 
