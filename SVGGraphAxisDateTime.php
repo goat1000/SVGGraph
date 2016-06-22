@@ -134,6 +134,11 @@ class AxisDateTime extends Axis {
     $start_date = new DateTime('@' . $min_val);
     $end_date = new DateTime('@' . $max_val);
 
+    // set the week start day before finding divisions
+    if(isset($options['datetime_week_start']) &&
+      isset(AxisDateTime::$weekdays[$options['datetime_week_start']]))
+      AxisDateTime::$week_start = $options['datetime_week_start'];
+
     if(!empty($fixed_division)) {
       list($units, $count) = AxisDateTime::ParseFixedDivisions($fixed_division,
         $min_val, $max_val, $length);
@@ -154,10 +159,6 @@ class AxisDateTime extends Axis {
       }
 
     } else {
-      // set the week start day before finding divisions
-      if(isset($options['datetime_week_start']) &&
-        isset(AxisDateTime::$weekdays[$options['datetime_week_start']]))
-        AxisDateTime::$week_start = $options['datetime_week_start'];
 
       // find a sensible division
       $div = AxisDateTime::FindDivision($start_date, $end_date, $length,
@@ -204,7 +205,7 @@ class AxisDateTime extends Axis {
   {
     $max_divisions = floor($length / $min_space);
     $duration_s = $end->format('U') - $start->format('U');
-    $avg_duration = (int)ceil($duration_s / $max_divisions);
+    $avg_duration = ceil($duration_s / $max_divisions);
 
     $choice = NULL;
     $divisions = 1;
@@ -224,7 +225,7 @@ class AxisDateTime extends Axis {
       $div_duration = $d[1] * AxisDateTime::$unit_sizes[$d[0]];
 
       if($div_duration >= $avg_duration) {
-        $divisions = (int)floor($duration_s / $div_duration);
+        $divisions = floor($duration_s / $div_duration);
         $unit = $d[0];
         $nunits = $d[1];
 
@@ -391,11 +392,8 @@ class AxisDateTime extends Axis {
           $seconds = $seconds - ($seconds % $n) + $n - 1;
           $datetime = clone $start;
           $datetime->modify("+{$seconds} second");
-        } else {
-          $s = $datetime->format('s');
-          $newtime = $datetime->format(sprintf('H:i:%02d', $s));
-          $datetime->modify($newtime);
         }
+        // if $n == 1, no modifications are required
         break;
       }
     }

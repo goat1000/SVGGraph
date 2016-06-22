@@ -1,3 +1,11 @@
+Version 2.23 (22/06/2016)
+------------
+- Added date/time axis.
+- Added callback function support to logarithmic axis.
+- Added exception_throw option to disable catching exceptions.
+- Fixed axis callback functions not working with associative data.
+- Fixed legend display for line graphs when marker size is 0.
+
 Version 2.22 (05/05/2016)
 ------------
 - Added support for legend entries from structured data.
