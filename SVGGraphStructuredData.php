@@ -65,10 +65,12 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
 
       // check for more datasets
       foreach($data as $item) {
-        foreach(array_keys($item) as $key)
-          if($key != $this->key_field && 
-            array_search($key, $this->dataset_fields) === FALSE)
+        foreach(array_keys($item) as $key) {
+          if($key !== $this->key_field &&
+            array_search($key, $this->dataset_fields) === FALSE) {
             $this->dataset_fields[] = $key;
+          }
+        }
       }
 
       // default structure

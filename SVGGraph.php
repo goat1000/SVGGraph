@@ -220,6 +220,7 @@ abstract class Graph {
   private static $precision = 5;
   private static $decimal = '.';
   private static $thousands = ',';
+  public static $key_format = NULL;
   protected $legend_reverse = false;
   protected $force_assoc = false;
   protected $repeated_keys = 'error';
@@ -315,6 +316,10 @@ abstract class Graph {
       $this->scatter_2d = false;
       if(empty($this->structure))
         $this->structure = array('key' => 0, 'value' => 1, 'datasets' => true);
+    }
+
+    if($this->datetime_keys && $this->datetime_key_format) {
+      Graph::$key_format = $this->datetime_key_format;
     }
 
     if($this->structured_data || is_array($this->structure)) {
@@ -1077,6 +1082,9 @@ abstract class Graph {
         $attr['stroke-dasharray'] = $dash;
       else
         unset($attr['stroke-dasharray']);
+    } else {
+      unset($attr['stroke'], $attr['stroke-width'], $attr['stroke-linejoin'],
+        $attr['stroke-dasharray']);
     }
   }
 
@@ -1758,11 +1766,20 @@ abstract class Graph {
 
 
 /**
-  * Converts a string key to a unix timestamp, or NULL if invalid
-  */
+ * Converts a string key to a unix timestamp, or NULL if invalid
+ */
 function SVGGraphDateConvert($k)
 {
-  $dt = date_create($k);
+  // if the format is set, try it
+  if(!is_null(Graph::$key_format)) {
+    $dt = date_create_from_format(Graph::$key_format, $k);
+
+    // if the specified format fails, try default format
+    if($dt === FALSE)
+      $dt = date_create($k);
+  } else {
+    $dt = date_create($k);
+  }
   if($dt === FALSE)
     return NULL;
   // this works in 64-bit on 32-bit systems, getTimestamp() doesn't
