@@ -41,7 +41,8 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
   public $error = null;
 
   public function __construct(&$data, $force_assoc, $datetime_keys,
-    $structure, $repeated_keys, $integer_keys, $requirements)
+    $structure, $repeated_keys, $integer_keys, $requirements,
+    $rekey_done = FALSE)
   {
     if(!is_null($structure) && !empty($structure)) {
       // structure provided, is it valid?
@@ -111,13 +112,15 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
       // reindex the array to 0, 1, 2, ...
       $this->data = array_values($this->data);
       if($datetime_keys) {
-        if($this->Rekey('SVGGraphDateConvert')) {
+        if($rekey_done || $this->Rekey('SVGGraphDateConvert')) {
           $this->datetime = true;
           $this->assoc = false;
         } else {
           $this->error = 'Too many date/time conversion errors';
           return;
         }
+        $GLOBALS['SVGGraphFieldSortField'] = $this->key_field;
+        usort($this->data, 'SVGGraphFieldSort');
       }
     } elseif(!is_null($this->key_field)) {
       // if not associative, sort by key field

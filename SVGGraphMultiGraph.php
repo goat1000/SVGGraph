@@ -54,9 +54,10 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
         }
       }
       $new_data = array_values($new_data);
+
       require_once('SVGGraphStructuredData.php');
       $this->values = new SVGGraphStructuredData($new_data, $force_assoc,
-        $datetime_keys, null, false, $int_keys, null);
+        $datetime_keys, null, false, $int_keys, null, true);
     }
     $this->datasets = count($this->values);
   }

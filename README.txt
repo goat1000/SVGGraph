@@ -1,5 +1,5 @@
-SVGGraph Library version 2.23
-=============================
+SVGGraph Library version 2.23.1
+===============================
 
 This library provides PHP classes and functions for easily creating SVG
 graphs from data. As of version 2.0, SVGGraph works with PHP 5 only -

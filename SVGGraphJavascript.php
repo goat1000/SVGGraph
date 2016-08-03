@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2015 Graham Breach
+ * Copyright (C) 2012-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -472,6 +472,7 @@ JAVASCRIPT;
       $this->AddFunction('init');
       $this->AddFunction('getE');
       $this->AddFunction('setattr');
+      $this->AddFunction('finditem');
       $this->InsertVariable('initfns', NULL, 'autoHide');
       $fn = <<<JAVASCRIPT
 function autoHide() {

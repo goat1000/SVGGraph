@@ -629,7 +629,8 @@ class RadarGraph extends LineGraph {
           $position['transform'] = "rotate($angle,$rcx,$rcy)";
         }
         // $c == -1 is particular too : XAxis text can bump YAxis texts
-        $y_nudge = $this->GetFirst($this->axis_font_size_v,
+        $y_nudge = $this->GetFirst(
+          $this->ArrayOption($this->axis_font_size_v, 0),
           $this->axis_font_size) / 2;
         if($c == -1 && $this->start_angle % 360 == 90) {
           $position['y'] -= $y_nudge;
@@ -682,9 +683,15 @@ class RadarGraph extends LineGraph {
   {
     $positions = array();
     $labels = '';
-    $font_size = $this->GetFirst($this->axis_font_size_v, $this->axis_font_size);
-    $font_adjust = $this->GetFirst($this->axis_font_adjust_v, $this->axis_font_adjust);
-    $text_space = $this->GetFirst($this->axis_text_space_v, $this->axis_text_space);
+    $font_size = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_size_v, $axis_no),
+      $this->axis_font_size);
+    $font_adjust = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
+      $this->axis_font_adjust);
+    $text_space = $this->GetFirst(
+      $this->ArrayOption($this->axis_text_space_v, $axis_no),
+      $this->axis_text_space);
     $c = cos($this->arad);
     $s = sin($this->arad);
     $a = $this->arad + ($s * $c > 0 ? - M_PI_2 : M_PI_2);
