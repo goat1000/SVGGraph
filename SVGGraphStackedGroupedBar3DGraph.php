@@ -94,7 +94,7 @@ class StackedGroupedBar3DGraph extends StackedBar3DGraph {
             if(!is_null($item->value)) {
               $t = ($j == $end_bar - 1 ? $top : NULL);
               $bar_sections = $this->Bar3D($item, $bar, $t, $bnum, $j,
-                $item->value >= 0 ? $ypos : $yneg, $this->DatasetYAxis($j));
+                $item->value >= 0 ? $ypos : $yneg);
               if($item->value < 0)
                 $yneg += $item->value;
               else
