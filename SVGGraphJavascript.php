@@ -480,10 +480,12 @@ function autoHide() {
     for(var a in autohide)
       autohide[a] = getE(a);
     document.addEventListener('mouseout', function(e) {
-      setattr(finditem(e,autohide),'opacity',1);
+      var t = finditem(e,autohide);
+      t && setattr(t,'opacity',1);
     });
     document.addEventListener('mouseover', function(e) {
-      setattr(finditem(e,autohide),'opacity',0);
+      var t = finditem(e,autohide);
+      t && setattr(t,'opacity',0);
     });
   }
 }\n
