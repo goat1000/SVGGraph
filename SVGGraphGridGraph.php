@@ -96,8 +96,10 @@ abstract class GridGraph extends Graph {
     // if the label_x or label_y are set but not _h and _v, assign them
     $lh = $this->flip_axes ? $this->label_y : $this->label_x;
     $lv = $this->flip_axes ? $this->label_x : $this->label_y;
-    if(empty($this->label_h) && !empty($lh))
-      $this->label_h = $lh;
+    if(empty($this->label_h) && !empty($lh)) {
+      // cope with multiple Y axis labels on horizontal graph
+      $this->label_h = is_array($lh) ? array_shift($lh) : $lh;
+    }
     if(empty($this->label_v) && !empty($lv))
       $this->label_v = $lv;
 
