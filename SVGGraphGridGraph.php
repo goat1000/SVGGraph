@@ -450,7 +450,7 @@ abstract class GridGraph extends Graph {
   {
     if(!empty($this->dataset_axis) && isset($this->dataset_axis[$dataset]))
       return $this->dataset_axis[$dataset];
-    return 0;
+    return $this->axis_right ? 1 : 0;
   }
 
   /**
