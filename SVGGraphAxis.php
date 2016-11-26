@@ -316,12 +316,13 @@ class Axis {
     if($this->values && $this->values->GetData($value, 'axis_text', $text))
       return $text;
 
+    // use the key if it is not the same as the value
+    $key = $this->values ? $this->values->GetKey($value) : $value;
+
     // if there is a callback, use it
     if(is_callable($this->label_callback)) {
-      $text = call_user_func($this->label_callback, $value);
+      $text = call_user_func($this->label_callback, $value, $key);
     } else {
-      // use the key if it is not the same as the value
-      $key = $this->values ? $this->values->GetKey($value) : $value;
       if($key !== $value)
         $text = $key;
       else
