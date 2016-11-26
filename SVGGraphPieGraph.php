@@ -27,6 +27,7 @@ class PieGraph extends Graph {
   protected $radius_x;
   protected $radius_y;
   protected $s_angle; // start_angle in radians
+  protected $full_angle; // amount of pie in radians
   protected $calc_done;
   protected $slice_info = array();
   protected $total = 0;
@@ -70,9 +71,21 @@ class PieGraph extends Graph {
     $this->x_centre = (($bound_x_right - $bound_x_left) / 2) + $bound_x_left;
     $this->y_centre = (($bound_y_bottom - $bound_y_top) / 2) + $bound_y_top;
     $this->start_angle %= 360;
-    if($this->start_angle < 0)
-      $this->start_angle = 360 + $this->start_angle;
+    while($this->start_angle < 0)
+      $this->start_angle += 360;
     $this->s_angle = deg2rad($this->start_angle);
+    if(is_null($this->end_angle) || !is_numeric($this->end_angle) ||
+      $this->end_angle == $this->start_angle ||
+      abs($this->end_angle - $this->start_angle) % 360 == 0) {
+      $this->full_angle = M_PI * 2.0;
+    } else {
+      while($this->end_angle < $this->start_angle)
+        $this->end_angle += 360;
+      $full_angle = $this->end_angle - $this->start_angle;
+      if($full_angle > 360)
+        $full_angle %= 360;
+      $this->full_angle = deg2rad($full_angle);
+    }
 
     if($h/$w > $this->aspect_ratio) {
       $this->radius_x = $w / 2.0;
@@ -94,7 +107,6 @@ class PieGraph extends Graph {
     if(!$this->calc_done)
       $this->Calc();
 
-    $unit_slice = 2.0 * M_PI / $this->total;
     $min_slice_angle = $this->ArrayOption($this->data_label_min_space, 0);
     $vcount = 0;
 
@@ -120,9 +132,10 @@ class PieGraph extends Graph {
       $item = $value[2];
       $value = $value[1];
       $key = $item->key;
+      $colour_index = $this->keep_colour_order ? $original_position : $slice;
       if($this->legend_show_empty || $item->value != 0) {
-        $attr = array('fill' => $this->GetColour($item, $slice, NULL, true,
-          true));
+        $attr = array('fill' => $this->GetColour($item, $colour_index, NULL,
+          true, true));
         $this->SetStroke($attr, $item, 0, 'round');
         
         // use the original position for legend index
@@ -242,7 +255,7 @@ class PieGraph extends Graph {
     if(!$item->value)
       return false;
 
-    $unit_slice = 2.0 * M_PI / $this->total;
+    $unit_slice = $this->full_angle / $this->total;
     $angle_start = $this->sub_total * $unit_slice;
     $angle_end = ($this->sub_total + $item->value) * $unit_slice;
     $radius_x = $this->radius_x;
