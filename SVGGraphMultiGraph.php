@@ -49,7 +49,11 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
       $count = count($values);
       for($i = 0; $i < $count; ++$i) {
         foreach($this->values[$i] as $item) {
-          $new_data[$item->key][0] = $item->key;
+          if(!isset($new_data[$item->key])) {
+            // fill the data item with NULLs
+            $new_data[$item->key] = array_fill(0, $count + 1, NULL);
+            $new_data[$item->key][0] = $item->key;
+          }
           $new_data[$item->key][$i + 1] = $item->value;
         }
       }
@@ -164,8 +168,11 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
       return $this->min_value;
     $minima = array();
     $chunk_count = count($this->values);
-    for($i = 0; $i < $chunk_count; ++$i)
-      $minima[] = $this->values->GetMinValue($i);
+    for($i = 0; $i < $chunk_count; ++$i) {
+      $min_val = $this->values->GetMinValue($i);
+      if(!is_null($min_val))
+        $minima[] = $min_val;
+    }
 
     $this->min_value = min($minima);
     return $this->min_value;
