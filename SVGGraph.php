@@ -32,6 +32,7 @@ class SVGGraph {
   public $links = NULL;
   public $colours = NULL;
   private $colour_sets = 0;
+  protected static $last_instance = NULL;
 
   public function __construct($w, $h, $settings = NULL)
   {
@@ -176,8 +177,8 @@ class SVGGraph {
    */
   public function Fetch($class, $header = TRUE, $defer_js = TRUE)
   {
-    $this->g = $this->Setup($class);
-    return $this->g->Fetch($header, $defer_js);
+    SVGGraph::$last_instance = $this->Setup($class);
+    return SVGGraph::$last_instance->Fetch($header, $defer_js);
   }
 
   /**
@@ -186,14 +187,17 @@ class SVGGraph {
   public function Render($class, $header = TRUE, $content_type = TRUE,
     $defer_js = FALSE)
   {
-    $this->g = $this->Setup($class);
-    return $this->g->Render($header, $content_type, $defer_js);
+    SVGGraph::$last_instance = $this->Setup($class);
+    return SVGGraph::$last_instance->Render($header, $content_type, $defer_js);
   }
 
-  public function FetchJavascript()
+  /**
+   * Fetch the Javascript for ALL graphs that have been Fetched
+   */
+  public static function FetchJavascript()
   {
-    if(isset($this->g))
-      return $this->g->FetchJavascript(true, true, true);
+    if(!is_null(SVGGraph::$last_instance))
+      return SVGGraph::$last_instance->FetchJavascript(true, true, true);
   }
 }
 
@@ -1679,7 +1683,7 @@ abstract class Graph {
           $functions .= "\n" . "setTimeout(function(){{$onload}},20);";
         $script_attr = array('type' => 'application/ecmascript');
           $script = "$variables\n$functions\n";
-        if(!empty($this->minify_js) && function_exists($this->minify_js))
+        if(is_callable($this->minify_js))
           $script = call_user_func($this->minify_js, $script);
         if($cdata_wrap)
           $script = "// <![CDATA[\n$script\n// ]]>";
