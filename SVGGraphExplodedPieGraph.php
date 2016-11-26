@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2015 Graham Breach
+ * Copyright (C) 2014-2016 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -94,14 +94,39 @@ class ExplodedPieGraph extends PieGraph {
       $amt = $iamt;
     $explode = $this->explode_amount * $amt;
 
-    $a = $angle_end - $angle_start;
-    $a_centre = $angle_start + ($angle_end - $angle_start) / 2;
+    $a_start = fmod($angle_start, M_PI * 2.0);
+    $a_end = fmod($angle_end, M_PI * 2.0);
+    if(abs($this->aspect_ratio - 1.0) > 0.01) {
+      $a_start = $this->AspectAngle($a_start, $this->aspect_ratio);
+      $a_end = $this->AspectAngle($a_end, $this->aspect_ratio);
+    }
+    if($a_end < $a_start)
+      $a_end += M_PI * 2.0;
+    $a_centre = $a_start + ($a_end - $a_start) / 2;
     $xo = $explode * cos($a_centre);
     $yo = $explode * sin($a_centre);
     if($this->reverse)
       $yo = -$yo;
 
     return array($xo, $yo);
+  }
+
+  /**
+   * Calculates the angle modified by the aspect ratio
+   */
+  private static function AspectAngle($a, $aspect)
+  {
+    $pi2 = M_PI * 2.0;
+    $res = $a;
+
+    if($a < M_PI * 0.5) {
+      $res = atan($aspect * tan($a));
+    } elseif($a < M_PI * 1.5) {
+      $res = M_PI - atan($aspect * tan(M_PI - $a));
+    } else {
+      $res = $pi2 - atan($aspect * tan($pi2 - $a));
+    }
+    return $res;
   }
 
   /**
