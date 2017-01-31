@@ -808,5 +808,12 @@ class RadarGraph extends LineGraph {
     return $points;
   }
 
+  /**
+   * Calculates guidelines
+   */
+  protected function CalcGuidelines($g = null)
+  {
+    // in the case of radar graphs, prevents junk guidelines being drawn
+  }
 }
 

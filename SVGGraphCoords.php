@@ -108,6 +108,19 @@ class SVGGraphCoords {
       $grid = true;
     }
 
+    // try value as assoc key first
+    if($grid) {
+      $axis_inst = $this->graph->GetAxis($axis, $axis_no);
+      $position = $axis_inst->PositionByKey($value);
+      if(!is_null($position)) {
+        if($axis == 'x')
+          $position += $this->graph->pad_left;
+        else
+          $position = $this->graph->height - $this->graph->pad_bottom - $position;
+        return $position;
+      }
+    }
+
     $trans = 0;
     if(is_numeric($value)) {
       if($grid) {

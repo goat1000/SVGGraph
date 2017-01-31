@@ -1,3 +1,20 @@
+Version 2.24 (31/01/2017)
+------------
+- Added semi-donut graph.
+- Added associative and datetime key support to shapes, labels and crosshairs.
+- Added end_angle and slice_fit options for drawing partial pie graphs.
+- Added keep_colour_order option for simpler pie graph slice colouring.
+- Added marker_opacity and marker_angle options.
+- Added custom marker support.
+- Made FetchJavascript work when called statically.
+- Fixed minify_js option to support anonymous callback functions.
+- Fixed error when array of guidelines contains a single guideline array.
+- Fixed bar_total_outline_colour option on horizontal stacked graphs.
+- Fixed javascript error in legend_autohide.
+- Fixed legend order for graphs with multiple datasets starting at different
+  key values.
+- Improved positioning of exploded pie slices.
+
 Version 2.23.1 (03/08/2016)
 --------------
 - Added datetime_key_format option.

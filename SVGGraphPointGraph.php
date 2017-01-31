@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2016 Graham Breach
+ * Copyright (C) 2010-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -170,9 +170,9 @@ abstract class PointGraph extends GridGraph {
    * Creates a single marker element and its link version
    */
   private function CreateMarker($type, $size, $fill, $stroke_width,
-    $stroke_colour)
+    $stroke_colour, $opacity, $angle)
   {
-    $m_key = "$type:$size:$fill:$stroke_width:$stroke_colour";
+    $m_key = "$type:$size:$fill:$stroke_width:$stroke_colour:$opacity:$angle";
     if(isset($this->marker_types[$m_key]))
       return $this->marker_types[$m_key];
 
@@ -183,9 +183,15 @@ abstract class PointGraph extends GridGraph {
       if(!empty($stroke_width))
         $marker['stroke-width'] = $stroke_width;
     }
+    if($opacity > 0.0 && $opacity < 1.0)
+      $marker['opacity'] = $opacity;
 
-    // check for image marker
-    if(strncmp($type, 'image:', 6) == 0) {
+    // check for custom or image markers
+    $content = NULL;
+    if($type[0] == '<') {
+      $content = $type;
+      $type = 'custom';
+    } elseif(strncmp($type, 'image:', 6) == 0) {
       $image_path = SVGGraphSubstr($type, 6, NULL, $this->encoding);
       $type = 'image';
     }
@@ -292,14 +298,27 @@ abstract class PointGraph extends GridGraph {
       $marker['width'] = $size * 2;
       $marker['height'] = $size * 2;
       break;
+    case 'custom' :
+      $element = 'g';
+      break;
     case 'circle' :
     default :
       $element = 'circle';
       $marker['r'] = $size;
     }
+
+    // angle happens here because the shape might already have a transform
+    if($angle != 0) {
+      $xform = "rotate({$angle})";
+      if(isset($marker['transform']))
+        $marker['transform'] .= $xform;
+      else
+        $marker['transform'] = $xform;
+    }
+
     $this->marker_elements[$marker['id']] = 
       $this->Element('symbol', NULL, NULL, 
-        $this->Element($element, $marker, NULL));
+        $this->Element($element, $marker, NULL, $content));
 
     // add link version
     unset($marker['cursor']);
@@ -307,7 +326,7 @@ abstract class PointGraph extends GridGraph {
     $marker['id'] = $this->marker_link_ids[$marker['id']];
     $this->marker_elements[$marker['id']] =
       $this->Element('symbol', NULL, NULL,
-        $this->Element($element, $marker, NULL));
+        $this->Element($element, $marker, NULL, $content));
 
     // save this marker style for reuse
     $this->marker_types[$m_key] = $id;
@@ -325,7 +344,7 @@ abstract class PointGraph extends GridGraph {
       return true;
 
     $vlist = array('marker_type', 'marker_size', 'marker_stroke_width',
-      'marker_stroke_colour');
+      'marker_stroke_colour', 'marker_angle', 'marker_opacity');
     foreach($vlist as $value)
       if($this->GetFromItemOrMember($value, $set, $item) !=
         $this->GetFromItemOrMember($value, $set, $null_item))
@@ -340,6 +359,8 @@ abstract class PointGraph extends GridGraph {
   {
     $type = $this->GetFromItemOrMember('marker_type', $set, $item);
     $size = $this->GetFromItemOrMember('marker_size', $set, $item);
+    $angle = $this->GetFromItemOrMember('marker_angle', $set, $item);
+    $opacity = $this->GetFromItemOrMember('marker_opacity', $set, $item);
     $stroke_colour = $this->GetFromItemOrMember('marker_stroke_colour', $set,
       $item);
     $stroke_width = '';
@@ -355,7 +376,8 @@ abstract class PointGraph extends GridGraph {
       $fill = $this->GetColour(null, 0, $set, true);
     }
 
-    return $this->CreateMarker($type, $size, $fill, $stroke_width, $stroke_colour);
+    return $this->CreateMarker($type, $size, $fill, $stroke_width,
+      $stroke_colour, $opacity, $angle);
   }
 
   /**

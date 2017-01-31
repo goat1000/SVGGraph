@@ -444,6 +444,19 @@ abstract class GridGraph extends Graph {
   }
 
   /**
+   * Returns an x or y axis, or NULL if it does not exist
+   */
+  public function GetAxis($axis, $num)
+  {
+    if(is_null($num))
+      $num = ($axis == 'y' ? $this->main_y_axis : $this->main_x_axis);
+    $axis_var = $axis == 'y' ? 'y_axes' : 'x_axes';
+    if(isset($this->{$axis_var}) && isset($this->{$axis_var}[$num]))
+      return $this->{$axis_var}[$num];
+    return NULL;
+  }
+
+  /**
    * Returns the Y-axis for a dataset
    */
   protected function DatasetYAxis($dataset)
@@ -1496,7 +1509,7 @@ abstract class GridGraph extends Graph {
       return '';
 
     $grid_id = $this->NewID();
-    $this->AddFunction('crosshairs');
+
     $grid_group['class'] = 'grid';
 
     // make the crosshair lines
@@ -1591,27 +1604,100 @@ abstract class GridGraph extends Graph {
     $u = $y_axis->BeforeUnits();
     if(!empty($u)) $units .= " unitsby=\"{$u}\"";
 
+    // names of which string function to use for each axis
+    $function_x = 'strValueX';
+    $function_y = 'strValueY';
+    $extra_x = $extra_y = '';
+
     if($this->log_axis_y) {
       if($this->flip_axes) {
         $base_x = " base=\"{$this->log_axis_y_base}\"";
         $zero_x = $x_axis->Value(0);
         $scale_x = $x_axis->Value($this->g_width);
+        $this->AddFunction('logStrValueX');
+        $function_x = 'logStrValueX';
       } else {
         $base_y = " base=\"{$this->log_axis_y_base}\"";
         $zero_y = $y_axis->Value(0);
         $scale_y = $y_axis->Value($this->g_height);
+        $this->AddFunction('logStrValueY');
+        $function_y = 'logStrValueY';
       }
     }
-    
-    $this->defs[] = <<<XML
+
+    if($this->datetime_keys &&
+      (method_exists($x_axis, 'GetFormat') ||
+      method_exists($y_axis, 'GetFormat'))) {
+      if($this->flip_axes) {
+        $zy = (int)$y_axis->Value(0);
+        $ey = (int)$y_axis->Value($this->g_width);
+        $scale_y = ($ey - $zy) / $this->g_height;
+        $dt = new DateTime('@' . $zy);
+        $zero_y = $dt->Format('c');
+        $this->AddFunction('dateStrValueY');
+        $function_y = 'dateStrValueY';
+        $extra_y = ' format="' .
+          htmlspecialchars($y_axis->GetFormat(), ENT_COMPAT,
+            $this->encoding) . '"';
+      } else {
+        $zx = (int)$x_axis->Value(0);
+        $ex = (int)$x_axis->Value($this->g_width);
+        $scale_x = ($ex - $zx) / $this->g_width;
+        $dt = new DateTime('@' . $zx);
+        $zero_x = $dt->Format('c');
+        $this->AddFunction('dateStrValueX');
+        $function_x = 'dateStrValueX';
+        $extra_x = ' format="' .
+          htmlspecialchars($x_axis->GetFormat(), ENT_COMPAT,
+            $this->encoding) . '"';
+      }
+    }
+
+    // build associative data keys XML
+    $keys_xml = '';
+    if($this->values->AssociativeKeys()) {
+
+      $k_max = $this->GetMaxKey();
+      $keys_xml .= "  <svggraph:keys>\n";
+      for($i = 0; $i <= $k_max; ++$i) {
+        $k = $this->GetKey($i);
+        $key = htmlspecialchars($k, ENT_COMPAT, $this->encoding);
+        $keys_xml .= "    <svggraph:key value=\"{$key}\"/>\n";
+      }
+      $keys_xml .= "  </svggraph:keys>\n";
+
+      // choose a rounding function
+      $round_function = 'kround';
+      if($this->label_centre)
+        $round_function = 'kroundDown';
+      $this->AddFunction($round_function);
+
+      // set the string function
+      if($this->flip_axes) {
+        $this->AddFunction('keyStrValueY');
+        $function_y = 'keyStrValueY';
+        $extra_y = " round=\"{$round_function}\"";
+      } else {
+        $this->AddFunction('keyStrValueX');
+        $function_x = 'keyStrValueX';
+        $extra_x = " round=\"{$round_function}\"";
+      }
+    }
+    // add details of scale to defs section for use by JS functions
+    $defs = <<<XML
 <svggraph:data xmlns:svggraph="http://www.goat1000.com/svggraph">
-  <svggraph:gridx zero="{$zero_x}" scale="{$scale_x}" precision="{$prec_x}"{$base_x}/>
-  <svggraph:gridy zero="{$zero_y}" scale="{$scale_y}" precision="{$prec_y}"{$base_y}/>
+  <svggraph:gridx function="{$function_x}"{$extra_x} zero="{$zero_x}" scale="{$scale_x}" precision="{$prec_x}"{$base_x}/>
+  <svggraph:gridy function="{$function_y}"{$extra_y} zero="{$zero_y}" scale="{$scale_y}" precision="{$prec_y}"{$base_y}/>
   <svggraph:chtext>
     <svggraph:chtextitem type="xy" groupid="{$text_group['id']}"$units/>
   </svggraph:chtext>
-</svggraph:data>
+{$keys_xml}</svggraph:data>
+
 XML;
+    $this->defs[] = $defs;
+
+    // add the main function at the end - it can fill in any defaults
+    $this->AddFunction('crosshairs');
     return $crosshairs;
   }
 
@@ -1900,8 +1986,9 @@ XML;
       if(empty($this->guideline) && $this->guideline !== 0)
         return;
 
-      if(is_array($this->guideline) && count($this->guideline) > 1 &&
-        !is_string($this->guideline[1])) {
+      if(is_array($this->guideline) &&
+        is_array($this->guideline[0]) ||
+        (count($this->guideline) > 1 && !is_string($this->guideline[1]))) {
 
         // array of guidelines
         foreach($this->guideline as $gl)

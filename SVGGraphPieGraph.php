@@ -63,40 +63,95 @@ class PieGraph extends Graph {
     $w = $bound_x_right - $bound_x_left;
     $h = $bound_y_bottom - $bound_y_top;
 
-    if($this->aspect_ratio == 'auto')
-      $this->aspect_ratio = $h/$w;
-    elseif($this->aspect_ratio <= 0)
-      $this->aspect_ratio = 1.0;
-
     $this->x_centre = (($bound_x_right - $bound_x_left) / 2) + $bound_x_left;
     $this->y_centre = (($bound_y_bottom - $bound_y_top) / 2) + $bound_y_top;
     $this->start_angle %= 360;
     while($this->start_angle < 0)
       $this->start_angle += 360;
     $this->s_angle = deg2rad($this->start_angle);
+
+    // sanitize aspect ratio
+    if($this->aspect_ratio != 'auto' && $this->aspect_ratio <= 0)
+      $this->aspect_ratio = 1.0;
+
     if(is_null($this->end_angle) || !is_numeric($this->end_angle) ||
       $this->end_angle == $this->start_angle ||
       abs($this->end_angle - $this->start_angle) % 360 == 0) {
       $this->full_angle = M_PI * 2.0;
+
+      $this->SetupAspectRatio($w, $h);
+
     } else {
+
       while($this->end_angle < $this->start_angle)
         $this->end_angle += 360;
       $full_angle = $this->end_angle - $this->start_angle;
       if($full_angle > 360)
         $full_angle %= 360;
       $this->full_angle = deg2rad($full_angle);
+
+      if($this->slice_fit) {
+        // not a full pie, position based on actual shape
+        $sw = 100;
+        $sh = 100;
+        if($this->aspect_ratio != 'auto')
+          $sw /= $this->aspect_ratio;
+
+        $all_slice = new SVGGraphSliceInfo($this->s_angle,
+          deg2rad($this->end_angle), $sw, $sh);
+        $bbox = $all_slice->BoundingBox($this->reverse);
+
+        $bw = $bbox[2] - $bbox[0];
+        $bh = $bbox[3] - $bbox[1];
+        $scale_x = $bw / $w;
+        $scale_y = $bh / $h;
+
+        if($this->aspect_ratio == 'auto') {
+          $this->x_centre = $bound_x_left + ($bbox[0] / -$scale_x);
+          $this->y_centre = $bound_y_top + ($bbox[1] / -$scale_y);
+          $w *= $scale_x;
+          $h *= $scale_y;
+
+          $this->aspect_ratio = $bh / $bw;
+        } else {
+
+          // calculate size and position from aspect ratio
+          $scale_x = $scale_y = max($scale_x, $scale_y);
+          $bw = ($bbox[2] - $bbox[0]) / $scale_x;
+          $bh = ($bbox[3] - $bbox[1]) / $scale_y;
+          $offset_x = $bbox[0] / -$scale_x;
+          $offset_y = $bbox[1] / -$scale_y;
+
+          $this->x_centre = $bound_x_left + ($w - $bw) / 2 + $offset_x;
+          $this->y_centre = $bound_y_top + ($h - $bh) / 2 + $offset_y;
+        }
+        $this->radius_x = $sw / $scale_x;
+        $this->radius_y = $sh / $scale_y;
+      } else {
+        $this->SetupAspectRatio($w, $h);
+      }
     }
 
-    if($h/$w > $this->aspect_ratio) {
+    $this->calc_done = true;
+    $this->sub_total = 0;
+    $this->ColourSetup($this->values->ItemsCount());
+  }
+
+  /**
+   * Sets the aspect ratio and radius members
+   */
+  private function SetupAspectRatio($w, $h)
+  {
+    if($this->aspect_ratio == 'auto')
+      $this->aspect_ratio = $h/$w;
+
+    if($h / $w > $this->aspect_ratio) {
       $this->radius_x = $w / 2.0;
       $this->radius_y = $this->radius_x * $this->aspect_ratio;
     } else {
       $this->radius_y = $h / 2.0;
       $this->radius_x = $this->radius_y / $this->aspect_ratio;
     }
-    $this->calc_done = true;
-    $this->sub_total = 0;
-    $this->ColourSetup($this->values->ItemsCount());
   }
 
   /**
@@ -403,6 +458,135 @@ class SVGGraphSliceInfo {
   public function Degrees()
   { 
     return rad2deg($this->end_angle - $this->start_angle);
+  }
+
+  /**
+   * Returns the bounding box for the slice, radius from 0,0
+   * @return array($x1, $y1, $x2, $y2)
+   */
+  public function BoundingBox($reverse)
+  {
+    $x1 = $y1 = $x2 = $y2 = 0;
+    $angle = fmod($this->end_angle - $this->start_angle, 2 * M_PI);
+    $right_angle = M_PI * 0.5;
+
+    $rx = $this->radius_x;
+    $ry = $this->radius_y;
+    $a1 = fmod($this->start_angle, 2 * M_PI);
+    $a2 = $a1 + $angle;
+    $start_sector = floor($a1 / $right_angle);
+    $end_sector = floor($a2 / $right_angle);
+
+    switch($end_sector - $start_sector) {
+
+    case 0:
+      // slice all in one sector
+      $x = max(abs(cos($a1)), abs(cos($a2))) * $rx;
+      $y = max(abs(sin($a1)), abs(sin($a2))) * $ry;
+      switch($start_sector) {
+      case 0:
+        $x2 = $x;
+        $y2 = $y;
+        break;
+      case 1:
+        $x1 = -$x;
+        $y2 = $y;
+        break;
+      case 2:
+        $x1 = -$x;
+        $y1 = -$y;
+        break;
+      case 3:
+        $x2 = $x;
+        $y1 = -$y;
+        break;
+      }
+      break;
+
+    case 1:
+      // slice across two sectors
+      switch($start_sector) {
+      case 0:
+        $x1 = cos($a2) * $rx;
+        $x2 = cos($a1) * $rx;
+        $y2 = $ry;
+        break;
+      case 1:
+        $x1 = -$rx;
+        $y1 = sin($a2) * $ry;
+        $y2 = sin($a1) * $ry;
+        break;
+      case 2:
+        $x1 = cos($a1) * $rx;
+        $x2 = cos($a2) * $rx;
+        $y1 = -$ry;
+        break;
+      case 3:
+        $x2 = $rx;
+        $y1 = sin($a1) * $ry;
+        $y2 = sin($a2) * $ry;
+        break;
+      }
+      break;
+
+    case 2:
+      // slice across three sectors
+      $x1 = -$rx;
+      $y1 = -$ry;
+      $x2 = $rx;
+      $y2 = $ry;
+      switch($start_sector) {
+      case 0:
+        $y1 = sin($a2) * $ry;
+        $x2 = cos($a1) * $rx;
+        break;
+      case 1:
+        $x2 = cos($a2) * $rx;
+        $y2 = sin($a1) * $ry;
+        break;
+      case 2:
+        $x1 = cos($a1) * $rx;
+        $y2 = sin($a2) * $ry;
+        break;
+      case 3:
+        $x1 = cos($a2) * $rx;
+        $y1 = sin($a1) * $ry;
+        break;
+      }
+      break;
+
+    case 3:
+      // slice across four sectors
+      $x = max(abs(cos($a1)), abs(cos($a2))) * $rx;
+      $y = max(abs(sin($a1)), abs(sin($a2))) * $ry;
+      $x1 = -$rx;
+      $y1 = -$ry;
+      $x2 = $rx;
+      $y2 = $ry;
+      switch($start_sector) {
+      case 0: $x2 = $x; break;
+      case 1: $y2 = $y; break;
+      case 2: $x1 = -$x; break;
+      case 3: $y1 = -$y; break;
+      }
+      break;
+
+    case 4:
+      // slice is > 270 degrees and both ends in one sector
+      $x1 = -$rx;
+      $y1 = -$ry;
+      $x2 = $rx;
+      $y2 = $ry;
+      break;
+    }
+
+    if($reverse) {
+      // swap Y around origin
+      $y = -$y1;
+      $y1 = -$y2;
+      $y2 = $y;
+    }
+    return array($x1, $y1, $x2, $y2);
   }
 }
 

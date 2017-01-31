@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2016 Graham Breach
+ * Copyright (C) 2009-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.23.1');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.24');
 
 require_once 'SVGGraphColours.php';
 
@@ -1120,14 +1120,12 @@ abstract class Graph {
   }
 
   /**
-   * Adds one or more javascript functions
+   * Adds a javascript function
    */
-  protected function AddFunction($name)
+  protected function AddFunction($name, $realname = NULL)
   {
     $this->LoadJavascript();
-    $fns = func_get_args();
-    foreach($fns as $fn)
-      Graph::$javascript->AddFunction($fn);
+    Graph::$javascript->AddFunction($name, $realname);
   }
 
   /**

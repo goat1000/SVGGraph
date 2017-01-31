@@ -585,5 +585,13 @@ class AxisDateTime extends Axis {
     $dt = new DateTime('@' . $f);
     return $dt->format($this->axis_text_format);
   }
+
+  /**
+   * Returns the format in use
+   */
+  public function GetFormat()
+  {
+    return $this->axis_text_format;
+  }
 }
 

@@ -33,9 +33,10 @@ class PolarAreaGraph extends PieGraph {
    */
   protected function Calc()
   {
-    // no sorting, no percentage
+    // no sorting, no percentage, no slice fit
     $this->sort = false;
     $this->show_label_percent = false;
+    $this->slice_fit = false;
     parent::Calc();
 
     $smax = sqrt($this->GetMaxValue());

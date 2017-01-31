@@ -51,9 +51,12 @@ class SVGGraphJavascript {
   /**
    * Adds a javascript function
    */
-  public function AddFunction($name)
+  public function AddFunction($name, $realname = NULL)
   {
-    if(isset($this->functions[$name]))
+    if(is_null($realname))
+      $realname = $name;
+
+    if(isset($this->functions[$realname]))
       return TRUE;
 
     $simple_functions = array(
@@ -535,6 +538,161 @@ function textAttr(e,a) {
 }\n
 JAVASCRIPT;
       break;
+
+    case 'strValueX' :
+      $fn = <<<JAVASCRIPT
+function strValueX(de,x,w,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision');
+  return ub + ((x - z) / s).toFixed(p) + ua;
+}\n
+JAVASCRIPT;
+      break;
+    case 'strValueY' :
+      $fn = <<<JAVASCRIPT
+function strValueY(de,y,h,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision');
+  return ub + ((y - z) / s).toFixed(p) + ua;
+}\n
+JAVASCRIPT;
+      break;
+    case 'logStrValueX' :
+      $fn = <<<JAVASCRIPT
+function logStrValueX(de,x,w,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision'), b = g.getAttributeNS(null, 'base'),
+    lgmin, lgmax, lgmul;
+    lgmin = Math.log(z)/Math.log(b);
+    lgmax = Math.log(s)/Math.log(b);
+    lgmul = w / (lgmax - lgmin);
+  return ub + (Math.pow(b, lgmin*1 + x / lgmul)).toFixed(p) + ua;
+}\n
+JAVASCRIPT;
+      break;
+    case 'logStrValueY' :
+      $fn = <<<JAVASCRIPT
+function logStrValueY(de,y,h,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision'), b = g.getAttributeNS(null, 'base'),
+    lgmin, lgmax, lgmul;
+    lgmin = Math.log(z)/Math.log(b);
+    lgmax = Math.log(s)/Math.log(b);
+    lgmul = h / (lgmax - lgmin);
+  return ub + (Math.pow(b, lgmin*1 + y / lgmul)).toFixed(p) + ua;
+}\n
+JAVASCRIPT;
+      break;
+    case 'kround' :
+      // round to nearest whole number
+      $fn = "function kround(v){return Math.round(v)|0;}\n";
+      break;
+    case 'kroundDown' :
+      // floor function
+      $fn = "function kroundDown(v){return v|0;}\n";
+      break;
+    case 'keyStrValueX' :
+      $fn = <<<JAVASCRIPT
+function keyStrValueX(de,x,w,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision'), keys = getData(de, 'keys'),
+    rfnc = g.getAttributeNS(null, 'round'), str = '', n = 0, i = 0,
+    v = window[rfnc]((x - z) / s);
+  if(keys) {
+    while(i <= v && n < keys.childNodes.length) {
+      if(keys.childNodes[n].nodeName == 'svggraph:key') {
+        if(i == v)
+          str = keys.childNodes[n].getAttributeNS(null,'value');
+        ++i;
+      }
+      ++n;
+    }
+  }
+  return str;
+}\n
+JAVASCRIPT;
+      break;
+    case 'keyStrValueY' :
+      $fn = <<<JAVASCRIPT
+function keyStrValueY(de,y,h,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision'), keys = getData(de, 'keys'),
+    rfnc = g.getAttributeNS(null, 'round'), str = '', n = 0, i = 0,
+    v = window[rfnc]((y - z) / s);
+  if(keys) {
+    while(i <= v && n < keys.childNodes.length) {
+      if(keys.childNodes[n].nodeName == 'svggraph:key') {
+        if(i == v)
+          str = keys.childNodes[n].getAttributeNS(null,'value');
+        ++i;
+      }
+      ++n;
+    }
+  }
+  return str;
+}\n
+JAVASCRIPT;
+      break;
+
+    case 'dateFormat' :
+      $fn = <<<JAVASCRIPT
+function dateFormat(d,f) {
+  var str = '', i, s, m = ['January','February','March','April','May','June',
+    'July','August','September','October','November','December'],
+    w = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  for(i = 0; i < f.length; ++i) {
+    switch(f[i]) {
+    case 'Y' : s = d.getUTCFullYear(); break;
+    case 'y' : s = (d.getUTCFullYear() + '').substr(2); break;
+    case 'F' : s = m[d.getUTCMonth()]; break;
+    case 'M' : s = m[d.getUTCMonth()].substr(0,3); break;
+    case 'm' : s = ('0' + (d.getUTCMonth() + 1)).substr(-2); break;
+    case 'n' : s = d.getUTCMonth() + 1; break;
+    case 'd' : s = ('0' + d.getUTCDate()).substr(-2); break;
+    case 'D' : s = w[d.getUTCDay()].substr(0,3); break;
+    case 'l' : s = w[d.getUTCDay()]; break;
+    case 'a' : s = ['am','pm'][d.getUTCHours() > 11 ? 1 : 0]; break;
+    case 'A' : s = ['AM','PM'][d.getUTCHours() > 11 ? 1 : 0]; break;
+    case 'g' : s = d.getUTCHours() % 12 || 12; break;
+    case 'G' : s = d.getUTCHours(); break;
+    case 'h' : s = ('0' + (d.getUTCHours() % 12 || 12)).substr(-2); break;
+    case 'H' : s = ('0' + d.getUTCHours()).substr(-2); break;
+    case 'i' : s = ('0' + d.getUTCMinutes()).substr(-2); break;
+    case 's' : s = ('0' + d.getUTCSeconds()).substr(-2); break;
+    default:
+      s = f[i];
+    }
+    str += s;
+  }
+  return str;
+}\n
+JAVASCRIPT;
+      break;
+    case 'dateStrValueX' :
+      $this->AddFunction('dateFormat');
+      $fn = <<<JAVASCRIPT
+function dateStrValueX(de,x,w,g,ub,ua) {
+  var z = new Date(g.getAttributeNS(null, 'zero')),
+    s = g.getAttributeNS(null, 'scale'), fmt = g.getAttributeNS(null, 'format'),
+    dt = new Date(z.valueOf() + (1000 * x * s)), str = '';
+  str = dateFormat(dt,fmt);
+  return str;
+}\n
+JAVASCRIPT;
+      break;
+    case 'dateStrValueY' :
+      $this->AddFunction('dateFormat');
+      $fn = <<<JAVASCRIPT
+function dateStrValueY(de,y,h,g,ub,ua) {
+  var z = new Date(g.getAttributeNS(null, 'zero')),
+    s = g.getAttributeNS(null, 'scale'), fmt = g.getAttributeNS(null, 'format'),
+    dt = new Date(z.valueOf() + (1000 * y * s)), str = '';
+  str = dateFormat(dt,fmt);
+  return str;
+}\n
+JAVASCRIPT;
+      break;
+
     case 'showCoords' :
       $this->AddFunction('getE');
       $this->AddFunction('newel');
@@ -543,15 +701,26 @@ JAVASCRIPT;
       $this->AddFunction('showhide');
       $this->AddFunction('fitRect');
       $this->AddFunction('textAttr');
-      $yb = "textAttr(ti,'unitsby') + ";
-      $ya = " + textAttr(ti,'unitsy')";
-      $xb = "textAttr(ti,'unitsbx') + ";
-      $xa = " + textAttr(ti,'unitsx')";
-      $text_format = "{$xb}x1.toFixed(xp){$xa} + ', ' + {$yb}y1.toFixed(yp){$ya}";
+
+      // add the default x/y coord functions if required
+      $this->AddFunction('strValueX');
+      $this->AddFunction('strValueY');
+
+      // format text for assoc X, assoc Y or x,y
+      $yb = "textAttr(ti,'unitsby')";
+      $ya = "textAttr(ti,'unitsy')";
+      $xb = "textAttr(ti,'unitsbx')";
+      $xa = "textAttr(ti,'unitsx')";
+      $text_format_x = "window[fnx](de,x,bb.width,gx,{$xb},{$xa})";
+      $text_format_y = "window[fny](de,bb.height-y,bb.height,gy,{$yb},{$ya})";
+
       if(!$this->crosshairs_show_h)
-        $text_format = "{$xb}x1.toFixed(xp){$xa}";
+        $text_format = $text_format_x;
       elseif(!$this->crosshairs_show_v)
-        $text_format = "{$yb}y1.toFixed(yp){$ya}";
+        $text_format = $text_format_y;
+      else
+        $text_format = "{$text_format_x} + ', ' + {$text_format_y}";
+
       $font_size = max(3, (int)$this->crosshairs_text_font_size);
       $pad = max(0, (int)$this->crosshairs_text_padding);
       $space = max(0, (int)$this->crosshairs_text_space);
@@ -561,8 +730,9 @@ JAVASCRIPT;
       $fn = <<<JAVASCRIPT
 function showCoords(de,x,y,bb,on) {
   var gx = getData(de, 'gridx'), gy = getData(de, 'gridy'),
-    textList = getData(de,'chtext'), group, i, x1, y1, xz, yz, xp, yp,
-    textNode, rect, tbb, ti, ds, ybase, xbase, lgmin, lgmax, lgmul;
+    textList = getData(de,'chtext'), group, i, x1, y1,
+    fnx = gx.getAttributeNS(null, 'function'),
+    fny = gy.getAttributeNS(null, 'function'), textNode, rect, tbb, ti, ds;
   for(i = 0; i < textList.childNodes.length; ++i) {
     if(textList.childNodes[i].nodeName == 'svggraph:chtextitem') {
       ti = textList.childNodes[i];
@@ -572,28 +742,6 @@ function showCoords(de,x,y,bb,on) {
         rect = group.querySelector('rect');
         while(textNode.childNodes.length > 0)
           textNode.removeChild(textNode.childNodes[0]);
-        xz = gx.getAttributeNS(null, 'zero');
-        yz = gy.getAttributeNS(null, 'zero');
-        xp = gx.getAttributeNS(null, 'precision');
-        yp = gy.getAttributeNS(null, 'precision');
-        xbase = gx.getAttributeNS(null, 'base');
-        ybase = gy.getAttributeNS(null, 'base');
-        if(xbase) {
-          lgmin = Math.log(xz)/Math.log(xbase);
-          lgmax = Math.log(gx.getAttributeNS(null, 'scale'))/Math.log(xbase);
-          lgmul = bb.width / (lgmax - lgmin);
-          x1 = Math.pow(xbase, lgmin*1 + x / lgmul);
-        } else {
-          x1 = (x - xz) / gx.getAttributeNS(null, 'scale');
-        }
-        if(ybase) {
-          lgmin = Math.log(yz)/Math.log(ybase);
-          lgmax = Math.log(gy.getAttributeNS(null, 'scale'))/Math.log(ybase);
-          lgmul = bb.height / (lgmax - lgmin);
-          y1 = Math.pow(ybase, lgmin*1 + (bb.height - y) / lgmul);
-        } else {
-          y1 = (bb.height - y - yz) / gy.getAttributeNS(null, 'scale');
-        }
         textNode.appendChild(newtext({$text_format}));
         setattr(textNode, 'y', 0 + 'px');
         tbb = textNode.getBBox();
@@ -777,7 +925,7 @@ JAVASCRIPT;
       throw new Exception("Unknown function '$name'");
     }
 
-    $this->InsertFunction($name, $fn);
+    $this->InsertFunction($realname, $fn);
   }
 
   /**

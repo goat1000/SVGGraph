@@ -273,6 +273,26 @@ class Axis {
   }
 
   /**
+   * Returns the position of an associative key, if possible
+   */
+  public function PositionByKey($key)
+  {
+    if($this->values && $this->values->AssociativeKeys()) {
+
+      // only need to look through dataset 0 because multi-dataset graphs
+      // convert to structured
+      $index = 0;
+      foreach($this->values[0] as $item) {
+        if($item->key == $key) {
+          return $this->Zero() + ($index * $this->Unit());
+        }
+        ++$index;
+      }
+    }
+    return NULL;
+  }
+
+  /**
    * Returns the position of the origin
    */
   public function Origin()
