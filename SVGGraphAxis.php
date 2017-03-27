@@ -341,6 +341,9 @@ class Axis {
 
     // if there is a callback, use it
     if(is_callable($this->label_callback)) {
+      // assoc keys should have integer indices
+      if($this->values && $this->values->AssociativeKeys())
+        $value = (int)round($value);
       $text = call_user_func($this->label_callback, $value, $key);
     } else {
       if($key !== $value)
