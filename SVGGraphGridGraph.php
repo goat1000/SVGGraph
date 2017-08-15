@@ -583,7 +583,11 @@ abstract class GridGraph extends Graph {
       if($this->datetime_keys) {
         // 0 is 1970-01-01, not a useful minimum
         if(empty($fixed_max)) {
-          $k_max[] = $this->GetAxisMaxKey($i);
+          // guidelines support datetime values too
+          if(!is_null($this->max_guide['x']))
+            $k_max[] = max($this->GetAxisMaxKey($i), $this->max_guide['x']);
+          else
+            $k_max[] = $this->GetAxisMaxKey($i);
         } else {
           $d = SVGGraphDateConvert($fixed_max);
           // subtract a se
@@ -593,7 +597,10 @@ abstract class GridGraph extends Graph {
             throw new Exception("Could not convert [{$fixed_max}] to datetime");
         }
         if(empty($fixed_min)) {
-          $k_min[] = $this->GetAxisMinKey($i);
+          if(!is_null($this->min_guide['x']))
+            $k_min[] = min($this->GetAxisMinKey($i), $this->min_guide['x']);
+          else
+            $k_min[] = $this->GetAxisMinKey($i);
         } else {
           $d = SVGGraphDateConvert($fixed_min);
           if(!is_null($d))
@@ -2005,6 +2012,15 @@ XML;
 
     $value = $g[0];
     $axis = (isset($g[2]) && ($g[2] == 'x' || $g[2] == 'y')) ? $g[2] : 'y';
+    if($axis == 'x') {
+      if($this->datetime_keys) {
+        // $value is a datetime string, so convert it
+        $value = SVGGraphDateConvert($value);
+      } else if($this->values->AssociativeKeys()) {
+        // $value is a key - must be converted later when the axis
+        // has been created
+      }
+    }
     $above = isset($g['above']) ? $g['above'] : $this->guideline_above;
     $position = $above ? SVGG_GUIDELINE_ABOVE : SVGG_GUIDELINE_BELOW;
     $guideline = array(
@@ -2195,7 +2211,11 @@ XML;
   protected function GuidelinePath($axis, $value, $depth, &$x, &$y, &$w, &$h)
   {
     if($axis == 'x') {
-      $x = $this->GridX($value);
+      if($this->values->AssociativeKeys() && !$this->flip_axes) {
+        $x = $this->pad_left + $this->x_axes[$this->main_x_axis]->PositionByKey($value);
+      } else {
+        $x = $this->GridX($value);
+      }
       $y = $this->height - $this->pad_bottom - $this->g_height;
       $w = 0;
       if($h == 0) {
@@ -2208,7 +2228,12 @@ XML;
       return "M$x {$y}v$h";
     } else {
       $x = $this->pad_left;
-      $y = $this->GridY($value);
+      if($this->values->AssociativeKeys() && $this->flip_axes) {
+        $y = $this->height - $this->pad_bottom -
+          $this->y_axes[$this->main_y_axis]->PositionByKey($value);
+      } else {
+        $y = $this->GridY($value);
+      }
       if($w == 0) {
         $w = $this->g_width;
       } elseif($w < 0) {
