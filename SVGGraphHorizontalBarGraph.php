@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2016 Graham Breach
+ * Copyright (C) 2011-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,13 +42,14 @@ class HorizontalBarGraph extends GridGraph {
     $bar_height = $this->BarHeight();
     $bspace = max(0, ($this->y_axes[$this->main_y_axis]->Unit() - $bar_height) / 2);
     $this->ColourSetup($this->values->ItemsCount());
+    $always_draw = $this->legend_show_empty || $this->show_data_labels;
 
     $bnum = 0;
     $series = '';
     foreach($this->values[0] as $item) {
       $bar = array('height' => $bar_height);
       $bar_pos = $this->GridPosition($item, $bnum);
-      if($this->legend_show_empty || $item->value != 0) {
+      if($always_draw || $item->value != 0) {
         $bar_style = array('fill' => $this->GetColour($item, $bnum));
         $this->SetStroke($bar_style, $item);
         $this->SetLegendEntry(0, $bnum, $item, $bar_style);
@@ -58,7 +59,7 @@ class HorizontalBarGraph extends GridGraph {
         $bar['y'] = $bar_pos - $bspace - $bar_height;
         $this->Bar($item->value, $bar);
 
-        if($bar['width'] > 0) {
+        if($always_draw || $bar['width'] > 0) {
           $show_label = $this->AddDataLabel(0, $bnum, $bar, $item,
             $bar['x'], $bar['y'], $bar['width'], $bar['height']);
           if($this->show_tooltips)

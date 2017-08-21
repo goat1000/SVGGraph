@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -49,7 +49,7 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
         $value = $end - $start;
         $this->Bar($value, $bar, $start);
 
-        if($bar['width'] > 0) {
+        if($bar['width'] > 0 || $this->show_data_labels) {
           $bar_style = array('fill' => $this->GetColour($item, $bnum));
           $this->SetStroke($bar_style, $item);
           $this->SetLegendEntry(0, $bnum, $item, $bar_style);

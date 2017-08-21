@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2016 Graham Breach
+ * Copyright (C) 2011-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,7 +78,7 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
             else
               $xpos += $item->value;
 
-            if($bar['width'] > 0) {
+            if($bar['width'] > 0 || $this->show_data_labels) {
               $show_label = $this->AddDataLabel($j, $bnum, $bar, $item,
                 $bar['x'], $bar['y'], $bar['width'], $bar['height']);
               if($this->show_tooltips)

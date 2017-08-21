@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015 Graham Breach
+ * Copyright (C) 2015-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -554,6 +554,10 @@ class DataLabels {
         break;
       case 'troughs' :
         if(in_array($index, $this->trough_indices[$dataset], true))
+          $show = true;
+        break;
+      case 'nonzero' :
+        if($item->value != 0)
           $show = true;
         break;
       default :
