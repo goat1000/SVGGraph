@@ -128,8 +128,8 @@ class BarAndLineGraph extends GroupedBarGraph {
                 $bars .= $this->GetLink($item, $k, $rect);
                 unset($bar['id']); // clear for next generated value
               }
-              ++$b;
             }
+            ++$b;
             $this->SetLegendEntry($j, $bnum, $item, $bar_style);
           }
         }
