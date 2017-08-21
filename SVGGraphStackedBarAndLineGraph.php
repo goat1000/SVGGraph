@@ -26,6 +26,7 @@ require_once 'SVGGraphLineGraph.php';
 class StackedBarAndLineGraph extends StackedBarGraph {
 
   protected $linegraph = null;
+  protected $single_axis = false;
 
   /**
    * We need an instance of the LineGraph class
@@ -37,6 +38,21 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     // prevent repeated labels
     unset($settings['label']);
     $this->linegraph = new LineGraph($w, $h, $settings);
+
+    // validate second axis datasets are only lines
+    if(isset($settings['dataset_axis'])) {
+      $lines = is_array($settings['line_dataset']) ? $settings['line_dataset'] :
+        array($settings['line_dataset']);
+
+      $line_map = array();
+      foreach($lines as $line)
+        $line_map[$line] = 1;
+      foreach($settings['dataset_axis'] as $dataset => $axis) {
+        if($axis == 1 && !isset($line_map[$dataset])) {
+          throw new Exception('Bar datasets must use axis 0');
+        }
+      }
+    }
   }
 
   protected function Draw()
@@ -197,23 +213,23 @@ class StackedBarAndLineGraph extends StackedBarGraph {
   }
 
   /**
-   * Returns the maximum value of the stack / lines
+   * Returns the minimum value for an axis
    */
-  protected function GetMaxValue()
+  protected function GetAxisMinValue($axis)
   {
-    if(is_null($this->max_value))
+    if(is_null($this->min_values))
       $this->CalcMinMaxValues();
-    return $this->max_value;
+    return isset($this->min_values[$axis]) ? $this->min_values[$axis] : NULL;
   }
 
   /**
-   * Returns the minimum value of the stack / lines
+   * Returns the maximum value for an axis
    */
-  protected function GetMinValue()
+  protected function GetAxisMaxValue($axis)
   {
-    if(is_null($this->min_value))
+    if(is_null($this->max_values))
       $this->CalcMinMaxValues();
-    return $this->min_value;
+    return isset($this->max_values[$axis]) ? $this->max_values[$axis] : NULL;
   }
 
   /**
@@ -227,9 +243,9 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     sort($lines);
     $lines = array_flip($lines);
 
-    $line_max = NULL;
+    $axis_max = array(NULL, NULL);
+    $axis_min = array(NULL, NULL);
     $stack_max = NULL;
-    $line_min = NULL;
     $stack_min = NULL;
     $datasets = count($this->multi_graph);
 
@@ -243,11 +259,12 @@ class StackedBarAndLineGraph extends StackedBarGraph {
           continue;
 
         if(array_key_exists($j, $lines)) {
-          // for lines, just find the global min/max
-          if(is_null($line_min) || $line_min > $item->value)
-            $line_min = $item->value;
-          if(is_null($line_max) || $line_max < $item->value)
-            $line_max = $item->value;
+          // for lines  find the global min/max for each axis
+          $axis = $this->DatasetYAxis($j);
+          if(is_null($axis_min[$axis]) || $axis_min[$axis] > $item->value)
+            $axis_min[$axis] = $item->value;
+          if(is_null($axis_max[$axis]) || $axis_max[$axis] < $item->value)
+            $axis_max[$axis] = $item->value;
         } else {
 
           // for bars need to find min and max stack sizes, using positive
@@ -258,29 +275,26 @@ class StackedBarAndLineGraph extends StackedBarGraph {
             $stack_pos += $item->value;
         }
       }
-      if($stack_neg) {
-        if(is_null($stack_min) || $stack_neg < $stack_min)
-          $stack_min = $stack_neg;
-        if(is_null($stack_max) || $stack_neg > $stack_max)
-          $stack_max = $stack_neg;
-      }
-      if($stack_pos) {
-        if(is_null($stack_min) || $stack_pos < $stack_min)
-          $stack_min = $stack_pos;
-        if(is_null($stack_max) || $stack_pos > $stack_max)
-          $stack_max = $stack_pos;
-      }
+
+      if(is_null($stack_min) || $stack_neg < $stack_min)
+        $stack_min = $stack_neg;
+      if(is_null($stack_max) || $stack_neg > $stack_max)
+        $stack_max = $stack_neg;
+
+      if(is_null($stack_min) || $stack_pos < $stack_min)
+        $stack_min = $stack_pos;
+      if(is_null($stack_max) || $stack_pos > $stack_max)
+        $stack_max = $stack_pos;
     }
 
-    if(is_null($line_min) || $stack_min < $line_min)
-      $this->min_value = $stack_min;
-    else
-      $this->min_value = $line_min;
+    if(is_null($axis_min[0]) || $stack_min < $axis_min[0])
+      $axis_min[0] = $stack_min;
 
-    if(is_null($line_max) || $stack_max > $line_max)
-      $this->max_value = $stack_max;
-    else
-      $this->max_value = $line_max;
+    if(is_null($axis_max[0]) || $stack_max > $axis_max[0])
+      $axis_max[0] = $stack_max;
+
+    $this->min_values = $axis_min;
+    $this->max_values = $axis_max;
   }
 
 }
