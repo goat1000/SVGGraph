@@ -1,3 +1,12 @@
+Version 2.24.1 (21/08/2017)
+--------------
+- Added stacked bar and line graph.
+- 0 values are now labelled on bar graphs.
+- Added "nonzero" data label filter to disable showing 0 value labels.
+- Added support for associative and datetime keys in X-axis guidelines.
+- Fixed axis text callback passing floating point values instead of integers
+  for array keys.
+
 Version 2.24 (31/01/2017)
 ------------
 - Added semi-donut graph.
