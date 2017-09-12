@@ -789,7 +789,8 @@ abstract class Graph {
         if($line == '')
           $line = ' ';
 
-        $content .= $this->Element('tspan', $tspan, NULL, $line);
+        // trim because spaces in text are significant
+        $content .= trim($this->Element('tspan', $tspan, NULL, $line));
         $tspan['dy'] = $line_spacing;
       }
     }
