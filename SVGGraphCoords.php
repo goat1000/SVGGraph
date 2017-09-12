@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2016 Graham Breach
+ * Copyright (C) 2015-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,10 +39,10 @@ class SVGGraphCoords {
   {
     if(is_numeric($x) && is_numeric($y))
       return false;
-    $first = substr($x, 0, 1);
+    $first = strtolower(substr($x, 0, 1));
     if($first == 'g')
       return true;
-    $first = substr($y, 0, 1);
+    $first = strtolower(substr($y, 0, 1));
     if($first == 'g')
       return true;
     return false;
@@ -53,10 +53,10 @@ class SVGGraphCoords {
    */
   private function ValueAxis(&$value, &$axis, &$axis_no)
   {
-    if(preg_match('/^[ug](.*?)(([xy])(\d?))?$/', $value, $matches)) {
+    if(preg_match('/^[ug](.*?)(([xy])(\d?))?$/i', $value, $matches)) {
       $value = $matches[1];
       if(count($matches) == 5) {
-        $axis = $matches[3];
+        $axis = strtolower($matches[3]);
         $axis_no = is_numeric($matches[4]) ? $matches[4] : NULL;
       }
       return;
@@ -80,12 +80,11 @@ class SVGGraphCoords {
   /**
    * Transform from grid space etc. to SVG space
    */
-  public function Transform($value, $axis)
+  public function Transform($value, $axis, $default_pos = 0)
   {
     if(is_numeric($value))
       return $value;
-    $value = strtolower($value);
-    $first = substr($value, 0, 1);
+    $first = strtolower(substr($value, 0, 1));
     $grid = false;
 
     if($first == 'u' || $first == 'g') {
@@ -121,7 +120,7 @@ class SVGGraphCoords {
       }
     }
 
-    $trans = 0;
+    $trans = $default_pos;
     if(is_numeric($value)) {
       if($grid) {
         $trans = $axis == 'x' ? $this->graph->GridX($value, $axis_no) :
