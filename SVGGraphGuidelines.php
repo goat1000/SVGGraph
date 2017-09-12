@@ -352,7 +352,7 @@ class Guidelines {
         $y = $this->coords->Transform("gb", 'y') - $h;
       return "M$x {$y}v$h";
     } else {
-      $x = $this->coords->Transform("g0", 'x');
+      $x = $this->coords->Transform("gl", 'x');
       $y = $this->coords->Transform("g{$value}", 'y', NULL);
       if(is_null($y))
         return '';
