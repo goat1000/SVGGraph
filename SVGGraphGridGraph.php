@@ -1628,13 +1628,13 @@ abstract class GridGraph extends Graph {
         $base_x = " base=\"{$this->log_axis_y_base}\"";
         $zero_x = $x_axis->Value(0);
         $scale_x = $x_axis->Value($this->g_width);
-        $this->AddFunction('logStrValueX');
+        $this->javascript->AddFunction('logStrValueX');
         $function_x = 'logStrValueX';
       } else {
         $base_y = " base=\"{$this->log_axis_y_base}\"";
         $zero_y = $y_axis->Value(0);
         $scale_y = $y_axis->Value($this->g_height);
-        $this->AddFunction('logStrValueY');
+        $this->javascript->AddFunction('logStrValueY');
         $function_y = 'logStrValueY';
       }
     }
@@ -1648,7 +1648,7 @@ abstract class GridGraph extends Graph {
         $scale_y = ($ey - $zy) / $this->g_height;
         $dt = new DateTime('@' . $zy);
         $zero_y = $dt->Format('c');
-        $this->AddFunction('dateStrValueY');
+        $this->javascript->AddFunction('dateStrValueY');
         $function_y = 'dateStrValueY';
         $extra_y = ' format="' .
           htmlspecialchars($y_axis->GetFormat(), ENT_COMPAT,
@@ -1659,7 +1659,7 @@ abstract class GridGraph extends Graph {
         $scale_x = ($ex - $zx) / $this->g_width;
         $dt = new DateTime('@' . $zx);
         $zero_x = $dt->Format('c');
-        $this->AddFunction('dateStrValueX');
+        $this->javascript->AddFunction('dateStrValueX');
         $function_x = 'dateStrValueX';
         $extra_x = ' format="' .
           htmlspecialchars($x_axis->GetFormat(), ENT_COMPAT,
@@ -1684,15 +1684,15 @@ abstract class GridGraph extends Graph {
       $round_function = 'kround';
       if($this->label_centre)
         $round_function = 'kroundDown';
-      $this->AddFunction($round_function);
+      $this->javascript->AddFunction($round_function);
 
       // set the string function
       if($this->flip_axes) {
-        $this->AddFunction('keyStrValueY');
+        $this->javascript->AddFunction('keyStrValueY');
         $function_y = 'keyStrValueY';
         $extra_y = " round=\"{$round_function}\"";
       } else {
-        $this->AddFunction('keyStrValueX');
+        $this->javascript->AddFunction('keyStrValueX');
         $function_x = 'keyStrValueX';
         $extra_x = " round=\"{$round_function}\"";
       }
@@ -1711,7 +1711,7 @@ XML;
     $this->defs[] = $defs;
 
     // add the main function at the end - it can fill in any defaults
-    $this->AddFunction('crosshairs');
+    $this->javascript->AddFunction('crosshairs');
     return $crosshairs;
   }
 

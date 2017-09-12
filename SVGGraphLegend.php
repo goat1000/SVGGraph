@@ -278,9 +278,9 @@ class SVGGraphLegend {
     }
 
     if($this->legend_autohide)
-      $this->graph->AutoHide($group);
+      $this->graph->javascript->AutoHide($group);
     if($this->legend_draggable)
-      $this->graph->SetDraggable($group);
+      $this->graph->javascript->SetDraggable($group);
     return $this->graph->Element('g', $group, NULL, $rect . $title . $parts);
   }
 

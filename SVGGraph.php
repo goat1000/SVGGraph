@@ -269,6 +269,14 @@ abstract class Graph {
    */
   public function __get($name)
   {
+    if('javascript' == $name) {
+      // $this->javascript will forward to the static Graph::$javascript
+      if(!isset(Graph::$javascript)) {
+        include_once 'SVGGraphJavascript.php';
+        Graph::$javascript = new SVGGraphJavascript($this->settings, $this);
+      }
+      return Graph::$javascript;
+    }
     $this->{$name} = isset($this->settings[$name]) ? $this->settings[$name] : null;
     return $this->{$name};
   }
@@ -1114,46 +1122,6 @@ abstract class Graph {
   }
 
   /**
-   * Loads the Javascript class
-   */
-  private function LoadJavascript()
-  {
-    if(!isset(Graph::$javascript)) {
-      include_once 'SVGGraphJavascript.php';
-      Graph::$javascript = new SVGGraphJavascript($this->settings, $this);
-    }
-  }
-
-  /**
-   * Adds a javascript function
-   */
-  protected function AddFunction($name, $realname = NULL)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->AddFunction($name, $realname);
-  }
-
-  /**
-   * Adds a Javascript variable
-   * - use $value:$more for assoc
-   * - use null:$more for array
-   */
-  public function InsertVariable($var, $value, $more = NULL, $quote = TRUE)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->InsertVariable($var, $value, $more, $quote);
-  }
-
-  /**
-   * Insert a comment into the Javascript section - handy for debugging!
-   */
-  public function InsertComment($details)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->InsertComment($details);
-  }
-
-  /**
    * Adds a pattern, returning the element ID
    */
   public function AddPattern($pattern)
@@ -1254,34 +1222,6 @@ abstract class Graph {
   }
 
   /**
-   * Adds an inline event handler to an element's array
-   */
-  protected function AddEventHandler(&$array, $evt, $code)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->AddEventHandler($array, $evt, $code);
-  }
-
-  /**
-   * Makes an item draggable
-   */
-  public function SetDraggable(&$element)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->SetDraggable($element);
-  }
-
-  /**
-   * Makes something auto-hide
-   */
-  public function AutoHide(&$element)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->AutoHide($element);
-  }
-
-
-  /**
    * Default tooltip contents are key and value, or whatever
    * $key is if $value is not set
    */
@@ -1301,7 +1241,7 @@ abstract class Graph {
     if(is_null($text))
       return;
     $text = addslashes(str_replace("\n", '\n', $text));
-    Graph::$javascript->SetTooltip($element, $text, $duplicate);
+    return $this->javascript->SetTooltip($element, $text, $duplicate);
   }
 
   /**
@@ -1311,48 +1251,6 @@ abstract class Graph {
   {
     return $this->units_before_tooltip . Graph::NumString($value) .
       $this->units_tooltip;
-  }
-
-
-  /**
-   * Sets the fader for an element
-   * @param array &$element Element that should cause fading
-   * @param number $in Fade in speed
-   * @param number $out Fade out speed
-   * @param string $id ID of element to be faded
-   * @param bool $duplicate TRUE to create transparent overlay
-   */
-  protected function SetFader(&$element, $in, $out, $target = NULL,
-    $duplicate = FALSE)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->SetFader($element, $in, $out, $target, $duplicate);
-  }
-
-  /**
-   * Sets click visibility for $target when $element is clicked
-   */
-  protected function SetClickShow(&$element, $target, $hidden,
-    $duplicate = FALSE)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->SetClickShow($element, $target, $hidden, $duplicate);
-  }
-
-  public function SetPopFront(&$element, $target, $duplicate = FALSE)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->SetPopFront($element, $target, $duplicate);
-  }
-
-  /**
-   * Add an overlaid copy of an element, with opacity of 0
-   * $from and $to are the IDs of the source and destination
-   */
-  protected function AddOverlay($from, $to)
-  {
-    $this->LoadJavascript();
-    Graph::$javascript->AddOverlay($from, $to);
   }
 
   /**
@@ -1376,20 +1274,21 @@ abstract class Graph {
     $popup = $this->ArrayOption($this->data_label_popfront, $dataset);
     if($click == 'hide' || $click == 'show') {
       $id = $this->NewID();
-      $this->SetClickShow($element, $id, $click == 'hide',
+      $this->javascript->SetClickShow($element, $id, $click == 'hide',
         $duplicate && !$this->compat_events);
     }
     if($popup) {
       if(!$id)
         $id = $this->NewID();
-      $this->SetPopFront($element, $id, $duplicate && !$this->compat_events);
+      $this->javascript->SetPopFront($element, $id,
+        $duplicate && !$this->compat_events);
     }
     if($fade_in || $fade_out) {
       $speed_in = $fade_in ? $fade_in / 100 : 0;
       $speed_out = $fade_out ? $fade_out / 100 : 0;
       if(!$id)
         $id = $this->NewID();
-      $this->SetFader($element, $speed_in, $speed_out, $id,
+      $this->javascript->SetFader($element, $speed_in, $speed_out, $id,
         $duplicate && !$this->compat_events);
     }
     $this->data_labels->AddLabel($dataset, $index, $item, $x, $y, $w, $h, $id,
@@ -1534,9 +1433,6 @@ abstract class Graph {
   private function BuildGraph()
   {
     $this->CheckValues($this->values);
-
-    if($this->show_tooltips)
-      $this->LoadJavascript();
 
     // body content comes from the subclass
     return $this->DrawGraph();
