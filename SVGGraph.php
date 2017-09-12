@@ -798,28 +798,32 @@ abstract class Graph {
 
   /**
    * Returns [width,height] of text 
-   * $text = string OR text length
    */
   public static function TextSize($text, $font_size, $font_adjust, $encoding,
     $angle = 0, $line_spacing = 0)
   {
     $height = $font_size;
-    if(is_int($text)) {
-      $len = $text;
+    if(!is_string($text)) {
+      if(is_numeric($text))
+        $text = Graph::NumString($text);
+      else
+        $text = (string)$text;
     } else {
       // replace all entities with an underscore (just for measurement)
       $text = preg_replace('/&[^;]+;/', '_', $text);
-      if($line_spacing > 0) {
-        $len = 0;
-        $lines = explode("\n", $text);
-        foreach($lines as $l)
-          if(SVGGraphStrlen($l, $encoding) > $len)
-            $len = SVGGraphStrlen($l, $encoding);
-        $height += $line_spacing * (count($lines) - 1);
-      } else {
-        $len = SVGGraphStrlen($text, $encoding);
-      }
     }
+
+    if($line_spacing > 0) {
+      $len = 0;
+      $lines = explode("\n", $text);
+      foreach($lines as $l)
+        if(SVGGraphStrlen($l, $encoding) > $len)
+          $len = SVGGraphStrlen($l, $encoding);
+      $height += $line_spacing * (count($lines) - 1);
+    } else {
+      $len = SVGGraphStrlen($text, $encoding);
+    }
+
     $width = $len * $font_size * $font_adjust;
     if($angle % 180 != 0) {
       if($angle % 90 == 0) {
