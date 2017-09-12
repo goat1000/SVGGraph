@@ -1103,10 +1103,7 @@ abstract class GridGraph extends Graph {
     $text_space = $this->GetFirst(
       $this->ArrayOption($this->axis_text_space_v, $axis_no),
       $this->axis_text_space);
-    $text_centre = $font_size * 0.3;
     $label_centre_y = $this->label_centre && $this->flip_axes;
-    $x_rotate_offset = $inside ? $text_centre : -$text_centre;
-    $y_rotate_offset = -$text_centre;
     $x = $xoff + $text_space;
     if(!$inside)
       $x = -$x;
@@ -1125,17 +1122,27 @@ abstract class GridGraph extends Graph {
         $key = '';
 
       if(SVGGraphStrlen($key, $this->encoding) && (++$p < $count || !$label_centre_y)) {
+        // get unrotated width and height first
+        list($t_width, $t_height) = $this->TextSize($key, $font_size,
+          $font_adjust, $this->encoding, 0, $font_size);
+        $text_centre = $font_size * 0.8 - $t_height * 0.5;
         $position['y'] = $y + $text_centre + $yoff;
+
         if($angle != 0) {
-          $rcx = $position['x'] + $x_rotate_offset;
-          $rcy = $position['y'] + $y_rotate_offset;
+          list($tr_width, $tr_height) = $this->TextSize($key, $font_size,
+            $font_adjust, $this->encoding, $angle, $font_size);
+
+          // axes of rotation are Y position and half height away from
+          // start/end of text
+          $rcx = $position['x'] + $t_height * ($inside ? 0.5 : -0.5);
+          $rcy = $y + $yoff;
           $position['transform'] = compact('angle', 'rcx', 'rcy');
+          $t_width = $tr_width;
+          $t_height = $tr_height;
         }
-        $size = $this->TextSize((string)$key, $font_size, $font_adjust, 
-          $this->encoding, $angle, $font_size);
         $position['text'] = $key;
-        $position['w'] = $size[0];
-        $position['h'] = $size[1];
+        $position['w'] = $t_width;
+        $position['h'] = $t_height;
         $positions[] = $position;
       }
       $y_prev = $y;
