@@ -653,6 +653,15 @@ abstract class PointGraph extends GridGraph {
       $this->units_tooltip;
     return $text;
   }
+
+  /**
+   * Returns TRUE if the item is visible on the graph
+   */
+  public function IsVisible($item, $dataset = 0)
+  {
+    // non-null values should be visible
+    return !is_null($item->value);
+  }
 }
 
 class Marker {

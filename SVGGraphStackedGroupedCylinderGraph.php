@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2016 Graham Breach
+ * Copyright (C) 2015-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -116,6 +116,9 @@ class StackedGroupedCylinderGraph extends StackedCylinderGraph {
               // set up legend
               $cstyle = array('fill' => $this->GetColour($item, $bnum, $j));
               $this->SetStroke($cstyle, $item, $j);
+
+              // store whether the bar can be seen or not
+              $this->bar_visibility[$j][$item->key] = ($t || $item->value != 0);
               $this->SetLegendEntry($j, $bnum, $item, $cstyle);
             }
           }

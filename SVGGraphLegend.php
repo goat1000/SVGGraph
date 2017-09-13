@@ -63,7 +63,7 @@ class SVGGraphLegend {
   public function SetEntry($dataset, $index, $item, $style_info)
   {
     // ignore entry if empty and legend_show_empty not enabled
-    if(!$item->value && !$this->show_empty)
+    if(!$this->show_empty && !$this->graph->IsVisible($item, $dataset))
       return;
 
     // find the text first

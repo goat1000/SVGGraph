@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +26,7 @@ class StackedCylinderGraph extends CylinderGraph {
 
   protected $legend_reverse = true;
   protected $single_axis = true;
+  protected $bar_visibility = array();
 
   protected function Draw()
   {
@@ -104,6 +105,9 @@ class StackedCylinderGraph extends CylinderGraph {
           // set up legend
           $cstyle = array('fill' => $this->GetColour($item, $bnum, $j));
           $this->SetStroke($cstyle, $item, $j);
+
+          // store whether the bar can be seen or not
+          $this->bar_visibility[$j][$item->key] = ($t || $value != 0);
           $this->SetLegendEntry($j, $bnum, $item, $cstyle);
         }
       }
@@ -143,6 +147,14 @@ class StackedCylinderGraph extends CylinderGraph {
   protected function GetMinValue()
   {
     return $this->multi_graph->GetMinSumValue();
+  }
+
+  /**
+   * Returns TRUE if the item is visible on the graph
+   */
+  public function IsVisible($item, $dataset = 0)
+  {
+    return $this->bar_visibility[$dataset][$item->key];
   }
 }
 

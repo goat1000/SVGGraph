@@ -256,5 +256,14 @@ abstract class ThreeDGraph extends GridGraph {
     return "M{$x} {$y}l{$w} {$h}M{$x1} {$y1} l{$xd} {$yd}";
   }
 
+  /**
+   * Returns TRUE if the item is visible on the graph
+   */
+  public function IsVisible($item, $dataset = 0)
+  {
+    // 0 values are visible, NULLs are not
+    return !is_null($item->value);
+  }
+
 }
 

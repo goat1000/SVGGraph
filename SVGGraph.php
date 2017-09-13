@@ -982,6 +982,15 @@ abstract class Graph {
   }
 
   /**
+   * Returns TRUE if the item is visible on the graph
+   */
+  public function IsVisible($item, $dataset = 0)
+  {
+    // default implementation is for all non-zero values to be visible
+    return ($item->value != 0);
+  }
+
+  /**
    * Sets up the colour class
    */
   protected function ColourSetup($count, $datasets = NULL)
