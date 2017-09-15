@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2016 Graham Breach
+ * Copyright (C) 2014-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,7 +40,7 @@ class DonutGraph extends PieGraph {
     $rx1 = $radius_x * $ratio;
     $ry1 = $radius_y * $ratio;
 
-    if($single_slice) {
+    if($single_slice && $this->full_angle >= M_PI * 2.0) {
       $x1_start = $xc + $rx1;
       $x1_end = $xc - $rx1;
       $y1_start = $y1_end = $yc;

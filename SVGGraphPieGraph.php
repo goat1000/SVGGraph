@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2016 Graham Breach
+ * Copyright (C) 2009-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -267,7 +267,7 @@ class PieGraph extends Graph {
     $angle_end += $this->s_angle;
     $this->CalcSlice($angle_start, $angle_end, $radius_x, $radius_y,
       $x_start, $y_start, $x_end, $y_end);
-    if($single_slice) {
+    if($single_slice && $this->full_angle >= M_PI * 2.0) {
       $attr['cx'] = $this->x_centre;
       $attr['cy'] = $this->y_centre;
       $attr['rx'] = $radius_x;
