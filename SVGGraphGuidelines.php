@@ -274,8 +274,18 @@ class Guidelines {
         $w = "u{$length_units}";
     }
 
-    $path_data = $this->GuidelinePath($line['axis'], $line['value'],
-      $line['depth'], $x, $y, $w, $h, $reverse_length);
+    // if the graph class has a custom path method, use it
+    // - its signature is the same as GuidelinePath but without $depth
+    $custom_method = ($line['depth'] == SVGG_GUIDELINE_ABOVE ?
+      'GuidelinePathAbove' : 'GuidelinePathBelow');
+
+    if(method_exists($this->graph, $custom_method)) {
+      $path_data = $this->graph->{$custom_method}($line['axis'], $line['value'],
+        $x, $y, $w, $h, $reverse_length);
+    } else {
+      $path_data = $this->GuidelinePath($line['axis'], $line['value'],
+        $line['depth'], $x, $y, $w, $h, $reverse_length);
+    }
     if($path_data == '')
       return;
 

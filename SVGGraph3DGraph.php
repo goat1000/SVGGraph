@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2016 Graham Breach
+ * Copyright (C) 2009-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -214,45 +214,52 @@ abstract class ThreeDGraph extends GridGraph {
   /**
    * Returns the path for a guideline, and sets dimensions of the straight bit
    */
-  protected function GuidelinePath($axis, $value, $depth, &$x, &$y, &$w, &$h)
+  public function GuidelinePathBelow($axis, $value, &$x, &$y, &$w, &$h,
+    $reverse_length)
   {
-    if($depth == SVGG_GUIDELINE_ABOVE)
-      return parent::GuidelinePath($axis, $value, $depth, $x, $y, $w, $h);
-
-    $y_axis_pos = $this->height - $this->pad_bottom -
-      $this->y_axes[$this->main_y_axis]->Zero();
-    $x_axis_pos = $this->pad_left + $this->x_axes[$this->main_x_axis]->Zero();
-    $z = $this->depth * $this->depth_unit;
-    list($xd,$yd) = $this->Project(0, 0, $z);
+    $coords = new SVGGraphCoords($this);
 
     if($axis == 'x') {
-      $x1 = $x_axis_pos + ($value * $this->x_axes[$this->main_x_axis]->Unit());
-      $y1 = $y_axis_pos;
-      $x = $xd + $x1;
-      $y = $this->pad_top;
-      $w = 0;
-      if($h == 0) {
-        $h = $this->g_height;
-      } elseif($h < 0) {
-        $h = -$h;
-        return "M$x {$y}v$h";
+      $y = $coords->Transform("gt", 'y');
+      $x = $coords->Transform("g{$value}", 'x', NULL);
+      if(is_null($x))
+        return '';
+
+      if(is_string($h) || $h > 0) {
+        $h = $coords->Transform("{$h}", 'y');
       } else {
-        $y = $this->height - $this->pad_bottom + $yd - $h;
+        $h = $coords->Transform("gh", 'y');
       }
+      if(!$reverse_length)
+        $y = $coords->Transform("gb", 'y') - $h;
+
     } else {
-      $x1 = $x_axis_pos;
-      $y1 = $y_axis_pos - ($value * $this->y_axes[$this->main_y_axis]->Unit());
-      $x = $this->pad_left + $xd;
-      $y = $yd + $y1;
-      $h = 0;
-      if($w == 0) {
-        $w = $this->g_width;
-      } elseif($w < 0) {
-        $w = -$w;
-        $x = $this->pad_left + $xd + $this->g_width - $w;
-        return "M$x {$y}h$w";
+      $x = $coords->Transform("gl", 'x');
+      $y = $coords->Transform("g{$value}", 'y', NULL);
+      if(is_null($y))
+        return '';
+
+      if(is_string($w) || $w > 0) {
+        $w = $coords->Transform("{$w}", 'x');
+      } else {
+        $w = $coords->Transform('gw', 'x');
       }
+      if($reverse_length)
+        $x = $coords->Transform("gr", 'x') - $w;
+      $h = 0;
     }
+
+    // get the depth section of the path
+    $z = $this->depth * $this->depth_unit;
+    list($xd, $yd) = $this->Project(0, 0, $z);
+    $x1 = $x;
+    $y1 = $y + $h;
+    $x = $x + $xd;
+    $y = $y + $yd;
+
+    // for reverse lengths the line doesn't meet the axis
+    if($reverse_length)
+      return "M{$x} {$y}l{$w} {$h}";
     return "M{$x} {$y}l{$w} {$h}M{$x1} {$y1} l{$xd} {$yd}";
   }
 
