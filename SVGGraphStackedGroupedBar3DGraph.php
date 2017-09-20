@@ -80,13 +80,10 @@ class StackedGroupedBar3DGraph extends StackedBar3DGraph {
           $end_bar = isset($this->groups[$l + 1]) ? $this->groups[$l + 1] : $bar_count;
           $ypos = $yneg = 0;
 
-          // find greatest -/+ bar
-          $max_neg_bar = $max_pos_bar = -1;
-          for($j = $start_bar; $j < $end_bar; ++$j) {
-            if($itemlist[$j]->value > 0)
-              $max_pos_bar = $j;
-            else
-              $max_neg_bar = $j;
+          // make $end_bar the top visible bar
+          for($j = $end_bar - 1; $j > $start_bar; --$j) {
+            if(is_null($itemlist[$j]->value))
+              --$end_bar;
           }
           for($j = $start_bar; $j < $end_bar; ++$j) {
             $item = $itemlist[$j];
