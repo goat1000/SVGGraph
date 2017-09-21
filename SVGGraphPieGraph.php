@@ -330,8 +330,11 @@ class PieGraph extends Graph {
       throw new Exception('Negative value for pie chart');
 
     $sum = 0;
-    foreach($this->values[0] as $item)
+    foreach($this->values[0] as $item) {
+      if(!is_null($item->value) && !is_numeric($item->value))
+        throw new Exception('Non-numeric value');
       $sum += $item->value;
+    }
     if($sum <= 0)
       throw new Exception('Empty pie chart');
 

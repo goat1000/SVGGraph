@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2016 Graham Breach
+ * Copyright (C) 2015-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,6 +43,11 @@ class Histogram extends BarGraph {
       $min = $max = NULL;
       foreach($this->values[0] as $item) {
         if(!is_null($item->value)) {
+          if(!is_numeric($item->value)) {
+            $this->values->error = 'Non-numeric value';
+            return;
+          }
+
           if(is_null($min) || $item->value < $min)
             $min = $item->value;
           if(is_null($max) || $item->value > $max)

@@ -257,6 +257,8 @@ class StackedBarAndLineGraph extends StackedBarGraph {
         $item = $itemlist[$j];
         if(is_null($item->value))
           continue;
+        if(!is_numeric($item->value))
+          throw new Exception('Non-numeric value');
 
         if(array_key_exists($j, $lines)) {
           // for lines  find the global min/max for each axis

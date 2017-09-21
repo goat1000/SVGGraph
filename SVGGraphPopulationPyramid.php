@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -198,6 +198,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     for($i = 0; $i < $sets; ++$i) {
       $dir = $i % 2;
       foreach($this->values[$i] as $item) {
+        if(!is_null($item->value) && !is_numeric($item->value))
+          throw new Exception('Non-numeric value');
         if(isset($sums[$dir][$item->key]))
           $sums[$dir][$item->key] += $item->value;
         else
