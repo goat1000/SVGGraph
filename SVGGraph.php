@@ -1077,6 +1077,8 @@ abstract class Graph {
    */
   public static function ArrayOption($o, $i)
   {
+    if(!is_numeric($i))
+      $i = 0;
     return is_array($o) ? $o[$i % count($o)] : $o;
   }
 
@@ -1667,8 +1669,7 @@ abstract class Graph {
   public static function min(&$a)
   {
     $min = null;
-    reset($a);
-    while(list(,$v) = each($a)) {
+    foreach($a as $v) {
       if(!is_null($v) && (is_null($min) || $v < $min))
         $min = $v;
     }
