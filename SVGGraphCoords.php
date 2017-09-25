@@ -95,19 +95,16 @@ class SVGGraphCoords {
 
       if($first == 'u') {
         // value is in grid units
-        if(is_numeric($value)) {
-          return $axis == 'x' ?
-            $this->graph->UnitsX($value, $axis_no) - $this->graph->UnitsX(0, $axis_no):
-            $this->graph->UnitsY($value, $axis_no) - $this->graph->UnitsY(0, $axis_no);
-        }
-        return 0;
+        return $axis == 'x' ?
+          $this->graph->UnitsX($value, $axis_no) - $this->graph->UnitsX(0, $axis_no):
+          $this->graph->UnitsY($value, $axis_no) - $this->graph->UnitsY(0, $axis_no);
       }
 
       // value is a grid position
       $grid = true;
     }
 
-    // try value as assoc key first
+    // try value as assoc/datetime key first
     if($grid) {
       $axis_inst = $this->graph->GetAxis($axis, $axis_no);
       $position = $axis_inst->PositionByKey($value);

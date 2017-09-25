@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016 Graham Breach
+ * Copyright (C) 2016-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -405,8 +405,34 @@ class AxisDateTime extends Axis {
    */
   public function Position($index, $item = NULL)
   {
-    $value = is_null($item) ? $index : $item->key;
+    if(is_null($item)) {
+      $value = $index;
+
+      // support '10 hours' type of position
+      if(is_string($index) && strpos($index, ' ') !== FALSE) {
+        list($units, $unit_count) = AxisDateTime::ParseFixedDivisions($value,
+          $this->start, $this->end, $this->length);
+
+        // initialise with 0, not the current time/date
+        $datetime = new DateTime('@0');
+        $datetime->modify("+{$unit_count} {$units}");
+        $value = $datetime->format('U');
+      }
+    } else {
+      $value = $item->key;
+    }
     return $this->length * ($value - $this->start) / $this->duration;
+  }
+
+  /**
+   * Returns the position by key, which is a datetime string
+   */
+  public function PositionByKey($key)
+  {
+    $value = SVGGraphDateConvert($key);
+    if($value)
+      return $this->Position($value);
+    return NULL;
   }
 
   /**

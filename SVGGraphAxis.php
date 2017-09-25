@@ -269,6 +269,8 @@ class Axis {
       $value = $index;
     else
       $value = $item->key;
+    if(!is_numeric($value))
+      return NULL;
     return $this->Zero() + ($value * $this->Unit());
   }
 
