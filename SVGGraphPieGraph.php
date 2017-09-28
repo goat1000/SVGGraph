@@ -207,9 +207,15 @@ class PieGraph extends Graph {
         $angle_end, $radius_x, $radius_y);
 
       $parts = array();
-      if($this->show_label_key)
-        $parts = explode("\n", $this->GetKey($this->values->AssociativeKeys() ? 
-          $original_position : $key));
+      if($this->show_label_key) {
+        $label_key = $this->GetKey($this->values->AssociativeKeys() ?
+          $original_position : $key);
+        if($this->datetime_keys) {
+          $dt = new DateTime("@{$label_key}");
+          $label_key = $dt->Format($this->data_label_datetime_format);
+        }
+        $parts = explode("\n", $label_key);
+      }
       if($this->show_label_amount)
         $parts[] = $this->units_before_label . Graph::NumString($value) .
           $this->units_label;
