@@ -27,7 +27,7 @@ class DonutGraph extends PieGraph {
    * Override the parent to draw doughnut slice
    */
   protected function GetSlice($item, $angle_start, $angle_end, $radius_x,
-    $radius_y, &$attr, $single_slice)
+    $radius_y, &$attr, $single_slice, $colour_index)
   {
     $x_start = $y_start = $x_end = $y_end = 0;
     $angle_start += $this->s_angle;

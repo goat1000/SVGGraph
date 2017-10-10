@@ -231,8 +231,6 @@ class PieGraph extends Graph {
       }
 
       if($radius_x || $radius_y) {
-        if($this->show_tooltips)
-          $this->SetTooltip($attr, $item, 0, $key, $value, !$this->compat_events);
   
         $this->CalcSlice($angle_start, $angle_end, $radius_x, $radius_y,
           $x1, $y1, $x2, $y2);
@@ -242,9 +240,18 @@ class PieGraph extends Graph {
 
         if($this->semantic_classes)
           $attr['class'] = "series0";
-        $path = $this->GetSlice($item, $angle_start, $angle_end,
-          $radius_x, $radius_y, $attr, $single_slice);
-        $this_slice = $this->GetLink($item, $key, $path);
+
+        $this_slice = array(
+          'original_position' => $original_position,
+          'attr' => $attr,
+          'item' => $item,
+          'angle_start' => $angle_start,
+          'angle_end' => $angle_end,
+          'radius_x' => $radius_x,
+          'radius_y' => $radius_y,
+          'single_slice' => $single_slice,
+          'colour_index' => $colour_index,
+        );
         if($single_slice)
           array_unshift($slices, $this_slice);
         else
@@ -252,7 +259,7 @@ class PieGraph extends Graph {
       }
     }
 
-    $series = implode($slices);
+    $series = $this->DrawSlices($slices);
     if($this->semantic_classes)
       $series = $this->Element('g', array('class' => 'series'), NULL, $series);
     $body .= $series;
@@ -263,10 +270,32 @@ class PieGraph extends Graph {
   }
 
   /**
+   * Returns the SVG markup to draw all slices
+   */
+  protected function DrawSlices($slice_list)
+  {
+    $slices = array();
+    foreach($slice_list as $slice) {
+      $item = $slice['item'];
+
+      if($this->show_tooltips)
+        $this->SetTooltip($slice['attr'], $item, 0, $item->key, $item->value,
+          !$this->compat_events);
+      $path = $this->GetSlice($item,
+        $slice['angle_start'], $slice['angle_end'],
+        $slice['radius_x'], $slice['radius_y'],
+        $slice['attr'], $slice['single_slice'], $slice['colour_index']);
+      $this_slice = $this->GetLink($item, $item->key, $path);
+      $slices[] = $this_slice;
+    }
+    return implode($slices);
+  }
+
+  /**
    * Returns a single slice of pie
    */
-  protected function GetSlice($item, $angle_start, $angle_end, $radius_x, $radius_y,
-    &$attr, $single_slice)
+  protected function GetSlice($item, $angle_start, $angle_end,
+    $radius_x, $radius_y, &$attr, $single_slice, $colour_index)
   {
     $x_start = $y_start = $x_end = $y_end = 0;
     $angle_start += $this->s_angle;

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2017 Graham Breach
+ * Copyright (C) 2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,11 +19,13 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-require_once 'SVGGraphPieGraph.php';
+require_once 'SVGGraphPie3DGraph.php';
 require_once 'SVGGraphPieExploder.php';
 
-class ExplodedPieGraph extends PieGraph {
+class ExplodedPie3DGraph extends Pie3DGraph {
 
+  protected $draw_flat_sides = true;
+  protected $separate_slices = true;
   protected $pie_exploder = NULL;
 
   /**
@@ -60,6 +62,17 @@ class ExplodedPieGraph extends PieGraph {
       $radius_y, $translated, $single_slice, $colour_index);
   }
 
+  /**
+   * Returns an edge markup
+   */
+  protected function GetEdge($edge, $x_centre, $y_centre, $depth, $overlay)
+  {
+    list($xo, $yo) = $this->pie_exploder->GetExplode($edge->slice['item'],
+      $edge->slice['angle_start'] + $this->s_angle,
+      $edge->slice['angle_end'] + $this->s_angle);
+    return parent::GetEdge($edge, $x_centre + $xo, $y_centre + $yo, $depth,
+      $overlay);
+  }
 
   /**
    * Returns the position for the label
