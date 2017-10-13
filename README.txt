@@ -1,5 +1,5 @@
-SVGGraph Library version 2.24.1
-===============================
+SVGGraph Library version 2.25
+=============================
 
 This library provides PHP classes and functions for easily creating SVG
 graphs from data. As of version 2.0, SVGGraph works with PHP 5 only -
@@ -87,7 +87,11 @@ At the moment these types of graph are supported by SVGGraph:
  PolarAreaGraph - a pie graph where the area of the slice varies instead of
                   its angle;
 
+ PolarArea3DGraph - a 3D version of the polar area graph.
+
  ExplodedPieGraph - a pie graph with slices exploded out from the centre.
+
+ ExplodedPie3DGraph - a 3D version of the exploded pie graph.
  
 Using SVGGraph
 ==============

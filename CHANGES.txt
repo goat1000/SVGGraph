@@ -1,3 +1,18 @@
+Version 2.25 (12/10/2017)
+------------
+- Added 3D polar area graph.
+- Added 3D exploded pie graph.
+- Added support for datetime keys in shapes and labels.
+- 3D pie graph sides are now drawn correctly when end_angle used.
+- Improved PHP7 compatibility.
+- Moved guideline code into separate file.
+- Fixed display of semi-donut graph when there is a single value.
+- Fixed display of multi-line axis text on horizontal graphs.
+- Fixed multi-line text alignment when minifying is disabled.
+- Fixed legend_show_empty behaviour inconsistencies.
+- Fixed incorrect legend size when containing numeric strings.
+- Fixed missing bar tops on stacked grouped 3D bar graphs.
+
 Version 2.24.1 (21/08/2017)
 --------------
 - Added stacked bar and line graph.
