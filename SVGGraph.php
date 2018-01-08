@@ -785,24 +785,42 @@ abstract class Graph {
 
     // put entities back in
     $text = preg_replace('/&amp;(amp|#x[a-f0-9]+|#\d+);/', '&$1;', $text);
+    $group = 'text';
+    $no_tspan = $this->no_tspan;
 
     if(strpos($text, "\n") === FALSE) {
       $content = ($text == '' ? ' ' : $text);
     } else {
       $lines = explode("\n", $text);
       $content = '';
-      $tspan = array('x' => $attribs['x'], 'dy' => 0);
+      $line_attr = array('x' => $attribs['x']);
+      if($no_tspan) {
+        $line_attr['y'] = $attribs['y'];
+        $line_element = 'text';
+        $group = 'g';
+      } else {
+        $line_attr['dy'] = 0;
+        $line_element = 'tspan';
+      }
+      $count = 1;
       foreach($lines as $line) {
         // blank tspan elements collapse to nothing, so insert a space
         if($line == '')
           $line = ' ';
 
         // trim because spaces in text are significant
-        $content .= trim($this->Element('tspan', $tspan, NULL, $line));
-        $tspan['dy'] = $line_spacing;
+        $content .= trim($this->Element($line_element, $line_attr, NULL, $line));
+        if($no_tspan) {
+          $line_attr['y'] = $attribs['y'] + $line_spacing * $count;
+        } else {
+          $line_attr['dy'] = $line_spacing;
+        }
+        ++$count;
       }
+      if($no_tspan)
+        unset($attribs['x'], $attribs['y']);
     }
-    return $this->Element('text', $attribs, $styles, $content); 
+    return $this->Element($group, $attribs, $styles, $content);
   }
 
   /**
