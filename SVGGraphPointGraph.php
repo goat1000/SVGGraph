@@ -397,8 +397,8 @@ abstract class PointGraph extends GridGraph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
-    $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
+    list($pos, $target) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
 
     // labels don't fit inside markers
     $pos = str_replace(array('inner','inside'), '', $pos);
@@ -409,7 +409,7 @@ abstract class PointGraph extends GridGraph {
       strpos($pos, 'bottom') === FALSE)
       $pos = str_replace('centre', 'top', $pos);
     $pos = 'outside ' . $pos;
-    return $pos;
+    return array($pos, $target);
   }
 
   /**

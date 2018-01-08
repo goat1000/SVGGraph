@@ -143,6 +143,8 @@ class StackedBarGraph extends BarGraph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
+    list($pos, $target) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
     if(!is_numeric($dataset)) {
       // doing this supports stacked grouped bar graph totals too
       list($d) = explode('-', $dataset);
@@ -151,22 +153,20 @@ class StackedBarGraph extends BarGraph {
           list($lpos, $l_h) = $this->last_position_pos[$index];
           list($hpos, $vpos) = Graph::TranslatePosition($lpos);
           if($vpos == 'ot')
-            return "above 0 -{$l_h}";
+            return array("above 0 -{$l_h}", $target);
         }
-        return 'above';
+        return array('above', $target);
       }
       if($d === 'totalneg') {
         if(isset($this->last_position_neg[$index])) {
           list($lpos, $l_h) = $this->last_position_neg[$index];
           list($hpos, $vpos) = Graph::TranslatePosition($lpos);
           if($vpos == 'ob')
-            return "below 0 {$l_h}";
+            return array("below 0 {$l_h}", $target);
         }
-        return 'below';
+        return array('below', $target);
       }
     }
-    $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
     if($label_h > $h && Graph::IsPositionInside($pos))
       $pos = str_replace(array('top','bottom','above','below'), 'middle', $pos);
 
@@ -174,7 +174,7 @@ class StackedBarGraph extends BarGraph {
       $this->last_position_pos[$index] = array($pos, $label_h);
     else
       $this->last_position_neg[$index] = array($pos, $label_h);
-    return $pos;
+    return array($pos, $target);
   }
 
   /**

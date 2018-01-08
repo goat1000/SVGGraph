@@ -1348,7 +1348,8 @@ abstract class Graph {
     $pos = $this->ArrayOption($this->data_label_position, $dataset);
     if(empty($pos))
       $pos = 'above';
-    return $pos;
+    $end = array($x + $w * 0.5, $y + $h * 0.5);
+    return array($pos, $end);
   }
 
 
@@ -1387,32 +1388,19 @@ abstract class Graph {
    */
   public function DataLabelStyle($dataset, $index, &$item)
   {
-    $style = array(
-      'type' => $this->ArrayOption($this->data_label_type, $dataset),
-      'font' => $this->ArrayOption($this->data_label_font, $dataset),
-      'font_size' => $this->ArrayOption($this->data_label_font_size, $dataset),
-      'font_adjust' => $this->ArrayOption($this->data_label_font_adjust, $dataset),
-      'font_weight' => $this->ArrayOption($this->data_label_font_weight, $dataset),
-      'colour' => $this->ArrayOption($this->data_label_colour, $dataset),
-      'altcolour' => $this->ArrayOption($this->data_label_colour_outside, $dataset),
-      'back_colour' => $this->ArrayOption($this->data_label_back_colour, $dataset),
-      'back_altcolour' => $this->ArrayOption($this->data_label_back_colour_outside, $dataset),
-      'space' => $this->ArrayOption($this->data_label_space, $dataset),
-      'angle' => $this->ArrayOption($this->data_label_angle, $dataset),
-      'pad_x' => $this->GetFirst(
+    $map = $this->data_labels->GetStyleMap();
+    $style = array();
+    foreach($map as $key => $option) {
+      $style[$key] = $this->ArrayOption($this->{$option}, $dataset);
+    }
+
+    // padding x/y options override single value
+    $style['pad_x'] = $this->GetFirst(
         $this->ArrayOption($this->data_label_padding_x, $dataset),
-        $this->ArrayOption($this->data_label_padding, $dataset)),
-      'pad_y' => $this->GetFirst(
+        $this->ArrayOption($this->data_label_padding, $dataset));
+    $style['pad_y'] = $this->GetFirst(
         $this->ArrayOption($this->data_label_padding_y, $dataset),
-        $this->ArrayOption($this->data_label_padding, $dataset)),
-      'round' => $this->ArrayOption($this->data_label_round, $dataset),
-      'stroke' => $this->ArrayOption($this->data_label_outline_colour, $dataset),
-      'stroke_width' => $this->ArrayOption($this->data_label_outline_thickness, $dataset),
-      'fill' => $this->ArrayOption($this->data_label_fill, $dataset),
-      'tail_width' => $this->ArrayOption($this->data_label_tail_width, $dataset),
-      'tail_length' => $this->ArrayOption($this->data_label_tail_length, $dataset),
-      'shadow_opacity' => $this->ArrayOption($this->data_label_shadow_opacity, $dataset),
-    );
+        $this->ArrayOption($this->data_label_padding, $dataset));
     return $style;
   }
 

@@ -149,8 +149,8 @@ class BarGraph extends GridGraph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
-    $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
+    list($pos,$end) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
     $bpos = $this->bar_label_position;
     if(!empty($bpos))
       $pos = $bpos;
@@ -159,7 +159,7 @@ class BarGraph extends GridGraph {
       $pos = str_replace(array('top','middle','bottom'), 'outside top inside ', $pos);
 
     // flip top/bottom for negative values
-    if($item->value < 0) {
+    if(!is_null($item) && $item->value < 0) {
       if(strpos($pos, 'top') !== FALSE)
         $pos = str_replace('top','bottom', $pos);
       elseif(strpos($pos, 'above') !== FALSE)
@@ -170,7 +170,7 @@ class BarGraph extends GridGraph {
         $pos = str_replace('bottom','top', $pos);
     }
 
-    return $pos;
+    return array($pos, $end);
   }
 
   /**

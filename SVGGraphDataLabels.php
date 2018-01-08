@@ -35,6 +35,51 @@ class DataLabels {
   private $max_labels = 1000;
   private $coords = NULL;
 
+  /**
+   * Details of each label type
+   */
+  private $types_info = array(
+    'box' => array('shape' => 'BoxLabel', 'tail' => false, 'pad' => true),
+    'bubble' => array('shape' => 'BubbleLabel', 'tail' => true, 'pad' => true),
+    'circle' => array('shape' => 'CircleLabel', 'tail' => false, 'pad' => true),
+    'line' => array('shape' => 'LineLabel', 'tail' => true, 'pad' => false),
+    'line2' => array('shape' => 'LineLabel2', 'tail' => true, 'pad' => true),
+    'linebox' => array('shape' => 'BoxLineLabel', 'tail' => true, 'pad' => true),
+    'linecircle' => array('shape' => 'CircleLineLabel', 'tail' => true, 'pad' => true),
+    'linesquare' => array('shape' => 'SquareLineLabel', 'tail' => true, 'pad' => true),
+    'plain' => array('shape' => NULL, 'tail' => false, 'pad' => false),
+    'square' => array('shape' => 'SquareLabel', 'tail' => false, 'pad' => true),
+  );
+
+  /**
+   * Mapping between label style array members and options
+   */
+  protected $style_map = array(
+    'type' => 'data_label_type',
+    'font' => 'data_label_font',
+    'font_size' => 'data_label_font_size',
+    'font_adjust' => 'data_label_font_adjust',
+    'font_weight' => 'data_label_font_weight',
+    'colour' => 'data_label_colour',
+    'altcolour' => 'data_label_colour_outside',
+    'back_colour' => 'data_label_back_colour',
+    'back_altcolour' => 'data_label_back_colour_outside',
+    'space' => 'data_label_space',
+    'angle' => 'data_label_angle',
+    'pad_x' => 'data_label_padding_x',
+    'pad_y' => 'data_label_padding_y',
+    'round' => 'data_label_round',
+    'stroke' => 'data_label_outline_colour',
+    'stroke_width' => 'data_label_outline_thickness',
+    'fill' => 'data_label_fill',
+    'tail_width' => 'data_label_tail_width',
+    'tail_length' => 'data_label_tail_length',
+    'tail_end' => 'data_label_tail_end',
+    'tail_end_angle' => 'data_label_tail_end_angle',
+    'tail_end_width' => 'data_label_tail_end_width',
+    'shadow_opacity' => 'data_label_shadow_opacity',
+  );
+
   function __construct(&$graph)
   {
     $this->graph =& $graph;
@@ -189,8 +234,9 @@ class DataLabels {
    */
   public function GetLabels()
   {
-    $labels = '';
     $filters = $this->data_label_filter;
+
+    $label_list = array();
     foreach($this->labels as $dataset => $label_set) {
 
       if(is_numeric($dataset)) {
@@ -202,11 +248,24 @@ class DataLabels {
       $count = 0;
       foreach($label_set as $i => $label) {
         if($this->Filter($set_filter, $dataset, $label, $i)) {
-          $labels .= $this->DrawLabel($dataset, $i, $label);
-          if(++$count >= $this->max_labels)
-            break;
+          $content = $this->GetLabelText($dataset, $label);
+          if(!is_null($content) && $content != '') {
+
+            list($w, $h) = $this->MeasureLabel($content, $dataset, $i, $label);
+
+            $label_list[] = compact('content', 'w', 'h', 'dataset', 'i', 'label');
+            if(++$count >= $this->max_labels)
+              break;
+          }
         }
       }
+    }
+
+    $this->SetLabelSizes($label_list);
+    $labels = '';
+    foreach($label_list as $l) {
+      $labels .= $this->DrawLabel($l['content'], $l['w'], $l['h'],
+        $l['dataset'], $l['i'], $l['label']);
     }
     $group = array();
     if($this->semantic_classes)
@@ -216,9 +275,62 @@ class DataLabels {
   }
 
   /**
-   * Draws a label
+   * Adjusts the label sizes
    */
-  protected function DrawLabel($dataset, $index, &$gobject)
+  protected function SetLabelSizes(&$labels)
+  {
+    if(!$this->data_label_same_size)
+      return;
+
+    // globally equal sizes
+    if(!is_array($this->data_label_same_size)) {
+      $max_w = 0;
+      $max_h = 0;
+      foreach($labels as $l) {
+        if(is_numeric($l['dataset'])) {
+          if($l['w'] > $max_w)
+            $max_w = $l['w'];
+          if($l['h'] > $max_h)
+            $max_h = $l['h'];
+        }
+      }
+
+      foreach($labels as $k => $l) {
+        if(is_numeric($l['dataset'])) {
+          $labels[$k]['w'] = $max_w;
+          $labels[$k]['h'] = $max_h;
+        }
+      }
+    } else {
+      // per-dataset maxima (20 datasets should be enough for anybody)
+      $max_w = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      $max_h = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+      foreach($labels as $l) {
+        $d = $l['dataset'];
+        if(is_numeric($d)) {
+          if($l['w'] > $max_w[$d])
+            $max_w[$d] = $l['w'];
+          if($l['h'] > $max_h[$d])
+            $max_h[$d] = $l['h'];
+        }
+      }
+
+      foreach($labels as $k => $l) {
+        $d = $l['dataset'];
+        if(is_numeric($d) &&
+          Graph::ArrayOption($this->data_label_same_size, $d)) {
+          $labels[$k]['w'] = $max_w[$d];
+          $labels[$k]['h'] = $max_h[$d];
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns the text for a label
+   */
+  protected function GetLabelText($dataset, &$gobject)
   {
     if(is_null($gobject['item']) && empty($gobject['content']))
       return '';
@@ -241,37 +353,76 @@ class DataLabels {
           $this->units_label;
       }
     }
-    if($content == '')
-      return '';
+    return $content;
+  }
 
+  /**
+   * Returns the style details for a label
+   */
+  protected function GetStyle($dataset, $index, &$gobject)
+  {
+    // global styles filled in by graph class
     $style = $this->graph->DataLabelStyle($dataset, $index, $gobject['item']);
+
+    // structured styles and user defined label styles
     if(!is_null($gobject['item']))
       $this->ItemStyles($style, $gobject['item']);
     elseif($dataset === '_user')
       $this->UserStyles($style, $gobject);
+    return $style;
+  }
 
-    $type = $style['type'];
+  /**
+   * Returns size of a label as array (w, h)
+   */
+  protected function MeasureLabel($content, $dataset, $index, &$gobject)
+  {
+    $style = $this->GetStyle($dataset, $index, $gobject);
+
+    // get size of text
     $font_size = max(4, (float)$style['font_size']);
-    $space = (float)$style['space'];
-    if($type == 'box' || $type == 'bubble') {
-      $label_pad_x = $style['pad_x'];
-      $label_pad_y = $style['pad_y'];
-    } else {
-      $label_pad_x = $label_pad_y = 0;
-    }
-
-    // reasonable approximation of the baseline position
-    $text_baseline = $font_size * 0.85;
-
-    // get size of label
-    list($tw, $th) = Graph::TextSize($content, $font_size, $style['font_adjust'],
+    list($w, $h) = Graph::TextSize($content, $font_size, $style['font_adjust'],
       $this->encoding, $style['angle'], $font_size);
 
-    $label_w = $tw + $label_pad_x * 2;
-    $label_h = $th + $label_pad_y * 2;
-    $label_wp = $label_w + $space * 2;
-    $label_hp = $label_h + $space * 2;
+    // if this label type uses padding, add it in
+    $type_info = isset($this->types_info[$style['type']]) ?
+      $this->types_info[$style['type']] : $this->types_info['plain'];
+    if($type_info['pad']) {
+      $w += $style['pad_x'] * 2;
+      $h += $style['pad_y'] * 2;
+    }
 
+    return array($w, $h);
+  }
+
+  /**
+   * Returns the foreground and background colours, dependent on relative
+   * position
+   */
+  protected function GetColours($hpos, $vpos, $style)
+  {
+    // if the position is outside, use the alternative colours
+    $colour = $style['colour'];
+    $back_colour = $style['back_colour'];
+    if(strpos($hpos . $vpos, 'o') !== FALSE) {
+      if(!empty($style['altcolour']))
+        $colour = $style['altcolour'];
+      if(!empty($style['back_altcolour']))
+        $back_colour = $style['back_altcolour'];
+    }
+    return array($colour, $back_colour);
+  }
+
+  /**
+   * Draws a label
+   */
+  protected function DrawLabel($content, $label_w, $label_h, $dataset, $index,
+    &$gobject)
+  {
+    $style = $this->GetStyle($dataset, $index, $gobject);
+    $style['target'] = array($gobject['x'], $gobject['y']);
+
+    $space = (float)$style['space'];
     $pos = NULL;
     if($dataset === '_user') {
       // user label, so convert coordinates
@@ -285,10 +436,16 @@ class DataLabels {
         $pos = $gobject['item']->Data('data_label_position');
 
       // find out from graph class where this label should go
-      if(is_null($pos))
-        $pos = $this->graph->DataLabelPosition($dataset, $index, $gobject['item'],
-          $gobject['x'], $gobject['y'], $gobject['width'], $gobject['height'],
-          $label_wp, $label_hp);
+      if(is_null($pos)) {
+        $label_wp = $label_w + $space * 2;
+        $label_hp = $label_h + $space * 2;
+
+        // get the label position and the target for tail
+        list($pos, $target) = $this->graph->DataLabelPosition($dataset,
+          $index, $gobject['item'], $gobject['x'], $gobject['y'],
+          $gobject['width'], $gobject['height'], $label_wp, $label_hp);
+        $style['target'] = $target;
+      }
     }
 
     // convert position string to an actual location
@@ -297,16 +454,11 @@ class DataLabels {
       $gobject['y'] + $gobject['height'], $gobject['x'] + $gobject['width'],
       $label_w, $label_h, $space, true);
 
-    // if the position is outside, use the alternative colours
-    $colour = $style['colour'];
-    $back_colour = $style['back_colour'];
-    if(strpos($hpos . $vpos, 'o') !== FALSE) {
-      if(!empty($style['altcolour']))
-        $colour = $style['altcolour'];
-      if(!empty($style['back_altcolour']))
-        $back_colour = $style['back_altcolour'];
-    }
+    list($colour, $back_colour) = $this->GetColours($hpos, $vpos, $style);
 
+    // reasonable approximation of the baseline position
+    $font_size = max(4, (float)$style['font_size']);
+    $text_baseline = $font_size * 0.85;
     $text = array(
       'font-family' => $style['font'],
       'font-size' => $font_size,
@@ -314,22 +466,29 @@ class DataLabels {
     );
 
     $label_markup = '';
+    $type_info = isset($this->types_info[$style['type']]) ?
+      $this->types_info[$style['type']] : $this->types_info['plain'];
+    if($type_info['pad']) {
+      $label_pad_x = $style['pad_x'];
+      $label_pad_y = $style['pad_y'];
+    } else {
+      $label_pad_x = $label_pad_y = 0;
+    }
 
-    // rotation
+    // need text size without padding, rotation, etc.
+    list($tbw, $tbh) = Graph::TextSize($content, $font_size,
+      $style['font_adjust'], $this->encoding, 0, $font_size);
+
+    $text['y'] = $y + ($label_h - $tbh) / 2 + $text_baseline;
     if($style['angle'] != 0) {
-
-      // need text size pre-rotation
-      list($tbw, $tbh) = Graph::TextSize($content, $font_size,
-        $style['font_adjust'], $this->encoding, 0, $font_size);
 
       if($anchor == 'middle') {
         $text['x'] = $x;
       } elseif($anchor == 'start') {
-        $text['x'] = $x + $label_pad_x + ($tw - $tbw) / 2;
+        $text['x'] = $x + ($label_w - $tbw) / 2;
       } else {
-        $text['x'] = $x - $label_pad_x - ($tw - $tbw) / 2; 
+        $text['x'] = $x - ($label_w - $tbw) / 2;
       }
-      $text['y'] = $y + $label_h / 2 - $tbh / 2 + $text_baseline;
 
     } else {
 
@@ -340,7 +499,6 @@ class DataLabels {
       } else {
         $text['x'] = $x;
       }
-      $text['y'] = $y + $label_pad_y + $text_baseline;
     }
 
     // make x right for bounding box
@@ -355,13 +513,6 @@ class DataLabels {
       $rx = $x + $label_w / 2;
       $ry = $y + $label_h / 2;
       $text['transform'] = "rotate({$style['angle']},$rx,$ry)";
-
-      /** DEBUG: text position and rotation point 
-      $label_markup .= $this->graph->Element('circle',
-        array('cx' => $text['x'], 'cy' => $text['y'], 'r' => 2, 'fill' => '#f0f'));
-      $label_markup .= $this->graph->Element('circle',
-        array('cx' => $rx, 'cy' => $ry, 'r' => 2));
-      **/
     }
 
     if($anchor != 'start')
@@ -371,38 +522,34 @@ class DataLabels {
 
     $surround = array();
     $element = null;
+    $shape_func = null;
+    $need_tail = false;
 
-    if($type == 'box') {
-      $element = $this->BoxLabel($x, $y, $label_w, $label_h, $style, $surround);
-    } elseif($type == 'bubble') {
-
-      $style['tail_direction'] = $this->graph->DataLabelTailDirection($dataset,
-        $index, $hpos, $vpos);
-      $element = $this->BubbleLabel($x, $y, $label_w, $label_h, $style, $surround);
-
-    } elseif($type == 'line') {
-
-      $style['tail_direction'] = $this->graph->DataLabelTailDirection($dataset,
-        $index, $hpos, $vpos);
-      $element = $this->LineLabel($x, $y, $label_w, $label_h, $style, $surround);
-    }
-
-    // if there is a box or bubble, draw it
-    if($element) {
-      $surround['stroke'] = $style['stroke'];
-      if($style['stroke_width'] != 1)
-        $surround['stroke-width'] = (float)$style['stroke_width'];
-
-      // add shadow if not completely transparent
-      if($style['shadow_opacity'] > 0) {
-        $shadow = $surround;
-        $offset = 2 + floor($style['stroke_width'] / 2);
-        $shadow['transform'] = "translate({$offset},{$offset})";
-        $shadow['fill'] = $shadow['stroke'] = '#000';
-        $shadow['opacity'] = $style['shadow_opacity'];
-        $label_markup .= $this->graph->Element($element, $shadow);
+    if($type_info['shape']) {
+      if($type_info['tail']) {
+        $style['tail_direction'] = $this->graph->DataLabelTailDirection($dataset,
+          $index, $hpos, $vpos);
       }
-      $label_markup .= $this->graph->Element($element, $surround);
+
+      // make the shape
+      $element = $this->{$type_info['shape']}($x, $y, $label_w, $label_h,
+        $style, $surround);
+      if($element) {
+        $surround['stroke'] = $style['stroke'];
+        if($style['stroke_width'] != 1)
+          $surround['stroke-width'] = (float)$style['stroke_width'];
+
+        // add shadow if not completely transparent
+        if($style['shadow_opacity'] > 0) {
+          $shadow = $surround;
+          $offset = 2 + floor($style['stroke_width'] / 2);
+          $shadow['transform'] = "translate({$offset},{$offset})";
+          $shadow['fill'] = $shadow['stroke'] = '#000';
+          $shadow['opacity'] = $style['shadow_opacity'];
+          $label_markup .= $this->graph->Element($element, $shadow);
+        }
+        $label_markup .= $this->graph->Element($element, $surround);
+      }
     }
 
     if(!empty($back_colour)) {
@@ -431,38 +578,23 @@ class DataLabels {
   }
 
   /**
+   * Returns the mapping between style members and option names
+   */
+  public function GetStyleMap()
+  {
+    return $this->style_map;
+  }
+
+  /**
    * Individual label styles from the structured data item
    */
   protected function ItemStyles(&$style, &$item)
   {
-    $options = array(
-      'type' => 'data_label_type',
-      'font' => 'data_label_font',
-      'font_size' => 'data_label_font_size',
-      'font_adjust' => 'data_label_font_adjust',
-      'font_weight' => 'data_label_font_weight',
-      'colour' => 'data_label_colour',
-      'altcolour' => 'data_label_colour_outside',
-      'back_colour' => 'data_label_back_colour',
-      'back_altcolour' => 'data_label_back_colour_outside',
-      'space' => 'data_label_space',
-      'angle' => 'data_label_angle',
-      'pad_x' => 'data_label_padding_x',
-      'pad_y' => 'data_label_padding_y',
-      'round' => 'data_label_round',
-      'stroke' => 'data_label_outline_colour',
-      'stroke_width' => 'data_label_outline_thickness',
-      'fill' => 'data_label_fill',
-      'tail_width' => 'data_label_tail_width',
-      'tail_length' => 'data_label_tail_length',
-      'shadow_opacity' => 'data_label_shadow_opacity',
-    );
-
     // overwrite any style options that the item has set
     $v = $item->Data('data_label_padding');
     if(!is_null($v))
       $style['pad_x'] = $style['pad_y'] = $v;
-    foreach($options as $s => $k) {
+    foreach($this->style_map as $s => $k) {
       $v = $item->Data($k);
       if(!is_null($v))
         $style[$s] = $v;
@@ -474,36 +606,15 @@ class DataLabels {
    */
   protected function UserStyles(&$style, &$label_array)
   {
-    $options = array(
-      'type' => 'type',
-      'font' => 'font',
-      'font_size' => 'font_size',
-      'font_adjust' => 'font_adjust',
-      'font_weight' => 'font_weight',
-      'colour' => 'colour',
-      // 'altcolour' => 'colour_outside',
-      'back_colour' => 'back_colour',
-      // 'back_altcolour' => 'back_colour_outside',
-      'space' => 'space',
-      'angle' => 'angle',
-      'pad_x' => 'padding_x',
-      'pad_y' => 'padding_y',
-      'round' => 'round',
-      'stroke' => 'outline_colour',
-      'stroke_width' => 'outline_thickness',
-      'fill' => 'fill',
-      'tail_width' => 'tail_width',
-      'tail_length' => 'tail_length',
-      'shadow_opacity' => 'shadow_opacity',
-    );
-
+    // pad_x and pad_y will override single padding option
     if(isset($label_array['padding']))
       $style['pad_x'] = $style['pad_y'] = $label_array['padding'];
-    foreach($options as $s => $k) {
-      if(isset($label_array[$k]))
-        $style[$s] = $label_array[$k];
+    foreach($this->style_map as $s => $k) {
+      // remove the "data_label_" part
+      $o = substr($k, 11);
+      if(isset($label_array[$o]))
+        $style[$s] = $label_array[$o];
     }
-
   }
 
   /**
@@ -590,15 +701,18 @@ class DataLabels {
     $h2 = $h / 2;
     $a = $style['tail_direction'] * M_PI / 180;
 
-    // make sure line is long enough to not look like part of text
-    $llen = max($style['font_size'], $style['tail_length']);
-
-    // start at edge of text bounding box
-    $w2a = $w2;
-    $h2a = $w2 * tan($a);
-    if(abs($h2a) > $h2) {
-      $h2a = $h2;
-      $w2a = $h2 / tan($a);
+    if($style['round']) {
+      $bbradius = sqrt($w2 * $w2 + $h2 * $h2);
+      $w2a = $bbradius * cos($a);
+      $h2a = $bbradius * sin($a);
+    } else {
+      // start at edge of text bounding box
+      $w2a = $w2;
+      $h2a = $w2 * tan($a);
+      if(abs($h2a) > $h2) {
+        $h2a = $h2;
+        $w2a = $h2 / tan($a);
+      }
     }
     if(($a < M_PI && $h2a < 0) || ($a > M_PI && $h2a > 0)) {
       $h2a = -$h2a;
@@ -607,9 +721,24 @@ class DataLabels {
      
     $x1 = $x + $w2 + $w2a;
     $y1 = $y + $h2 + $h2a;
-    $x2 = $llen * cos($a);
-    $y2 = $llen * sin($a);
-    $surround['d'] = "M{$x1} {$y1}l{$x2} {$y2}";
+    if($style['tail_length'] == 'auto') {
+      list($x2, $y2) = $style['target'];
+      // check line is outside bbox
+      if($style['round']) {
+        $llen = sqrt(pow($x2 - $x - $w2, 2) + pow($y2 - $y - $h2, 2));
+        if($llen < $bbradius)
+          return '';
+      } else {
+        if($x2 > $x && $x2 < $x + $w && $y2 > $y && $y2 < $y + $h)
+          return '';
+      }
+    } else {
+      // make sure line is long enough to not look like part of text
+      $llen = max($style['font_size'], $style['tail_length']);
+      $x2 = $x1 + ($llen * cos($a));
+      $y2 = $y1 + ($llen * sin($a));
+    }
+    $surround['d'] = "M{$x1} {$y1}L{$x2} {$y2}";
     return 'path';
   }
 
@@ -701,6 +830,688 @@ class DataLabels {
     $surround['d'] = $start . $tr . $r . $br . $b . $bl . $l . $tl . $t;
     $surround['fill'] = $this->graph->ParseColour($style['fill']);
     return 'path';
+  }
+
+  /**
+   * Returns the cx, cy and radius for a round label
+   */
+  protected function CalcRoundLabel($x, $y, $w, $h)
+  {
+    $w2 = $w / 2;
+    $h2 = $h / 2;
+    $r = sqrt($w2 * $w2 + $h2 * $h2);
+    return array($x + $w2, $y + $h2, $r);
+  }
+
+  /**
+   * Circular label style
+   */
+  protected function CircleLabel($x, $y, $w, $h, &$style, &$surround)
+  {
+    $params = $this->CalcRoundLabel($x, $y, $w, $h);
+    $surround['cx'] = $params[0];
+    $surround['cy'] = $params[1];
+    $surround['r'] = $params[2];
+    $surround['fill'] = $this->graph->ParseColour($style['fill']);
+    return 'circle';
+  }
+
+  /**
+   * Returns the tail target coordinates, angle and length for a box label,
+   * or NULL if the tail would end inside the label.
+   * Return value is array(array($x, $y), $angle, $length)
+   */
+  protected function GetBoxTailTarget(&$style, $x1, $y1, $x2, $y2)
+  {
+    $target = NULL;
+    $length = $style['tail_length'];
+    $cx = ($x1 + $x2) / 2;
+    $cy = ($y1 + $y2) / 2;
+    $w2 = $cx - $x1;
+    $h2 = $cy - $y1;
+    if($length == 'auto') {
+      // just use the defined target
+      $target = $style['target'];
+
+      // check that target is outside the label
+      $tx = $target[0]; $ty = $target[1];
+      if($tx >= $x1 && $tx <= $x2 && $ty >= $y1 && $ty <= $y2)
+        return NULL;
+
+      if($tx > $x2) {
+        $dx = $tx - $x2;
+      } elseif($tx < $x1) {
+        $dx = $x1 - $tx;
+      } else {
+        $dx = abs($tx - $cx);
+      }
+      if($ty > $y2) {
+        $dy = $ty - $y2;
+      } elseif($ty < $y1) {
+        $dy = $y1 - $ty;
+      } else {
+        $dy = abs($ty - $cy);
+      }
+      $length = sqrt($dx * $dx + $dy * $dy);
+      $angle = atan2($ty - $cy, $tx - $cx);
+    } else {
+      // target is radius + tail length away
+      if($length <= 0)
+        return NULL;
+      $angle = $style['tail_direction'] * M_PI / 180;
+
+      $lx = $length * cos($angle);
+      $ly = $length * sin($angle);
+      // compare tangent with box ratio
+      if(abs(tan($angle)) > $h2 / $w2) {
+        // out top or bottom
+        $target = array($cx + $lx,
+          $ly > 0 ? $y2 + $ly : $y1 + $ly);
+      } else {
+        // out left or right
+        $target = array(
+          $lx > 0 ? $x2 + $lx : $x1 + $lx,
+          $cy + $ly);
+      }
+    }
+    return array($target, $angle, $length);
+  }
+
+  /**
+   * Returns the tail target coordinates, angle and length for a round label,
+   * or NULL if the tail would end inside the label.
+   * Return value is array(array($x, $y), $angle, $length)
+   */
+  protected function GetRoundTailTarget(&$style, $cx, $cy, $radius)
+  {
+    $target = NULL;
+    $length = $style['tail_length'];
+    if($length == 'auto') {
+      // just use the defined target
+      $target = $style['target'];
+
+      // check that target is outside the label radius
+      $tx = $target[0] - $cx;
+      $ty = $target[1] - $cy;
+      $rt = sqrt($tx * $tx + $ty * $ty);
+      if($rt <= $radius)
+        return NULL;
+      $angle = atan2($ty, $tx);
+      $length = $rt - $radius;
+    } else {
+      // target is radius + tail length away
+      if($length <= 0)
+        return NULL;
+      $len = $radius + $length;
+      $angle = $style['tail_direction'] * M_PI / 180;
+      $target = array($cx + ($len * cos($angle)), $cy + ($len * sin($angle)));
+    }
+    return array($target, $angle, $length);
+  }
+
+  /**
+   * Rotate and translate $x and $y, returning SVGGraphPoint
+   */
+  private static function XForm($x, $y, $a, $tx, $ty)
+  {
+    if($x == 0 && $y == 0)
+      return new SVGGraphPoint($tx, $ty);
+    $sa = sin($a);
+    $ca = cos($a);
+    $x1 = $x * $ca - $y * $sa;
+    $y1 = $x * $sa + $y * $ca;
+    return new SVGGraphPoint($tx + $x1, $ty + $y1);
+  }
+
+  /**
+   * Returns the tail ending path fragment
+   */
+  protected function GetTailEnding($x, $y, $langle, $lwidth, $dist, &$style)
+  {
+    $a = max(5, min(80, $style['tail_end_angle']));
+    $ewidth = max($lwidth, $style['tail_end_width']);
+    $eangle = M_PI * $a / 180;
+
+    // first fallback is a tapering line
+    $fallback = "L{$x} {$y}";
+    $lw = $lwidth * 0.5;
+    $ew = $ewidth * 0.5;
+    $ll = $lw / tan($eangle);
+    $el = $ew / tan($eangle);
+
+    // ends are defined pointing upwards
+    $langle -= M_PI * 0.5;
+    $type = $style['tail_end'];
+
+    // "point" style by default
+    $points = array(array(-$lw, -$ll), array(0, 0),
+      array($lw, -$ll));
+
+    switch($type)
+    {
+    default:
+    case 'flat' :
+      $points = array(array(-$lw, 0), array($lw, 0));
+      break;
+    case 'taper' :
+      return $fallback;
+    case 'point' :
+      if($dist <= $ll)
+        return $fallback;
+      break;
+
+    case 'filled' :
+      if($dist <= $el)
+        return $fallback;
+      if($ew > $lw) {
+        $points = array(array(-$lw, -$el),
+          array(-$ew, -$el),
+          array(0,0),
+          array($ew, -$el),
+          array($lw, -$el));
+      }
+      break;
+    case 'arrow' :
+      $tip_w = $lwidth * sin($eangle);
+      $w1 = $ew - $tip_w;
+      $l2 = $el + $lwidth * cos($eangle);
+      $l1 = $l2 - ($ew - $tip_w - $lw) / tan($eangle);
+      if($dist < $l2)
+        return $fallback;
+      if($w1 > $lw) {
+        $points = array(array(-$lw, -$l1),
+          array(-$w1, -$l2),
+          array(-$ew, -$el),
+          array(0, 0),
+          array($ew, -$el),
+          array($w1, -$l2),
+          array($lw, -$l1));
+        break;
+      }
+      // fall through to diamond shape if not wide enough
+
+    case 'diamond' :
+      $blen = 2 * $el - $ll;
+      if($dist <= $blen)
+        return $fallback;
+      if($ew > $lw) {
+        $points = array(array(-$lw, -$blen),
+          array(-$ew, -$el),
+          array(0,0),
+          array($ew, -$el),
+          array($lw, -$blen));
+      }
+      break;
+    case 'tee' :
+      if($dist <= $lwidth)
+        return $fallback;
+      $points = array(array(-$lw, -$lwidth),
+        array(-$ew, -$lwidth),
+        array(-$ew, 0),
+        array($ew, 0),
+        array($ew, -$lwidth),
+        array($lw, -$lwidth));
+      break;
+    case 'round' :
+      if($dist < $lw)
+        return $fallback;
+      $cradius = min($ew, max($lw, $dist / 2));
+      $rlen = sqrt(($cradius * $cradius) - ($lw * $lw));
+      $rdist = $cradius + $rlen;
+      $p1 = $this->XForm(-$lw, -$rdist, $langle, $x, $y);
+      $p2 = $this->XForm($lw, -$rdist, $langle, $x, $y);
+      return "L{$p1}A{$cradius} {$cradius} 0 1 0 {$p2}";
+    }
+
+    $path = '';
+    foreach($points as $pair) {
+      $pt = $this->XForm($pair[0], $pair[1], $langle, $x, $y);
+      $path .= 'L' . $pt;
+    }
+    return $path;
+  }
+
+  /**
+   * Returns the point where a line crosses an arc
+   */
+  private function LineCrossArc($x, $y, $angle, $cx, $cy, $radius, $corner)
+  {
+    $h = $cx;
+    $k = $cy;
+    $r = $radius;
+
+    // 90-degree angles are simpler
+    $cos = abs(cos($angle));
+    $sin = abs(sin($angle));
+    if($cos == 1 || $sin == 1) {
+      if($cos == 1) {
+        $rt = sqrt(-($y * $y) + (2 * $y * $k) - ($k * $k) + ($r * $r));
+        $y1 = $y2 = $y;
+        $x1 = $h - $rt;
+        $x2 = $h + $rt;
+      } else {
+        $rt = sqrt(-($x * $x) + (2 * $x * $h) - ($h * $h) + ($r * $r));
+        $x1 = $x2 = $x;
+        $y1 = $k - $rt;
+        $y2 = $k + $rt;
+      }
+    } else {
+      // y = mx + c
+      $m = tan($angle);
+      $c = $y - ($x * $m);
+
+      // using quadratic formula
+      $disc = -($c * $c) - (2 * $c * $h * $m) + (2 * $c * $k)
+        - ($h * $h * $m * $m) + (2 * $h * $k * $m) - ($k * $k)
+        + ($m * $m * $r * $r) + ($r * $r);
+      $rt = sqrt($disc);
+      $b = (-$c * $m) + $h + ($k * $m);
+      $d = ($m * $m) + 1;
+
+      $x1 = (-$rt + $b) / $d;
+      $x2 = ($rt + $b) / $d;
+
+      // y = mx + c again, using original x and y
+      $y1 = $m * $x1 + $c;
+      $y2 = $m * $x2 + $c;
+    }
+
+    $use_first = false;
+    switch($corner) {
+    case 'tr' :
+      if($x1 > $cx && $y1 < $cy)
+        $use_first = true;
+      break;
+    case 'tl' :
+      if($x1 < $cx && $y1 < $cy)
+        $use_first = true;
+      break;
+    case 'br' :
+      if($x1 > $cx && $y1 > $cy)
+        $use_first = true;
+      break;
+    case 'bl' :
+      if($x1 < $cx && $y1 > $cy)
+        $use_first = true;
+    }
+    if($use_first)
+      return new SVGGraphPoint($x1, $y1);
+    return new SVGGraphPoint($x2, $y2);
+  }
+
+  /**
+   * Filled line label
+   */
+  protected function LineLabel2($x, $y, $w, $h, &$style, &$surround)
+  {
+    if($style['round']) {
+      list($cx, $cy, $bbradius) = $this->CalcRoundLabel($x, $y, $w, $h);
+      list($target, $angle, $len) = $this->GetRoundTailTarget($style, $cx, $cy,
+        $bbradius);
+    } else {
+      list($target, $angle, $len) = $this->GetBoxTailTarget($style, $x, $y, $x + $w,
+        $y + $h);
+    }
+    if(is_null($target))
+      return NULL;
+
+    if($style['round']) {
+      $t_width = max(1, min($style['tail_width'], $bbradius));
+      $l_angle = asin($t_width * 0.5 / $bbradius);
+      $p1 = new SVGGraphPoint($cx + $bbradius * cos($angle - $l_angle), 
+        $cy + $bbradius * sin($angle - $l_angle));
+      $p2 = new SVGGraphPoint($cx + $bbradius * cos($angle + $l_angle),
+        $cy + $bbradius * sin($angle + $l_angle));
+    } else {
+
+      $h2 = $h * 0.5; $w2 = $w * 0.5;
+      $cx = $x + $w2; $cy = $y + $h2;
+      $t_width = max(1, min((float)$style['tail_width'], $w - 1, $h - 1));
+      $sin = sin($angle);
+      $cos = cos($angle);
+      $xo = $yo = 0;
+      if(abs($sin) == 1) {
+        $py = $cy + $h2 * $sin;
+        $px = $cx;
+        $xo = $t_width * 0.5;
+      } elseif(abs($cos) == 1) {
+        $px = $cx + $w2 * $cos;
+        $py = $cy;
+        $yo = $t_width * 0.5;
+      } else {
+        $h1 = abs($w2 * tan($angle));
+        if($h1 >= $h2) {
+          $h1 = ($sin < 0 ? -$h2 : $h2);
+          $w1 = $h1 * tan(M_PI * 0.5 - $angle);
+        } else {
+          $w1 = ($cos < 0 ? -$w2 : $w2);
+          $h1 = $w1 / tan(M_PI * 0.5 - $angle);
+        }
+        $px = $cx + $w1;
+        $py = $cy + $h1;
+        $xo = $t_width * 0.5 * $sin;
+        $yo = $t_width * -0.5 * $cos;
+      }
+
+      $p1 = new SVGGraphPoint($px + $xo, $py + $yo);
+      $p2 = new SVGGraphPoint($px - $xo, $py - $yo);
+      $l1 = $px - $target[0];
+      $l2 = $py - $target[1];
+      $len = sqrt($l1 * $l1 + $l2 * $l2);
+    }
+
+    $surround['fill'] = $this->graph->ParseColour($style['fill']);
+    $surround['d'] = "M{$p1}L{$p2}" .
+      $this->GetTailEnding($target[0], $target[1], $angle, $t_width, $len, $style) . "z";
+    return "path";
+  }
+
+  /**
+   * Line and box label style
+   */
+  protected function BoxLineLabel($x, $y, $w, $h, &$style, &$surround)
+  {
+    $x1 = $x; $y1 = $y;
+    $x2 = $x + $w; $y2 = $y + $h;
+    list($target, $angle, $len) = $this->GetBoxTailTarget($style, $x1, $y1,
+      $x2, $y2);
+    if(is_null($target))
+      return $this->BoxLabel($x, $y, $w, $h, $style, $surround);
+
+    $round = min((float)$style['round'], $h / 3, $w / 3);
+    $t_width = max(1, min((float)$style['tail_width'], $w - 1, $h - 1));
+    $cx = ($x1 + $x2) / 2;
+    $cy = ($y1 + $y2) / 2;
+
+    while($angle < 0)
+      $angle += M_PI * 2.0;
+
+    // centre points of corner arcs
+    $x1c = $x1 + $round;
+    $x2c = $x2 - $round;
+    $y1c = $y1 + $round;
+    $y2c = $y2 - $round;
+
+    // box corners
+    if($round) {
+      $arc = "a{$round} {$round} 0 0 0 ";
+      $c_tl = "L{$x1c} {$y1}{$arc}-{$round} {$round}";
+      $c_tr = "L{$x2} {$y1c}{$arc}-{$round} -{$round}";
+      $c_bl = "L{$x1} {$y2c}{$arc}{$round} {$round}";
+      $c_br = "L{$x2c} {$y2}{$arc}{$round} -{$round}";
+      // this gets repeated a lot
+      $arc = "A{$round} {$round} 0 0 0";
+    } else {
+      $c_tl = "L{$x1} {$y1}";
+      $c_tr = "L{$x2} {$y1}";
+      $c_bl = "L{$x1} {$y2}";
+      $c_br = "L{$x2} {$y2}";
+    }
+    $points = array();
+    $rangle = M_PI * 0.5 - $angle;
+    if(abs(tan($angle)) > $h / $w) {
+      // top or bottom
+      // $hoff = horizontal offset from centre of edge
+      // $wa = width at angle
+      $hoff = $h * 0.5 * tan($rangle);
+      $wa = $t_width * 0.5 / cos($rangle);
+      if($angle > M_PI) {
+        // top
+        $p1 = new SVGGraphPoint($cx - $hoff + $wa, $y1);
+        if($p1->x < $x1) {
+          $p1->y = $y1 + ($x1 - $p1->x) * tan($angle);
+          $p1->x = $x1;
+        }
+        $p2 = new SVGGraphPoint($cx - $hoff - $wa, $y1);
+        if($p2->x > $x2) {
+          $p2->y = $y1 - ($p2->x - $x2) * tan($angle);
+          $p2->x = $x2;
+        }
+        $start = "M{$p1}";
+        $end = "L{$p2}";
+        // if the line meets the side past the corner radius, there is no corner
+        if($p1->y > $y1c)
+          $c_tl = '';
+        if($p2->y > $y1c)
+          $c_tr = '';
+        if($round) {
+          if($c_tl != '' && $p1->x < $x1c) {
+            $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x1c, $y1c, $round, 'tl');
+            $start = "M{$cross}";
+            $c_tl = "{$arc} {$x1} {$y1c}";
+            if($p2->x < $x1c) {
+              $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x1c, $y1c, $round, 'tl');
+              $end = "L{$x1c} {$y1}{$arc} {$cross}";
+            }
+          }
+          if($c_tr != '' && $x2c < $p2->x) {
+            $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x2c, $y1c, $round, 'tr');
+            $end = "{$arc} {$cross}";
+            $c_tr = "L{$x2} {$y1c}";
+            if($x2c < $p1->x) {
+              $cross = $this->LineCrossArc($p1->x, $p2->y, $angle, $x2c, $y1c, $round, 'tr');
+              $start = "M{$cross}{$arc} {$x2c} {$y1}";
+            }
+          }
+        }
+        $points = array($start, $c_tl, $c_bl, $c_br, $c_tr, $end);
+        $distance = $y1 - $target[1];
+      } else {
+        // bottom
+        $p1 = new SVGGraphPoint($cx + $hoff + $wa, $y2);
+        if($p1->x > $x2) {
+          $p1->y = $y2 - ($p1->x - $x2) * tan($angle);
+          $p1->x = $x2;
+        }
+        $p2 = new SVGGraphPoint($cx + $hoff - $wa, $y2);
+        if($p2->x < $x1) {
+          $p2->y = $y2 + ($x1 - $p2->x) * tan($angle);
+          $p2->x = $x1;
+        }
+        $start = "M{$p1}";
+        $end = "L{$p2}";
+        if($p1->y < $y2c)
+          $c_br = '';
+        if($p2->y < $y2c)
+          $c_bl = '';
+        if($round) {
+          if($c_bl != '' && $p2->x < $x1c) {
+            $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x1c, $y2c, $round, 'bl');
+            $end = "{$arc} {$cross}";
+            $c_bl = "L{$x1} {$y2c}";
+            if($p1->x < $x1c) {
+              $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x1c, $y2c, $round, 'bl');
+              $start = "M{$cross}{$arc} {$x1c} {$y2}";
+            }
+          }
+          if($c_br != '' && $x2c < $p1->x) {
+            $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x2c, $y2c, $round, 'br');
+            $start = "M{$cross}";
+            $c_br = "{$arc} {$x2} {$y2c}";
+            if($x2c < $p2->x) {
+              $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x2c, $y2c, $round, 'br');
+              $end = "L{$x2c} {$y2}{$arc} {$cross}";
+            }
+          }
+        }
+        $points = array($start, $c_br, $c_tr, $c_tl, $c_bl, $end);
+        $distance = $target[1] - $y2;
+      }
+    } else {
+      // either side
+      // $voff = vertical offset from centre of side
+      // $wa = width at angle
+      $voff = $w * 0.5 * tan($angle);
+      $wa = $t_width * 0.5 / cos($angle);
+      if($angle < M_PI * 0.5 || $angle > M_PI * 1.5) {
+        // right
+        $p1 = new SVGGraphPoint($x2, $cy + $voff - $wa);
+        if($p1->y < $y1) {
+          $p1->x = $x2 + ($y1 - $p1->y) * tan($rangle);
+          $p1->y = $y1;
+        }
+        $p2 = new SVGGraphPoint($x2, $cy + $voff + $wa);
+        if($p2->y > $y2) {
+          $p2->x = $x2 - ($p2->y - $y2) * tan($rangle);
+          $p2->y = $y2;
+        }
+        $start = "M{$p1}";
+        $end = "L{$p2}";
+        if($p1->x < $x2c)
+          $c_tr = '';
+        if($p2->x < $x2c)
+          $c_br = '';
+        if($round) {
+          if($c_br != '' && $y2c < $p2->y) {
+            $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x2c, $y2c, $round, 'br');
+            $end = "{$arc} {$cross}";
+            $c_br = "L{$x2c} {$y2}";
+            if($y2c < $p1->y) {
+              $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x2c, $y2c, $round, 'br');
+              $start = "M{$cross}{$arc} {$x2} {$y2c}";
+            }
+          }
+          if($c_tr != '' && $p1->y < $y1c) {
+            $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x2c, $y1c, $round, 'tr');
+            $start = "M{$cross}";
+            $c_tr = "{$arc} {$x2c} {$y1}";
+            if($p2->y < $y1c) {
+              $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x2c, $y1c, $round, 'tr');
+              $end = "L{$x2} {$y1c}{$arc} {$cross}";
+            }
+          }
+        }
+        $points = array($start, $c_tr, $c_tl, $c_bl, $c_br, $end);
+        $distance = $target[0] - $x2;
+      } else {
+        // left
+        $p1 = new SVGGraphPoint($x1, $cy - $voff - $wa);
+        if($y2 < $p1->y) {
+          $p1->x = $x1 + ($y2 - $p1->y) * tan($rangle);
+          $p1->y = $y2;
+        }
+        $p2 = new SVGGraphPoint($x1, $cy - $voff + $wa);
+        if($p2->y < $y1) {
+          $p2->x = $x1 - ($p2->y - $y1) * tan($rangle);
+          $p2->y = $y1;
+        }
+        $start = "M{$p1}";
+        $end = "L{$p2}";
+        if($p1->x > $x1c)
+          $c_bl = '';
+        if($p2->x > $x1c)
+          $c_tl = '';
+        if($round) {
+          if($c_bl != '' && $y2c < $p1->y) {
+            $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x1c, $y2c, $round, 'bl');
+            $start = "M{$cross}";
+            $c_bl = "{$arc} {$x1c} {$y2}";
+            if($y2c < $p2->y) {
+              $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x1c, $y2c, $round, 'bl');
+              $end = "L{$x1} {$y2c}{$arc} {$cross}";
+            }
+          }
+          if($c_tl != '' && $p2->y < $y1c) {
+            $cross = $this->LineCrossArc($p2->x, $p2->y, $angle, $x1c, $y1c, $round, 'tl');
+            $end = "{$arc} {$cross}";
+            $c_tl = "L{$x1c} {$y1}";
+            if($p1->y < $y1c) {
+              $cross = $this->LineCrossArc($p1->x, $p1->y, $angle, $x1c, $y1c, $round, 'tl');
+              $start = "M{$cross}{$arc} {$x1} {$y1c}";
+            }
+          }
+        }
+        $points = array($start, $c_bl, $c_br, $c_tr, $c_tl, $end);
+        $distance = $x1 - $target[0];
+      }
+    }
+    $box_path = implode($points);
+
+    $surround['fill'] = $this->graph->ParseColour($style['fill']);
+    $surround['d'] = $box_path .
+      $this->GetTailEnding($target[0], $target[1], $angle, $t_width, $distance,
+        $style) . "z";
+    return "path";
+  }
+
+  /**
+   * Line and circle label style
+   */
+  protected function CircleLineLabel($x, $y, $w, $h, &$style, &$surround)
+  {
+    list($cx, $cy, $bbradius) = $this->CalcRoundLabel($x, $y, $w, $h);
+    list($target, $angle, $len) = $this->GetRoundTailTarget($style, $cx, $cy,
+      $bbradius);
+    if(is_null($target))
+      return $this->CircleLabel($x, $y, $w, $h, $style, $surround);
+
+    $t_width = max(1, min($style['tail_width'], $bbradius));
+    $l_angle = asin($t_width * 0.5 / $bbradius);
+    $p1x = $cx + $bbradius * cos($angle - $l_angle);
+    $p1y = $cy + $bbradius * sin($angle - $l_angle);
+    $p2x = $cx + $bbradius * cos($angle + $l_angle);
+    $p2y = $cy + $bbradius * sin($angle + $l_angle);
+
+    $surround['fill'] = $this->graph->ParseColour($style['fill']);
+    $surround['d'] = "M{$p1x} {$p1y}A{$bbradius} {$bbradius} 0 1 0 {$p2x} {$p2y}" .
+      $this->GetTailEnding($target[0], $target[1], $angle, $t_width, $len, $style) . "z";
+    return "path";
+  }
+
+  /**
+   * Converts a rectangle to a square with same centre point
+   */
+  private static function MakeSquare(&$x, &$y, &$w, &$h)
+  {
+    if($w == $h)
+      return;
+    $w2 = $w / 2;
+    $h2 = $h / 2;
+    if($w > $h) {
+      $y -= ($w2 - $h2);
+      $h += ($w - $h);
+    } else {
+      $x -= ($h2 - $w2);
+      $w += ($h - $w);
+    }
+  }
+
+  /**
+   * Square label style
+   */
+  protected function SquareLabel($x, $y, $w, $h, &$style, &$surround)
+  {
+    $this->MakeSquare($x, $y, $w, $h);
+    return $this->BoxLabel($x, $y, $w, $h, $style, $surround);
+  }
+
+  /**
+   * Line and square label style
+   */
+  protected function SquareLineLabel($x, $y, $w, $h, &$style, &$surround)
+  {
+    $this->MakeSquare($x, $y, $w, $h);
+    return $this->BoxLineLabel($x, $y, $w, $h, $style, $surround);
+  }
+
+};
+
+/**
+ * Data class for x,y coordinates
+ */
+class SVGGraphPoint {
+  public $x = 0;
+  public $y = 0;
+
+  public function __construct($x, $y)
+  {
+    $this->x = $x;
+    $this->y = $y;
+  }
+
+  public function __toString()
+  {
+    return (string)$this->x . ' ' . (string)$this->y;
   }
 };
 

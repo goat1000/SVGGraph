@@ -139,8 +139,8 @@ class HorizontalBarGraph extends GridGraph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
-    $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
+    list($pos, $target) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
     $bpos = $this->bar_label_position;
     if(!empty($bpos))
       $pos = $bpos;
@@ -149,13 +149,13 @@ class HorizontalBarGraph extends GridGraph {
       $pos = str_replace(array('left','centre','right'), 'outside right inside', $pos);
 
     // flip sides for negative values
-    if($item->value < 0) {
+    if(!is_null($item) && $item->value < 0) {
       if(strpos($pos, 'right') !== FALSE)
         $pos = str_replace('right', 'left', $pos);
       elseif(strpos($pos, 'left') !== FALSE)
         $pos = str_replace('left', 'right', $pos);
     }
-    return $pos;
+    return array($pos, $target);
   }
 
   /**

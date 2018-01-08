@@ -133,24 +133,26 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
+    list($pos, $target) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
     if(!is_numeric($dataset)) {
       if($dataset === 'totalpos') {
         if(isset($this->last_position_pos[$index])) {
           list($lpos, $l_w) = $this->last_position_pos[$index];
           list($hpos, $vpos) = Graph::TranslatePosition($lpos);
           if($hpos == 'or')
-            return "middle outside right {$l_w} 0";
+            return array("middle outside right {$l_w} 0", $target);
         }
-        return 'outside right';
+        return array('outside right', $target);
       }
       if($dataset === 'totalneg') {
         if(isset($this->last_position_neg[$index])) {
           list($lpos, $l_w) = $this->last_position_neg[$index];
           list($hpos, $vpos) = Graph::TranslatePosition($lpos);
           if($hpos == 'ol')
-            return "middle outside left -{$l_w} 0";
+            return array("middle outside left -{$l_w} 0", $target);
         }
-        return 'outside left';
+        return array('outside left', $target);
       }
     }
     if($dataset === 'totalpos')
@@ -158,8 +160,6 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
     if($dataset === 'totalneg')
       return 'outside left';
 
-    $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
     if($label_w > $w && Graph::IsPositionInside($pos))
       $pos = str_replace(array('outside left','outside right'), 'centre', $pos);
 
@@ -167,7 +167,7 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
       $this->last_position_pos[$index] = array($pos, $label_w);
     else
       $this->last_position_neg[$index] = array($pos, $label_w);
-    return $pos;
+    return array($pos, $target);
   }
 
   /**

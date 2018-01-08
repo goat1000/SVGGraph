@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2016 Graham Breach
+ * Copyright (C) 2014-2017 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -85,11 +85,13 @@ class PolarAreaGraph extends PieGraph {
       $t_radius = sqrt(pow($x1, 2) + pow($y1, 2));
 
       // see if the text fits in the slice
-      $r1 = $this->label_position * $rx;
+      $pos_radius = $this->label_position;
+      $r1 = $pos_radius * $rx;
+      $outside = false;
       if(sin($ab) * $r1 > $t_radius) {
         // place it at the label_position distance from centre
-        $xc = $this->label_position * $rx * $cos_ac;
-        $yc = $this->label_position * $ry * $sin_ac;
+        $xc = $pos_radius * $rx * $cos_ac;
+        $yc = $pos_radius * $ry * $sin_ac;
       } else {
         // find min distance that label fits in
         $h  = $t_radius / sin($ab);
@@ -111,13 +113,23 @@ class PolarAreaGraph extends PieGraph {
           $xc = $xmax;
           $yc = $ymax;
         }
+        $outside = true;
       }
       if($this->reverse)
         $yc = -$yc;
 
-      return "$xc $yc";
+      if($pos_radius > 1 || $outside) {
+        $space = $this->ArrayOption($this->data_label_space, $dataset);
+        $xt = ($rx + $space) * $cos_ac;
+        $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * $sin_ac;
+      } else {
+        $xt = $rx * 0.5 * $cos_ac;
+        $yt = ($this->reverse ? -1 : 1) * $ry * 0.5 * $sin_ac;
+      }
+      $target = array($x + $xt, $y + $yt);
+      return array("$xc $yc", $target);
     }
-    return 'middle centre';
+    return array('middle centre', array($x, $y));
   }
   
 }

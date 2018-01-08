@@ -94,10 +94,21 @@ class DonutGraph extends PieGraph {
     $label_w, $label_h)
   {
     if($dataset === 'innertext')
-      return 'centre middle';
+      return array('centre middle', array($x, $y));
 
-    return parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
+    list($pos, $target) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
+    if(isset($this->slice_info[$index]) && $this->label_position <= 1) {
+      $a = $this->slice_info[$index]->MidAngle();
+      $ac = $this->s_angle + $a;
+      $rx = $this->slice_info[$index]->radius_x;
+      $ry = $this->slice_info[$index]->radius_y;
+      $ring_centre = ($this->inner_radius + 1) * 0.5;
+      $xt = $rx * $ring_centre * cos($ac);
+      $yt = ($this->reverse ? -1 : 1) * $ry * $ring_centre * sin($ac);
+      $target = array($x + $xt, $y + $yt);
+    }
+    return array($pos, $target);
   }
 
   /**

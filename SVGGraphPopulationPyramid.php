@@ -142,14 +142,12 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
       // pass in an item with negative value for positions on left
       $ineg = $item;
       $ineg->value = -$item->value;
-      $pos = parent::DataLabelPosition($dataset, $index, $ineg, $x, $y, $w, $h,
+      return parent::DataLabelPosition($dataset, $index, $ineg, $x, $y, $w, $h,
         $label_w, $label_h);
     } else {
-      $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
+      return parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
         $label_w, $label_h);
     }
-
-    return $pos;
   }
 
   /**

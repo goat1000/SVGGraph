@@ -394,7 +394,7 @@ class PieGraph extends Graph {
   }
 
   /**
-   * Returns the position for the label
+   * Returns the position for the label and its target
    */
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
@@ -405,14 +405,26 @@ class PieGraph extends Graph {
       $ry = $this->slice_info[$index]->radius_y;
 
       // place it at the label_position distance from centre
+      $pos_radius = $this->label_position;
       $ac = $this->s_angle + $a;
-      $xc = $this->label_position * $rx * cos($ac);
-      $yc = ($this->reverse ? -1 : 1) * $this->label_position * $ry * sin($ac);
+      $xc = $pos_radius * $rx * cos($ac);
+      $yc = ($this->reverse ? -1 : 1) * $pos_radius * $ry * sin($ac);
       $pos = "$xc $yc";
+
+      if($pos_radius > 1) {
+        $space = $this->ArrayOption($this->data_label_space, $dataset);
+        $xt = ($rx + $space) * cos($ac);
+        $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * sin($ac);
+      } else {
+        $xt = $rx * 0.5 * cos($ac);
+        $yt = ($this->reverse ? -1 : 1) * $ry * 0.5 * sin($ac);
+      }
+      $target = array($x + $xt, $y + $yt);
     } else {
       $pos = 'middle centre';
+      $target = array($x, $y);
     }
-    return $pos;
+    return array($pos, $target);
   }
 
   /**

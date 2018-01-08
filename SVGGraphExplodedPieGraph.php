@@ -67,8 +67,8 @@ class ExplodedPieGraph extends PieGraph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
-    $pos = parent::DataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,
-      $label_w, $label_h);
+    list($pos, $target) = parent::DataLabelPosition($dataset, $index, $item,
+      $x, $y, $w, $h, $label_w, $label_h);
 
     if(isset($this->slice_info[$index])) {
       list($xo, $yo) = $this->pie_exploder->GetExplode($item,
@@ -85,11 +85,15 @@ class ExplodedPieGraph extends PieGraph {
         $y1 = $this->centre_y + $yo;
       }
 
+      // explode target position too
+      $target[0] += $xo;
+      $target[1] += $yo;
+
       $pos = "$x1 $y1";
     } else {
       $pos = 'middle centre';
     }
-    return $pos;
+    return array($pos, $target);
   }
 
   /**
