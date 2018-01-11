@@ -1,3 +1,14 @@
+Version 2.26 (10/01/2018)
+------------
+- Added "auto" option for data label tail length.
+- Added data_label_same_size option for more consistent labels.
+- Setting data_label_round for line or plain labels now uses a circular
+  bounding box.
+- Added circle, square, linecircle, linebox, linesquare and line2 label styles.
+- Added tail end options for new label styles.
+- Added no_tspan option for compatibility with renderers that don't support
+  tspan elements fully.
+
 Version 2.25 (12/10/2017)
 ------------
 - Added 3D polar area graph.
