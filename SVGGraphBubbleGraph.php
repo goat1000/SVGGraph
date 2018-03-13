@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -70,6 +70,7 @@ class BubbleGraph extends PointGraph {
           $bubble = $this->Element('circle', array_merge($circle, $circle_style));
           $series .= $this->GetLink($item, $item->key, $bubble);
 
+          $this->AddMarker($x, $y, $item);
           $this->SetLegendEntry(0, $bnum, $item, $circle_style);
         }
       }
@@ -78,10 +79,13 @@ class BubbleGraph extends PointGraph {
 
     if($this->semantic_classes)
       $series = $this->Element('g', array('class' => 'series'), NULL, $series);
+    list($best_fit_above, $best_fit_below) = $this->BestFitLines();
+    $body .= $best_fit_below;
     $body .= $series;
     $body .= $this->OverShapes();
     $body .= $this->Axes();
     $body .= $this->DrawMarkers();
+    $body .= $best_fit_above;
     return $body;
   }
 
@@ -95,6 +99,9 @@ class BubbleGraph extends PointGraph {
     // using force_assoc makes things work properly
     if($this->values->AssociativeKeys())
       $this->force_assoc = true;
+
+    // prevent drawing actual markers
+    $this->marker_size = 0;
   }
 
   /**
