@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2017 Graham Breach
+ * Copyright (C) 2009-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -1573,7 +1573,7 @@ abstract class GridGraph extends Graph {
     // text group for grid details
     $text_group = array('id' => $this->NewId(), 'visibility' => 'hidden');
     $text_rect = array(
-      'x' => $this->grid_, 'y' => 0, 'width' => '10', 'height' => 10,
+      'x' => '0', 'y' => '0', 'width' => '10', 'height' => '10',
       'fill' => $this->ParseColour($this->crosshairs_text_back_colour),
     );
     if($this->crosshairs_text_round)
