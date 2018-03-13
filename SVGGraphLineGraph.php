@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2016 Graham Breach
+ * Copyright (C) 2009-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,21 @@ class LineGraph extends PointGraph {
   protected $require_integer_keys = false;
   protected $curr_line_style = NULL;
   protected $curr_fill_style = NULL;
+
+  /**
+   * Override constructor to handle some odd settings
+   */
+  public function __construct($width, $height, $settings = NULL)
+  {
+    parent::__construct($width, $height, $settings);
+    if(isset($settings['line_figure']) && $settings['line_figure']) {
+
+      // drawing figures means keeping data in order and accepting
+      // repeated keys
+      $this->sort_keys = false;
+      $this->repeated_keys = 'accept';
+    }
+  }
 
   protected function Draw()
   {
@@ -87,6 +102,8 @@ class LineGraph extends PointGraph {
   public function DrawLine($dataset, $points, $y_bottom, $stroke_colour = false)
   {
     $attr = array('fill' => 'none');
+    $figure = $this->line_figure;
+    $close = $figure && $this->ArrayOption($this->line_figure_closed, $dataset);
     $fill = $this->ArrayOption($this->fill_under, $dataset);
     $dash = $this->ArrayOption($this->line_dash, $dataset);
     $stroke_width = $this->ArrayOption($this->line_stroke_width, $dataset);
@@ -99,7 +116,8 @@ class LineGraph extends PointGraph {
       list($x, $y, $item, $dataset, $index) = $point;
 
       if(empty($fillpath))
-        $fillpath = "M$x {$y_bottom}L";
+        $fillpath = $figure ? "M$x {$y}L" : "M$x {$y_bottom}L";
+
       $path .= "$cmd$x $y ";
       $fillpath .= "$x $y ";
 
@@ -107,6 +125,10 @@ class LineGraph extends PointGraph {
       $cmd = $cmd == 'M' ? 'L' : '';
       $last_x = $x;
     }
+
+    // close the path?
+    if($close)
+      $path .= 'z';
     $attr['stroke'] = $stroke_colour ? $this->stroke_colour :
       $this->GetColour(null, 0, $dataset, true);
     $this->curr_line_style = $attr;
@@ -117,7 +139,8 @@ class LineGraph extends PointGraph {
 
     if($fill) {
       $opacity = $this->ArrayOption($this->fill_opacity, $dataset);
-      $fillpath .= "L{$last_x} {$y_bottom}z";
+      if(!$figure)
+        $fillpath .= "L{$last_x} {$y_bottom}z";
       $fill_style = array(
         'fill' => $this->GetColour(null, 0, $dataset),
         'd' => $fillpath,

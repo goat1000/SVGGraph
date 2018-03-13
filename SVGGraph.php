@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.26');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.27');
 
 require_once 'SVGGraphColours.php';
 
@@ -228,6 +228,7 @@ abstract class Graph {
   protected $legend_reverse = false;
   protected $force_assoc = false;
   protected $repeated_keys = 'error';
+  protected $sort_keys = true;
   protected $require_structured = false;
   protected $require_integer_keys = true;
   protected $multi_graph = NULL;
@@ -339,7 +340,8 @@ abstract class Graph {
       require_once 'SVGGraphStructuredData.php';
       $this->values = new SVGGraphStructuredData($new_values, $this->force_assoc,
         $this->datetime_keys, $this->structure, $this->repeated_keys,
-        $this->require_integer_keys, $this->require_structured);
+        $this->sort_keys, $this->require_integer_keys,
+        $this->require_structured);
     } else {
       require_once 'SVGGraphData.php';
       $this->values = new SVGGraphData($new_values, $this->force_assoc,

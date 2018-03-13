@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2016 Graham Breach
+ * Copyright (C) 2011-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,7 +61,7 @@ class MultiGraph implements Countable, ArrayAccess, Iterator {
 
       require_once('SVGGraphStructuredData.php');
       $this->values = new SVGGraphStructuredData($new_data, $force_assoc,
-        $datetime_keys, null, false, $int_keys, null, true);
+        $datetime_keys, null, false, false, $int_keys, null, true);
     }
     $this->datasets = count($this->values);
   }

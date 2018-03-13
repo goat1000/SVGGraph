@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,6 +32,7 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
   private $assoc = null;
   private $datetime;
   private $repeated_keys;
+  private $sort_keys;
   private $assoc_test;
   private $structure = array();
   private $max_keys = array();
@@ -41,7 +42,7 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
   public $error = null;
 
   public function __construct(&$data, $force_assoc, $datetime_keys,
-    $structure, $repeated_keys, $integer_keys, $requirements,
+    $structure, $repeated_keys, $sort_keys, $integer_keys, $requirements,
     $rekey_done = FALSE)
   {
     if(!is_null($structure) && !empty($structure)) {
@@ -108,6 +109,7 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
     $this->force_assoc = $force_assoc;
     $this->assoc_test = $integer_keys ? 'is_int' : 'is_numeric';
 
+    $do_sort = false;
     if($datetime_keys || $this->AssociativeKeys()) {
       // reindex the array to 0, 1, 2, ...
       $this->data = array_values($this->data);
@@ -119,11 +121,15 @@ class SVGGraphStructuredData implements Countable, ArrayAccess, Iterator {
           $this->error = 'Too many date/time conversion errors';
           return;
         }
-        $GLOBALS['SVGGraphFieldSortField'] = $this->key_field;
-        usort($this->data, 'SVGGraphFieldSort');
+        $do_sort = true;
       }
     } elseif(!is_null($this->key_field)) {
       // if not associative, sort by key field
+      $do_sort = true;
+    }
+
+    if($do_sort && $sort_keys) {
+      $this->sort_keys = true;
       $GLOBALS['SVGGraphFieldSortField'] = $this->key_field;
       usort($this->data, 'SVGGraphFieldSort');
     }
