@@ -891,7 +891,7 @@ abstract class Graph {
    */
   protected function ErrorText($error)
   {
-    $text = array('x' => $this->pad_left, 'y' => $this->height - 3);
+    $text = array('x' => 3, 'y' => $this->height - 3);
     $style = array(
       'font-family' => 'monospace',
       'font-size' => '11px',

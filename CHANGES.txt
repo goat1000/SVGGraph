@@ -1,3 +1,13 @@
+Version 2.27 (28/03/2018)
+------------
+- Added support for multiple Y-axes using dataset_axis option.
+- Added support for best-fit lines on bubble graphs.
+- Added line_figure and line_figure_closed options for drawing shapes on line
+  graphs.
+- Fixed crosshairs being left behind when cursor moved out of document.
+- Fixed broken bars when all values in stacked grouped 3D bar and cylinder
+  graphs negative.
+
 Version 2.26 (10/01/2018)
 ------------
 - Added "auto" option for data label tail length.

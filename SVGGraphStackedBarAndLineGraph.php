@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017 Graham Breach
+ * Copyright (C) 2017-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +39,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     unset($settings['label']);
     $this->linegraph = new LineGraph($w, $h, $settings);
 
-    // validate second axis datasets are only lines
+    // validate secondary axis datasets are only lines
     if(isset($settings['dataset_axis'])) {
       $lines = is_array($settings['line_dataset']) ? $settings['line_dataset'] :
         array($settings['line_dataset']);
@@ -48,7 +48,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
       foreach($lines as $line)
         $line_map[$line] = 1;
       foreach($settings['dataset_axis'] as $dataset => $axis) {
-        if($axis == 1 && !isset($line_map[$dataset])) {
+        if($axis != 0 && !isset($line_map[$dataset])) {
           throw new Exception('Bar datasets must use axis 0');
         }
       }
@@ -243,8 +243,9 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     sort($lines);
     $lines = array_flip($lines);
 
-    $axis_max = array(NULL, NULL);
-    $axis_min = array(NULL, NULL);
+    $axis_count = $this->YAxisCount();
+    $axis_max = array_fill(0, $axis_count, NULL);
+    $axis_min = array_fill(0, $axis_count, NULL);
     $stack_max = NULL;
     $stack_min = NULL;
     $datasets = count($this->multi_graph);
