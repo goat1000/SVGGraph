@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2017 Graham Breach
+ * Copyright (C) 2015-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,46 +78,51 @@ class StackedGroupedCylinderGraph extends StackedCylinderGraph {
           $bar['x'] = $bspace + $bar_pos + ($l * $group_unit_width);
           $start_bar = $this->groups[$l];
           $end_bar = isset($this->groups[$l + 1]) ? $this->groups[$l + 1] : $bar_count;
-          $ypos = $yneg = 0;
 
-          // make $end_bar the top visible bar
-          for($j = $end_bar - 1; $j > $start_bar; --$j) {
-            if(is_null($itemlist[$j]->value))
-              --$end_bar;
-          }
+          // stack the bars in order they must be drawn
+          $stack = array();
+          $ypos = $yneg = 0;
           for($j = $start_bar; $j < $end_bar; ++$j) {
             $item = $itemlist[$j];
-
             if(!is_null($item->value)) {
-              $t = ($j == $end_bar - 1 ? $top : NULL);
-              $bar_sections = $this->Bar3D($item, $bar, $t, $bnum, $j,
-                $item->value >= 0 ? $ypos : $yneg);
-              if($item->value < 0)
+              if($item->value < 0) {
+                array_unshift($stack, array($j, $yneg));
                 $yneg += $item->value;
-              else
+              } else {
+                $stack[] = array($j, $ypos);
                 $ypos += $item->value;
-
-              $group['fill'] = $this->GetColour($item, $bnum, $j);
-              $show_label = $this->AddDataLabel($j, $bnum, $group, $item,
-                $bar['x'] + $tx, $bar['y'] + $ty, $bar['width'], $bar['height']);
-
-              if($this->show_tooltips)
-                $this->SetTooltip($group, $item, $j, $item->key, $item->value);
-              $link = $this->GetLink($item, $k, $bar_sections);
-              $this->SetStroke($group, $item, $j, 'round');
-              if($this->semantic_classes)
-                $group['class'] = "series{$j}";
-              $bars .= $this->Element('g', $group, NULL, $link);
-              unset($group['id'], $group['class']);
-
-              // set up legend
-              $cstyle = array('fill' => $this->GetColour($item, $bnum, $j));
-              $this->SetStroke($cstyle, $item, $j);
-
-              // store whether the bar can be seen or not
-              $this->bar_visibility[$j][$item->key] = ($t || $item->value != 0);
-              $this->SetLegendEntry($j, $bnum, $item, $cstyle);
+              }
             }
+          }
+
+          $stack_last = count($stack) - 1;
+          foreach($stack as $b => $stack_bar) {
+            list($j, $stack_pos) = $stack_bar;
+            $item = $itemlist[$j];
+            $t = ($b == $stack_last ? $top : NULL);
+            $bar_sections = $this->Bar3D($item, $bar, $t, $bnum, $j,
+              $stack_pos);
+
+            $group['fill'] = $this->GetColour($item, $bnum, $j);
+            $show_label = $this->AddDataLabel($j, $bnum, $group, $item,
+              $bar['x'] + $tx, $bar['y'] + $ty, $bar['width'], $bar['height']);
+
+            if($this->show_tooltips)
+              $this->SetTooltip($group, $item, $j, $item->key, $item->value);
+            $link = $this->GetLink($item, $k, $bar_sections);
+            $this->SetStroke($group, $item, $j, 'round');
+            if($this->semantic_classes)
+              $group['class'] = "series{$j}";
+            $bars .= $this->Element('g', $group, NULL, $link);
+            unset($group['id'], $group['class']);
+
+            // set up legend
+            $cstyle = array('fill' => $this->GetColour($item, $bnum, $j));
+            $this->SetStroke($cstyle, $item, $j);
+
+            // store whether the bar can be seen or not
+            $this->bar_visibility[$j][$item->key] = ($t || $item->value != 0);
+            $this->SetLegendEntry($j, $bnum, $item, $cstyle);
           }
         }
       }
