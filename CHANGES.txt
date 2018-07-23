@@ -1,3 +1,7 @@
+Version 2.28 (23/07/2018)
+------------
+- Added text measurement class using font metrics and/or character widths.
+
 Version 2.27 (28/03/2018)
 ------------
 - Added support for multiple Y-axes using dataset_axis option.

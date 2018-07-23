@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2017 Graham Breach
+ * Copyright (C) 2010-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -192,7 +192,8 @@ abstract class PointGraph extends GridGraph {
       $content = $type;
       $type = 'custom';
     } elseif(strncmp($type, 'image:', 6) == 0) {
-      $image_path = SVGGraphSubstr($type, 6, NULL, $this->encoding);
+      $svg_text = new SVGGraphText($this);
+      $image_path = $svg_text->Substr($type, 6);
       $type = 'image';
     }
 

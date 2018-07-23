@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2016 Graham Breach
+ * Copyright (C) 2012-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -576,6 +576,9 @@ class RadarGraph extends LineGraph {
   protected function XAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside)
   {
     $positions = array();
+    $font = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_h, 0),
+      $this->axis_font);
     $font_size = $this->GetFirst(
       $this->ArrayOption($this->axis_font_size_h, 0),
       $this->axis_font_size);
@@ -590,10 +593,11 @@ class RadarGraph extends LineGraph {
     $count = count($points);
     $p = 0;
     $direction = $this->reverse ? -1 : 1;
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $x = $grid_point->position - $this->pad_left;
-      if(SVGGraphStrlen($key, $this->encoding) > 0 && ++$p < $count) {
+      if($svg_text->Strlen($key) > 0 && ++$p < $count) {
         $a = $this->arad + $direction * $x / $this->radius;
         $s = sin($a);
         $c = cos($a);
@@ -609,10 +613,9 @@ class RadarGraph extends LineGraph {
           'sin' => $s,
           'cos' => $c
         );
-        $size = $this->TextSize((string)$key, $font_size, $font_adjust,
-          $this->encoding, $angle, $font_size);
+        $size = $svg_text->Measure((string)$key, $font_size, $angle, $font_size);
         // $s == +1 or -1 is a particular case: vertically centre
-        $lines = $this->CountLines($key);
+        $lines = $svg_text->Lines($key);
         if(pow($s, 2) == 1)
           $position['y'] -= ($lines / 2 - 1) * $font_size;
         elseif($c < 0)
@@ -653,15 +656,24 @@ class RadarGraph extends LineGraph {
   { 
     $inside = ('inside' == $this->GetFirst($this->axis_text_position_h,
       $this->axis_text_position));
-    $font_size = $this->GetFirst($this->axis_font_size_h, $this->axis_font_size);
+    $font = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_h, 0),
+      $this->axis_font);
+    $font_size = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_size_h, 0),
+      $this->axis_font_size);
+    $font_adjust = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_adjust_h, 0),
+      $this->axis_font_adjust);
     $positions = $this->XAxisTextPositions($points, $xoff, $yoff, $angle,
       $inside);
     $labels = '';
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($positions as $pos) {
       $text = $pos['text'];
       unset($pos['w'], $pos['h'], $pos['text'], $pos['angle'], $pos['sin'],
         $pos['cos']);
-      $labels .= $this->Text($text, $font_size, $pos);
+      $labels .= $svg_text->Text($text, $font_size, $pos);
     }
     $group = array();
     if(!empty($this->axis_font_h))
@@ -683,6 +695,9 @@ class RadarGraph extends LineGraph {
   {
     $positions = array();
     $labels = '';
+    $font = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_v, $axis_no),
+      $this->axis_font);
     $font_size = $this->GetFirst(
       $this->ArrayOption($this->axis_font_size_v, $axis_no),
       $this->axis_font_size);
@@ -700,10 +715,11 @@ class RadarGraph extends LineGraph {
     $x3 = 0;
     $y3 = $c > 0 ? $font_size : 0;
     $position = array('text-anchor' => $s < 0 ? 'start' : 'end');
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $y = $grid_point->position;
-      if(SVGGraphStrlen($key, $this->encoding) > 0) {
+      if($svg_text->Strlen($key) > 0) {
         $x1 = $y * $s;
         $y1 = $y * $c;
         $position['x'] = $this->xc + $x1 + $x2 + $x3;
@@ -713,8 +729,7 @@ class RadarGraph extends LineGraph {
           $rcy = $position['y'];
           $position['transform'] = "rotate($angle,$rcx,$rcy)";
         }
-        $size = $this->TextSize((string)$key, $font_size, $font_adjust, 
-          $this->encoding, $angle, $font_size);
+        $size = $svg_text->Measure((string)$key, $font_size, $angle, $font_size);
         $position['text'] = $key;
         $position['w'] = $size[0];
         $position['h'] = $size[1];
@@ -731,14 +746,21 @@ class RadarGraph extends LineGraph {
   { 
     $positions = $this->YAxisTextPositions($points, $xoff, $yoff, $angle, false, $axis_no);
     $labels = '';
+    $font = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_v, $axis_no),
+      $this->axis_font);
     $font_size = $this->GetFirst(
       $this->ArrayOption($this->axis_font_size_v, $axis_no),
       $this->axis_font_size);
+    $font_adjust = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
+      $this->axis_font_adjust);
     $anchor = $positions[0]['text-anchor'];
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($positions as $pos) {
       $text = $pos['text'];
       unset($pos['w'], $pos['h'], $pos['text'], $pos['text-anchor']);
-      $labels .= $this->Text($text, $font_size, $pos);
+      $labels .= $svg_text->Text($text, $font_size, $pos);
     }
     $group = array('text-anchor' => $anchor);
     if(!empty($this->axis_font_v))
@@ -759,13 +781,14 @@ class RadarGraph extends LineGraph {
     if(empty($this->label_v))
       return '';
 
+    $svg_text = new SVGGraphText($this);
     $c = cos($this->arad);
     $s = sin($this->arad);
     $a = $this->arad + ($s * $c > 0 ? - M_PI_2 : M_PI_2);
     $offset = max($this->division_size * (int)$this->show_divisions,
       $this->subdivision_size * (int)$this->show_subdivisions) +
       $this->pad_v_axis_label + $this->label_space;
-    $offset += ($c < 0 ? ($this->CountLines($this->label_v) - 1) : 1) *
+    $offset += ($c < 0 ? ($svg_text->Lines($this->label_v) - 1) : 1) *
       $this->label_font_size;
 
     $x2 = $offset * sin($a);
@@ -779,7 +802,7 @@ class RadarGraph extends LineGraph {
       'y' => $y,
       'transform' => "rotate($a,$x,$y)",
     );
-    return $this->Text($this->label_v, $this->label_font_size,
+    return $svg_text->Text($this->label_v, $this->label_font_size,
       array_merge($attribs, $pos));
   }
 

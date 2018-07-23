@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SVGGraph Font Measurer</title>
+<style>
+html { max-width: 800px; margin 0 auto }
+body { font-family: 'Arial'; background-color: #f0f0f0 }
+fieldset { display: block; margin: 1em; background-color: #fff }
+label { padding: 0.3em; font-size: small}
+fieldset > label { clear: left; }
+p { overflow: auto; }
+p > label { white-space: nowrap; float: left }
+input { margin: 0.3em }
+input[type=checkbox] { margin-right: 2em; }
+input[readonly], textarea[readonly] { color: #666 }
+svg { border: 1px solid #000 }
+</style>
+</head>
+<body>
+
+<h1>SVGGraph Font Measurer</h1>
+
+<form action="javascript:measureFont()" method="post" name="measurer">
+
+<fieldset>
+<legend>Character measurement ranges</legend>
+
+<p>These are the characters that will be measured. Choose from the standard
+ranges, or input your own ranges or single character codes. Codes are accepted
+in decimal or hexadecimal, e.g. <code>256</code> or <code>0x0100</code> or
+<code>U+0100</code> or <code>\u0100</code>. Use "-" or ".." between codes to
+define a range.</p>
+
+<p id="widthdiv"></p>
+
+<label>Character width range(s):<br>
+  <input type="text" name="widthrange" size="60">
+</label>
+</fieldset>
+
+<fieldset>
+<legend>Kerning ranges</legend>
+
+<p>These will be measured in pairs to determine which pairs of
+characters are smaller than the sum of their individual widths.</p>
+
+<p id="kerndiv"></p>
+<label>Kerning pair range(s):<br>
+  <input type="text" name="kernrange" size="60">
+</label>
+</fieldset>
+
+<fieldset>
+<legend>Font selection</legend>
+<p>Type the font name in the box. Common font names will be auto-completed.
+The "measure size" is the font size used for measuring the characters, and also
+affects the size of the SVG measurement area below.</p>
+
+<label>Font:
+  <input type="text" name="font" list="fonts">
+</label>
+<datalist id="fonts">
+</datalist>
+<label>Measure size:
+<select name="size"> </select>
+</label>
+</fieldset>
+
+<div>
+<fieldset>
+  <legend>Generate metrics</legend>
+  <p>Press this button to start measuring the characters and kerning pairs.
+  The results will appear below the SVG measurement area.</p>
+  <input type="submit" value="Generate metrics">
+</fieldset>
+</div>
+
+</form>
+
+<div id="svgPart">
+  <fieldset>
+    <legend>SVG measurement area</legend>
+    <p>The area below is an SVG document where the characters and pairs are
+    measured.</p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="200" height="200" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+<g font-family="Courier New" font-size="100" id="textGroup">
+  <text x="10" y="80" id="measureThis">Ready</text>
+  <rect x="1" y="1" width="0" height="0" fill="none" stroke="#f00" id="measureRect" />
+  <rect x="0" y="0" width="0" height="3" fill="#f00" id="progress" />
+</g>
+</svg>
+  </fieldset>
+</div>
+
+<div id="complete" style="display:none">
+<div>
+<fieldset>
+  <legend>Metrics test</legend>
+  <p>Enter a string in the box below and choose the font size to test the
+  measurement algorithm. The text and a bounding box will be drawn in the SVG
+  measurement area above - the bounding box is calculated using the algorithm.</p>
+<form action="javascript:calc()" name="tester">
+  <label>Test string
+    <input type="text" name="testString" size="80" value="This is the length test string!">
+  </label>
+  <br>
+  <label>Font size <input type="text" name="fontSize" size="3" value="24"></label>
+  <label>Font adjust value <input type="text" name="fontAdjust" size="3" value="0.6"></label>
+<input type="submit" disabled name="submit" value="Display">
+</fieldset>
+<fieldset>
+  <legend>Test results</legend>
+  <p>These results show the calculated and actual string widths, along with
+  the pre-metrics method calculation using both the font adjust value above and
+  the adjust value determined from the mean character width.</p>
+
+<label>Calculated width:
+  <input type="text" name="outwidth" size="8" readonly>
+</label>
+
+<label>Actual width:
+  <input type="text" name="outactual" size="8" readonly>
+</label>
+<br>
+<label>Old method (input adjust):
+  <input type="text" name="outold" size="8" readonly>
+</label>
+<label>Old method (calculated adjust):
+  <input type="text" name="outoldcalc" size="8" readonly>
+</label>
+
+</form>
+</fieldset>
+</div>
+
+<fieldset>
+  <legend>Metrics</legend>
+
+  <p>These are the measured metrics. The height, baseline and mean width are
+  used by the new algorithm to calculate the position and size of strings. The
+  calculated adjust value is not used by the new algorithm, but it can be used
+  for SVGGraph font adjust options (using the old algorithm) instead of the
+  metric file.</p>
+
+  <label>Filename:
+    <input type="text" id="outfilename" readonly>
+  </label>
+  <br>
+  <label>Height:
+    <input type="text" id="outheight" size="5" readonly>
+  </label>
+  <br>
+  <label>Baseline:
+    <input type="text" id="outbaseline" size="5" readonly>
+  </label>
+  <br>
+  <label>Mean width:
+    <input type="text" id="outmean" size="5" readonly>
+  </label>
+  <br>
+  <label>Calculated adjust:
+    <input type="text" id="outadjust" size="5" readonly>
+  </label>
+  <br>
+
+  <label>Metrics file: <a id="download">Download</a><br>
+  <textarea rows="22" cols="100" id="results" readonly></textarea>
+  </label>
+</fieldset>
+</div>
+
+<script>// <![CDATA[
+var fonts = [
+  'Arial', 'Arial Black', 'Comic Sans MS',
+  'Courier New', 'Georgia', 'Impact',
+  'Lucida Console', 'Lucida Sans Unicode', 'Palatino Linotype',
+  'Tahoma', 'Times New Roman', 'Trebuchet MS',
+  'Verdana', 'Symbol', 'Webdings', 'Wingdings',
+  'Calibri', 'Cambria', 'Candara', 'Consolas',
+  'Constantia', 'Corbel',
+];
+var char_ranges = {
+  'Basic Latin (ASCII)': [0x0020,0x007f],
+  'Latin-1 supplement':  [0x00a0,0x00ff],
+  'Latin Extended-A':    [0x0100,0x017f],
+  'Latin Extended-B':    [0x0180,0x024f],
+  'Greek and Coptic':    [0x0370,0x03ff],
+  'Cyrillic':            [0x0400,0x04ff],
+  'Cyrillic Supplement': [0x0500,0x052f],
+};
+var sizes = [20, 50, 100, 200];
+var font = 'Times New Roman', size = 100, font_adjust = 0.6, kcounter = 0,
+  kcount = 0, kchar = 0, krange = 0, kranges = [];
+
+function getE(i){return document.getElementById(i)}
+function setattr(i,a,v){i.setAttributeNS(null,a,v);return v}
+function newel(e,a){
+  var ns='http://www.w3.org/2000/svg', ne=document.createElementNS(ns,e),i;
+  for(i in a)
+    setattr(ne, i, a[i]);
+  return ne;
+}
+function newtext(c){return document.createTextNode(c)}
+function finditem(e,list) {
+  var l = e.target.correspondingUseElement || e.target, t;
+  while(!t && l.parentNode) {
+    t = l.id && list[l.id];
+    l = l.parentNode;
+  }
+  return t;
+}
+function toHex(i) {
+  return ('000' + (i * 1).toString(16)).substr(-4).toUpperCase();
+}
+function getUChar(i) {
+  var uval, uchar;
+  try {
+    uval = '\\u' + toHex(i);
+    eval("uchar = '" + uval + "'");
+  } catch(e) {
+    return null;
+  }
+  return uchar;
+}
+function drawText(text) {
+  var mt = getE('measureThis');
+  mt.replaceChild(newtext(text), mt.childNodes[0]);
+  return mt.getBBox();
+}
+/**
+ * Measures characters that take up no space by themselves
+ */
+function spaces(map) {
+  var i, bb, rchar = '-', rw; // hyphen for either side of space
+
+  bb = drawText(rchar);
+  rw = bb.width;
+  for(i in map) {
+    if(map[i].w == 0) {
+      bb = drawText(rchar + map[i].c + rchar);
+      map[i].w = bb.width - (rw * 2);
+    }
+  }
+}
+/**
+ * Finds the character pairs that are smaller than the sum of their widths
+ */
+function kerning(c) {
+  var str = '', charwidth, charc = getUChar(c), testchar, testwidth,
+    i, j, pair, pw, bb, w, threshold, r;
+  if(output.widths[c]) {
+    if(output.widths[c].h == 0)
+      return;
+    charwidth = output.widths[c].w;
+  } else {
+    bb = drawText(charc);
+    if(bb.height == 0)
+      return;
+    charwidth = bb.width;
+  }
+  threshold = 0.05 * charwidth;
+  for(r = 0; r < kranges.length; ++r) {
+    for(i = kranges[r][0]; i <= kranges[r][1]; ++i) {
+      testchar = getUChar(i);
+      if(output.widths[i]) {
+        if(output.widths[i].h == 0)
+          continue;
+        testwidth = output.widths[i].w;
+      } else {
+        bb = drawText(testchar);
+        if(bb.height == 0)
+          continue;
+        testwidth = bb.width;
+      }
+      pair = charc + testchar;
+      pw = charwidth + testwidth;
+
+      bb = drawText(pair);
+      w = bb.width;
+      if(pw - w > threshold) {
+        output.kern[pair] = bb.width;
+      }
+    }
+  }
+}
+function kernChar() {
+  if(kchar == 0) {
+    kchar = kranges[0][0];
+  } else if(kchar > kranges[krange][1]) {
+    ++krange;
+    kchar = kranges[krange][0];
+  } 
+  kerning(kchar);
+  setProgress(kcounter, kcount);
+  if(++kcounter < kcount) {
+    ++kchar;
+    setTimeout(kernChar, 0);
+  } else {
+    setTimeout(complete, 0);
+  }
+}
+function measure(str, map, kern) {
+  var l = str.length, i, c, p, chars = [], sl = 0, unk = 'M'.codePointAt();
+  for(i = 0; i < l; ++i) {
+    c = str[i].codePointAt();
+    chars[i] = map[c] ? map[c] : map[unk];
+  }
+  for(i = 0; i < l - 1; ++i) {
+    c = str.substr(i, 2);
+    if(kern[c]) {
+      chars[i + 1] -= chars[i] + chars[i + 1] - kern[c];
+    }
+  }
+  for(i = 0; i < l; ++i) {
+    sl += chars[i];
+  }
+  return sl;
+}
+function parseRange(str) {
+  var matches, ranges = [], i, curr, m, start, end;
+  matches = str.split(/[\s,]+/);
+
+  for(i = 0; i < matches.length; ++i) {
+    curr = matches[i];
+    if('' == curr)
+      continue;
+    if(m = curr.match(/^\d+$/)) {
+      start = end = parseInt(curr);
+    } else if(m = curr.match(/^(U\+|\\u|0x)([\da-f]+)$/i)) {
+      start = end = parseInt(m[2], 16);
+    } else if(m = curr.match(/^(\d+)(-|\.\.)(\d+)$/)) {
+      start = parseInt(m[1]);
+      end = parseInt(m[3]);
+    } else if(m = curr.match(/^(U\+|\\u|0x)([\da-f]+)(-|\.\.)(U\+|\\u|0x)([\da-f]+)$/i)) {
+      start = parseInt(m[2], 16);
+      end = parseInt(m[5], 16);
+    } else {
+      continue; // unrecognised
+    }
+    ranges.push([start, end]);
+  }
+
+  ranges.sort(function(a, b) { return a[0] - b[0]; });
+  return ranges;
+}
+function rangesToString(r) {
+  var i, s = '';
+  for(i = 0; i < r.length; ++i) {
+    if(r[i][0] == r[i][1])
+      s += ', ' + r[i][0];
+    else
+      s += ', ' + r[i][0] + '-' + r[i][1];
+  }
+  return s.replace(/^, /, '');
+}
+function rangeInArray(a, r) {
+  var i = 0;
+  for(i = 0; i < a.length; ++i) {
+    if(a[i][0] == r[0] && a[i][1] == r[1])
+      return true;
+  }
+  return false;
+}
+function updateRanges() {
+  var form = document.forms['measurer'], i, range, remove = [];
+  range = parseRange(form.widthrange.value);
+  for(i in char_ranges) {
+    if(form[i].checked) {
+      if(!rangeInArray(range, char_ranges[i]))
+        range.push(char_ranges[i]);
+    } else {
+      remove.push(char_ranges[i]);
+    }
+  }
+  range = range.filter(function(r) { return !rangeInArray(this, r); }, remove);
+  range.sort(function(a, b) { return a[0] - b[0]; });
+  form.widthrange.value = rangesToString(range);
+
+  remove = [];
+  range = parseRange(form.kernrange.value);
+  for(i in char_ranges) {
+    if(form['k' + i].checked) {
+      if(!rangeInArray(range, char_ranges[i]))
+        range.push(char_ranges[i]);
+    } else {
+      remove.push(char_ranges[i]);
+    }
+  }
+  range = range.filter(function(r) { return !rangeInArray(remove, r); });
+  range.sort(function(a, b) { return a[0] - b[0]; });
+  form.kernrange.value = rangesToString(range);
+}
+function measureFont() {
+  var form = document.forms['measurer'], character, mean = 0, mcount = 0,
+    font_top = settings.baseline, height = 0, ranges,
+    r, i, bb, w, t, spread = {}, map = {};
+
+  // global
+  output = {
+    'font': form.font.value,
+    'size': form.size.value,
+    'kern': {}
+  };
+  moveRect(0, 0, 0, 0);
+  setFont(output.font, output.size);
+  ranges = parseRange(form.widthrange.value);
+  i = ranges.reduce(function(t, p) { return t + 1 + p[1] - p[0];}, 0);
+  if(i == 0) {
+    window.alert('No characters selected for measurement!');
+    return;
+  }
+
+  for(r = 0; r < ranges.length; ++r) {
+    for(i = ranges[r][0]; i <= ranges[r][1]; ++i) {
+
+      character = getUChar(i);
+      if(null != character) {
+        bb = drawText(character);
+        w = bb.width;
+        map[i] = { 'c': character, 'w': bb.width, 'h': bb.height };
+        if(w > 0) {
+          if(bb.y < font_top)
+            font_top = bb.y;
+          if(bb.height > height)
+            height = bb.height;
+          mean += w;
+
+          if(spread[w])
+            ++spread[w].count;
+          else
+            spread[w] = { first: character, firstCode: i, count: 1 };
+          ++mcount;
+        }
+      }
+    }
+  }
+
+  spaces(map);
+
+  output.baseline = settings.baseline - font_top;
+  output.height = height;
+  output.widths = map;
+  output.mean = mean / mcount;
+  output.adjust = output.mean / output.size;
+
+  kranges = parseRange(form.kernrange.value);
+  kcount = kranges.reduce(function(t, p) { return t + 1 + p[1] - p[0];}, 0);
+  kcounter = 0;
+  kchar = 0;
+  krange = 0;
+  if(kcount)
+    setTimeout(kernChar, 1);
+  else
+    setTimeout(complete, 1);
+}
+function complete() {
+  var res = getE('results'), i, w, filename, json, dl;
+  for(i in output.widths) {
+    w = output.widths[i].w;
+    output.widths[i] = output.widths[i].w;
+  }
+  setProgress(100, 100);
+  drawText('Done');
+
+  filename = output.font.toLowerCase().replace(/[^a-z0-9]+/gi, '_') + '.json';
+  json = JSON.stringify(output, function(k, v) {
+    return (typeof v === 'number' ? parseFloat(v.toPrecision(7)) : v);
+  });
+  res.value = json;
+  getE('outfilename').value = filename;
+  getE('outheight').value = output.height;
+  getE('outbaseline').value = output.baseline;
+  getE('outmean').value = output.mean;
+  getE('outadjust').value = output.adjust;
+  i = getE('complete');
+  i.style.display = 'block';
+
+  dl = getE('download');
+  dl.setAttribute('href', 'data:text/plain;charset=utf-8,' +
+    encodeURIComponent(json));
+  dl.setAttribute('download', filename);
+  document.forms['tester'].submit.disabled = false;
+}
+
+function setProgress(n, m) {
+  var p = getE('progress'), pc = 100 * n / m;
+  setattr(p, 'width', pc + '%');
+}
+function setFont(font, size) {
+  var g = getE('textGroup');
+  setattr(g, 'font-family', font);
+  setattr(g, 'font-size', size);
+}
+function setFontSize(size) {
+  var g = getE('textGroup');
+  setattr(g, 'font-size', size);
+}
+function moveRect(x, y, w, h) {
+  var r = getE('measureRect');
+  setattr(r,'x', x);
+  setattr(r,'y', y);
+  setattr(r, 'width', w);
+  setattr(r, 'height', h);
+}
+function calc() {
+  var f = document.forms['tester'], r = getE('measureRect'),
+    font_size = f.fontSize.value, old_size, old_size2;
+  var res = measure(f.testString.value, output.widths, output.kern) *
+    font_size / output.size;
+  setFontSize(font_size);
+  var bb = drawText(f.testString.value);
+  font_adjust = f['fontAdjust'].value;
+  old_size = f.testString.value.length * font_size * font_adjust;
+  old_size2 = f.testString.value.length * font_size * output.adjust;
+  f.outwidth.value = res;
+  f.outactual.value = bb.width;
+  f.outold.value = old_size;
+  f.outoldcalc.value = old_size2;
+
+  moveRect(settings.text_x,
+    settings.baseline - font_size * (output.baseline / output.size),
+    res, font_size * (output.height / output.size));
+}
+
+var settings = { svg_width: 100, svg_height: 100, baseline: 80, text_x: 10 };
+
+function setup() {
+  var svg = document.querySelector('svg'), form = document.forms['measurer'],
+    text = getE('measureThis');
+
+  svg.width.baseVal.value = settings.svg_width = form.size.value * 6;
+  svg.height.baseVal.value = settings.svg_height = form.size.value * 2;
+  setFont(form.font.value, form.size.value);
+  setattr(text, 'x', settings.text_x = form.size.value * 0.2);
+  setattr(text, 'y', settings.baseline = form.size.value * 1.5);
+  moveRect(0, 0, 0, 0);
+  drawText('Ready');
+}
+
+function makeCheckbox(name, label, value, checked) {
+  var l, i, t;
+  l = document.createElement('label');
+  t = document.createTextNode(label);
+  l.appendChild(t);
+  i = document.createElement('input');
+  i.type = 'checkbox';
+  i.name = name;
+  if(checked)
+    i.checked = true;
+  i.value = value;
+  i.addEventListener('change', updateRanges);
+  l.appendChild(i);
+  return l;
+}
+window.onload = function() {
+  var f = document.forms['measurer'], fd = getE('fonts'), fe, i, o, t;
+
+  fonts.sort();
+  for(i in fonts) {
+    o = document.createElement('option');
+    o.text = fonts[i];
+    fd.appendChild(o);
+  }
+  f.font.value = font;
+  for(i in sizes) {
+    o = document.createElement('option');
+    o.text = sizes[i];
+    f.size.add(o);
+  }
+  f.size.value = size;
+  f.font.addEventListener('change', setup);
+  f.size.addEventListener('change', setup);
+
+  fd = getE('widthdiv');
+  fe = getE('kerndiv');
+  for(i in char_ranges) {
+    t = i + ' (U+' + toHex(char_ranges[i][0]) + '-U+' + toHex(char_ranges[i][1]) + ')';
+    o = makeCheckbox(i, t, char_ranges[i][0] + '-' + char_ranges[i][1],
+      i.match(/ASCII/));
+    fd.appendChild(o);
+    o = makeCheckbox('k' + i, t, char_ranges[i][0] + '-' + char_ranges[i][1],
+      i.match(/ASCII/));
+    fe.appendChild(o);
+  }
+  setup();
+  updateRanges();
+};
+// ]]></script>
+</body>
+</html>

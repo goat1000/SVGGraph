@@ -102,6 +102,7 @@ abstract class GridGraph extends Graph {
       $this->label_v = $lv;
 
     $right_labels = array();
+    $svg_text = new SVGGraphText($this);
     if(!empty($this->label_v)) {
       $lines_left = 0;
       $lines_right = array();
@@ -110,7 +111,7 @@ abstract class GridGraph extends Graph {
         foreach($this->label_v as $axis_no => $label_text) {
           if(is_null($label_text) || $axis_no > $this->YAxisCount() - 1)
             continue;
-          $count = $this->CountLines($label_text);
+          $count = $svg_text->Lines($label_text);
           if($axis_no == 0)
             $lines_left = $count;
           else
@@ -122,10 +123,10 @@ abstract class GridGraph extends Graph {
         // increase padding
         if($this->axis_right) {
           $this->label_v = array(1 => $label);
-          $lines_right[1] = $this->CountLines($label);
+          $lines_right[1] = $svg_text->Lines($label);
         } else {
           $this->label_v = $label;
-          $lines_left = $this->CountLines($label);
+          $lines_left = $svg_text->Lines($label);
         }
       }
 
@@ -157,7 +158,7 @@ abstract class GridGraph extends Graph {
       }
     }
     if(!empty($this->label_h)) {
-      $lines = $this->CountLines($this->label_h);
+      $lines = $svg_text->Lines($this->label_h);
       $font_size = $this->GetFirst($this->label_font_size_h,
         $this->label_font_size);
       if(is_null($grid_b)) {
@@ -1197,6 +1198,7 @@ abstract class GridGraph extends Graph {
     $x_prev = -$this->width;
     $count = count($points);
     $label_centre_x = $this->label_centre && !$this->flip_axes;
+    $font = $this->GetFirst($this->axis_font_h, $this->axis_font);
     $font_size = $this->GetFirst($this->axis_font_size_h, $this->axis_font_size);
     $font_adjust = $this->GetFirst($this->axis_font_adjust_h, $this->axis_font_adjust);
     $text_space = $this->GetFirst($this->axis_text_space_h, $this->axis_text_space);
@@ -1223,6 +1225,7 @@ abstract class GridGraph extends Graph {
       $position['text-anchor'] = $this->axis_text_angle_h < 0 ? 'end' : 'start';
     }
     $p = 0;
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $x = $grid_point->position;
@@ -1231,7 +1234,7 @@ abstract class GridGraph extends Graph {
       if($inside && !$label_centre_x && $key == '0')
         $key = '';
 
-      if(SVGGraphStrlen($key, $this->encoding) > 0 && (++$p < $count || !$label_centre_x)) {
+      if($svg_text->Strlen($key) > 0 && (++$p < $count || !$label_centre_x)) {
         $position['x'] = $x + $xoff;
         if($angle != 0) {
           $position['x'] -= $x_rotate_offset;
@@ -1239,8 +1242,7 @@ abstract class GridGraph extends Graph {
           $rcy = $position['y'] + $y_rotate_offset;
           $position['transform'] = "rotate($angle,$rcx,$rcy)";
         }
-        $size = $this->TextSize((string)$key, $font_size, $font_adjust,
-          $this->encoding, $angle, $font_size);
+        $size = $svg_text->Measure((string)$key, $font_size, $angle, $font_size);
         $position['text'] = $key;
         $position['w'] = $size[0];
         $position['h'] = $size[1];
@@ -1257,6 +1259,9 @@ abstract class GridGraph extends Graph {
   protected function YAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside, $axis_no)
   {
     $y_prev = $this->height;
+    $font = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_v, $axis_no),
+      $this->axis_font);
     $font_size = $this->GetFirst(
       $this->ArrayOption($this->axis_font_size_v, $axis_no),
       $this->axis_font_size);
@@ -1276,6 +1281,7 @@ abstract class GridGraph extends Graph {
     $positions = array();
     $count = count($points);
     $p = 0;
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($points as $grid_point) {
       $key = $grid_point->text;
       $y = $grid_point->position;
@@ -1284,16 +1290,16 @@ abstract class GridGraph extends Graph {
       if($inside && !$label_centre_y && !$axis_no && $key == '0')
         $key = '';
 
-      if(SVGGraphStrlen($key, $this->encoding) && (++$p < $count || !$label_centre_y)) {
+      if($svg_text->Strlen($key) && (++$p < $count || !$label_centre_y)) {
         // get unrotated width and height first
-        list($t_width, $t_height) = $this->TextSize($key, $font_size,
-          $font_adjust, $this->encoding, 0, $font_size);
+        list($t_width, $t_height) = $svg_text->Measure($key, $font_size, 0,
+          $font_size);
         $text_centre = $font_size * 0.8 - $t_height * 0.5;
         $position['y'] = $y + $text_centre + $yoff;
 
         if($angle != 0) {
-          list($tr_width, $tr_height) = $this->TextSize($key, $font_size,
-            $font_adjust, $this->encoding, $angle, $font_size);
+          list($tr_width, $tr_height) = $svg_text->Measure($key, $font_size,
+            $angle, $font_size);
 
           // axes of rotation are Y position and half height away from
           // start/end of text
@@ -1330,14 +1336,18 @@ abstract class GridGraph extends Graph {
       return '';
 
     $labels = '';
+    $font = $this->GetFirst($this->axis_font_h, $this->axis_font);
     $font_size = $this->GetFirst($this->axis_font_size_h, $this->axis_font_size);
+    $font_adjust = $this->GetFirst($this->axis_font_adjust_h,
+      $this->axis_font_adjust);
     $anchor = $positions[0]['text-anchor'];
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     foreach($positions as $pos) {
       $text = $pos['text'];
       if($inside)
         $pos['y'] -= $pos['h'] - $font_size;
       unset($pos['w'], $pos['h'], $pos['text'], $pos['text-anchor']);
-      $labels .= $this->Text($text, $font_size, $pos);
+      $labels .= $svg_text->Text($text, $font_size, $pos);
     }
     $group = array('text-anchor' => $anchor);
     if(!empty($this->axis_font_h))
@@ -1369,8 +1379,16 @@ abstract class GridGraph extends Graph {
       return '';
 
     $labels = '';
-    $font_size = $this->GetFirst($this->ArrayOption($this->axis_font_size_v, $axis_no),
+    $font = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_v, $axis_no),
+      $this->axis_font);
+    $font_size = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_size_v, $axis_no),
       $this->axis_font_size);
+    $font_adjust = $this->GetFirst(
+      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
+      $this->axis_font_adjust);
+    $svg_text = new SVGGraphText($this, $font, $font_adjust);
     $anchor = $positions[0]['text-anchor'];
     foreach($positions as $pos) {
       $text = $pos['text'];
@@ -1384,7 +1402,7 @@ abstract class GridGraph extends Graph {
         $pos['transform'] = "rotate({$t['angle']},{$t['rcx']},{$t['rcy']})";
       }
       unset($pos['w'], $pos['h'], $pos['text'], $pos['text-anchor']);
-      $labels .= $this->Text($text, $font_size, $pos);
+      $labels .= $svg_text->Text($text, $font_size, $pos);
     }
     $group = array('text-anchor' => $anchor);
     if(!empty($this->axis_font_v))
@@ -1409,7 +1427,9 @@ abstract class GridGraph extends Graph {
       $this->pad_left;
     $y = $this->height - $this->label_bottom_offset;
     $pos = compact('x', 'y');
-    return $this->Text($this->label_h, $this->label_font_size,
+    $font = $this->GetFirst($this->label_font_h, $this->label_font);
+    $svg_text = new SVGGraphText($this, $font);
+    return $svg_text->Text($this->label_h, $this->label_font_size,
       array_merge($attribs, $pos));
   }
 
@@ -1461,7 +1481,8 @@ abstract class GridGraph extends Graph {
         $this->label_colour, 
         $this->ArrayOption($this->axis_text_colour_v, $i),
         $this->axis_text_colour);
-      $text .= $this->Text($label_text, $font_size, array_merge($attribs, $pos));
+      $svg_text = new SVGGraphText($this, $font);
+      $text .= $svg_text->Text($label_text, $font_size, array_merge($attribs, $pos));
     }
 
     return $text;
@@ -1489,7 +1510,8 @@ abstract class GridGraph extends Graph {
         $label_text['y'] = $this->height - $this->label_bottom_offset;
         $label_text['x'] = $this->pad_left +
           ($this->width - $this->pad_left - $this->pad_right) / 2;
-        $labels .= $this->Text($this->label_h, $this->label_font_size,
+        $svg_text = new SVGGraphText($this, $this->label_font);
+        $labels .= $svg_text->Text($this->label_h, $this->label_font_size,
           $label_text);
       }
 
@@ -1773,8 +1795,9 @@ abstract class GridGraph extends Graph {
     if($weight && $weight != 'normal')
       $text_element['font-weight'] = $weight;
 
+    $svg_text = new SVGGraphText($this);
     $text = $this->Element('g', $text_group, NULL,
-      $this->Element('rect', $text_rect) . $this->Text('', $font_size, 
+      $this->Element('rect', $text_rect) . $svg_text->Text('', $font_size, 
         $text_element));
     $this->AddBackMatter($text);
 

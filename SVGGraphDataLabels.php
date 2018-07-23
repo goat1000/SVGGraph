@@ -336,7 +336,6 @@ class DataLabels {
       return '';
 
     if(is_null($gobject['item'])) {
-      // convert to string - numbers will confuse TextSize()
       $content = (string)$gobject['content'];
     } else {
       if(is_callable($this->data_label_callback)) {
@@ -381,8 +380,9 @@ class DataLabels {
 
     // get size of text
     $font_size = max(4, (float)$style['font_size']);
-    list($w, $h) = Graph::TextSize($content, $font_size, $style['font_adjust'],
-      $this->encoding, $style['angle'], $font_size);
+    $svg_text = new SVGGraphText($this->graph, $style['font'], $style['font_adjust']);
+    list($w, $h) = $svg_text->Measure($content, $font_size, $style['angle'],
+      $font_size);
 
     // if this label type uses padding, add it in
     $type_info = isset($this->types_info[$style['type']]) ?
@@ -456,9 +456,7 @@ class DataLabels {
 
     list($colour, $back_colour) = $this->GetColours($hpos, $vpos, $style);
 
-    // reasonable approximation of the baseline position
     $font_size = max(4, (float)$style['font_size']);
-    $text_baseline = $font_size * 0.85;
     $text = array(
       'font-family' => $style['font'],
       'font-size' => $font_size,
@@ -476,8 +474,10 @@ class DataLabels {
     }
 
     // need text size without padding, rotation, etc.
-    list($tbw, $tbh) = Graph::TextSize($content, $font_size,
-      $style['font_adjust'], $this->encoding, 0, $font_size);
+    $svg_text = new SVGGraphText($this->graph, $style['font'],
+      $style['font_adjust']);
+    list($tbw, $tbh) = $svg_text->Measure($content, $font_size, 0, $font_size);
+    $text_baseline = $svg_text->Baseline($font_size);
 
     $text['y'] = $y + ($label_h - $tbh) / 2 + $text_baseline;
     if($style['angle'] != 0) {
@@ -559,9 +559,9 @@ class DataLabels {
         'stroke-linejoin' => 'round',
       );
       $t1 = array_merge($outline, $text);
-      $label_markup .= $this->graph->Text($content, $font_size, $t1);
+      $label_markup .= $svg_text->Text($content, $font_size, $t1);
     }
-    $label_markup .= $this->graph->Text($content, $font_size, $text);
+    $label_markup .= $svg_text->Text($content, $font_size, $text);
 
     $group = array();
     if(isset($gobject['id']) && !is_null($gobject['id']))

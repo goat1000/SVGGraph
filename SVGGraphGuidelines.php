@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017 Graham Breach
+ * Copyright (C) 2017-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,7 +40,7 @@ class Guidelines {
     if(empty($graph->guideline) && $graph->guideline !== 0)
       return;
 
-    $this->graph = $graph;
+    $this->graph =& $graph;
     $this->settings = $settings;
     $this->flip_axes = $flip_axes;
     $this->assoc_keys = $assoc;
@@ -301,6 +301,7 @@ class Guidelines {
       $text_pad = $this->guideline_text_padding;
       $text_angle = $this->guideline_text_angle;
       $text_align = $this->guideline_text_align;
+      $font = $this->guideline_font;
       $font_size = $this->guideline_font_size;
       $font_adjust = $this->guideline_font_adjust;
       if(isset($line['text'])) {
@@ -309,11 +310,15 @@ class Guidelines {
         $this->UpdateAndUnset($text_angle, $line['text'], 'text_angle');
         $this->UpdateAndUnset($text_align, $line['text'], 'text_align');
         $this->UpdateAndUnset($font_adjust, $line['text'], 'font_adjust');
+        if(isset($line['text']['font-family']))
+          $font = $line['text']['font-family'];
         if(isset($line['text']['font-size']))
           $font_size = $line['text']['font-size'];
       }
-      list($text_w, $text_h) = $this->graph->TextSize($line['title'], 
-        $font_size, $font_adjust, $this->encoding, $text_angle, $font_size);
+
+      $svg_text = new SVGGraphText($this->graph, $font, $font_adjust);
+      list($text_w, $text_h) = $svg_text->Measure($line['title'], $font_size,
+        $text_angle, $font_size);
 
       list($x, $y, $text_pos_align) = Graph::RelativePosition(
         $text_pos, $y, $x, $y + $h, $x + $w,
@@ -336,7 +341,7 @@ class Guidelines {
 
       if(isset($line['text']))
         $t = array_merge($t, $line['text']);
-      $text .= $this->graph->Text($line['title'], $font_size, $t);
+      $text .= $svg_text->Text($line['title'], $font_size, $t);
     }
   }
 

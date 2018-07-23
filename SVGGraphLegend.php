@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2017 Graham Breach
+ * Copyright (C) 2016-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -110,9 +110,10 @@ class SVGGraphLegend {
     // find the largest width / height
     $font_size = $this->legend_font_size;
     $max_width = $max_height = 0;
+    $svg_text = new SVGGraphText($this->graph, $this->legend_font,
+      $this->legend_font_adjust);
     foreach($this->entries as $entry) {
-      list($w, $h) = $this->graph->TextSize($entry->text, $font_size,
-        $this->legend_font_adjust, $encoding, 0, $font_size);
+      list($w, $h) = $svg_text->Measure($entry->text, $font_size, 0, $font_size);
       if($w > $max_width)
         $max_width = $w;
       if($h > $max_height)
@@ -141,8 +142,10 @@ class SVGGraphLegend {
       $title_colour = Graph::GetFirst($this->legend_title_colour,
         $this->legend_colour);
 
-      list($tw, $th) = $this->graph->TextSize($this->legend_title,
-        $title_font_size, $title_font_adjust, $encoding, 0, $title_font_size);
+      $svg_text_title = new SVGGraphText($this->graph, $title_font,
+        $title_font_adjust);
+      list($tw, $th) = $svg_text_title->Measure($this->legend_title,
+        $title_font_size, 0, $title_font_size);
       $title_width = $tw + $padding * 2;
       $start_y += $th + $padding;
     }
@@ -167,7 +170,7 @@ class SVGGraphLegend {
         // position the text element
         $text['y'] = $y + ($font_size * 0.75) +
           ($entry_height - $entry->height) / 2;
-        $text_element = $this->graph->Text($entry->text, $font_size, $text);
+        $text_element = $svg_text->Text($entry->text, $font_size, $text);
         if(isset($text_columns[$column]))
           $text_columns[$column] .= $text_element;
         else
@@ -252,7 +255,7 @@ class SVGGraphLegend {
         $text['font-weight'] = $this->legend_title_font_weight;
       if($title_colour != $this->legend_colour)
         $text['fill'] = $title_colour;
-      $title = $this->graph->Text($this->legend_title, $title_font_size, $text);
+      $title = $svg_text_title->Text($this->legend_title, $title_font_size, $text);
     }
 
     // create group to contain whole legend

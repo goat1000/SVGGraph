@@ -19,9 +19,10 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.27');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.28');
 
 require_once 'SVGGraphColours.php';
+require_once 'SVGGraphText.php';
 
 class SVGGraph {
 
@@ -44,25 +45,6 @@ class SVGGraph {
       if(isset($settings['structured_data']) && !$settings['structured_data'])
         unset($settings['structure']);
       $this->settings = $settings;
-    }
-
-    // use mbstring if available, or fall back to 1-byte char strings
-    if(!function_exists('SVGGraphStrlen')) {
-      if(extension_loaded('mbstring')) {
-        function SVGGraphStrlen($s, $e) {
-          return mb_strlen($s, $e);
-        }
-        function SVGGraphSubstr($s, $b, $l, $e) {
-          return mb_substr($s, $b, $l, $e);
-        }
-      } else {
-        function SVGGraphStrlen($s, $e) {
-          return strlen($s);
-        }
-        function SVGGraphSubstr($s, $b, $l, $e) {
-          return is_null($l) ? substr($s, $b) : substr($s, $b, $l);
-        }
-      }
     }
   }
 
@@ -613,8 +595,10 @@ abstract class Graph {
    */
   protected function DrawTitle()
   {
+    $svg_text = new SVGGraphText($this, $this->graph_title_font);
+
     // graph_title is available for all graph types
-    if(SVGGraphStrlen($this->graph_title, $this->encoding) <= 0)
+    if($svg_text->Strlen($this->graph_title) <= 0)
       return '';
 
     $pos = $this->graph_title_position;
@@ -625,7 +609,7 @@ abstract class Graph {
       'text-anchor' => 'middle',
       'fill' => $this->graph_title_colour
     );
-    $lines = $this->CountLines($this->graph_title);
+    $lines = $svg_text->Lines($this->graph_title);
     $title_space = $this->graph_title_font_size * $lines +
       $this->graph_title_space;
     if($pos != 'top' && $pos != 'bottom' && $pos != 'left' && $pos != 'right')
@@ -657,7 +641,7 @@ abstract class Graph {
     $this->{$pad_side} += $title_space;
 
     // the Text function will break it into lines
-    return $this->Text($this->graph_title, $this->graph_title_font_size,
+    return $svg_text->Text($this->graph_title, $this->graph_title_font_size,
       $text);
   }
 
@@ -758,142 +742,13 @@ abstract class Graph {
   }
 
   /**
-   * Fits text to a box - text will be bottom-aligned
-   */
-  protected function TextFit($text, $x, $y, $w, $h, $attribs = NULL,
-    $styles = NULL)
-  {
-    $pos = array('onload' => "textFit(evt,$x,$y,$w,$h)");
-    if(is_array($attribs))
-      $pos = array_merge($attribs, $pos);
-    $txt = $this->Element('text', $pos, $styles, $text);
-
-    /** Uncomment to see the box
-    $rect = array('x' => $x, 'y' => $y, 'width' => $w, 'height' => $h,
-      'fill' => 'none', 'stroke' => 'black');
-    $txt .= $this->Element('rect', $rect);
-    **/
-    $this->AddFunction('textFit');
-    return $txt;
-  }
-
-  /**
-   * Returns a text element, with tspans for multiple lines
-   */
-  public function Text($text, $line_spacing, $attribs, $styles = NULL)
-  {
-    // strip special characters
-    $text = htmlspecialchars($text, ENT_COMPAT, $this->encoding);
-
-    // put entities back in
-    $text = preg_replace('/&amp;(amp|#x[a-f0-9]+|#\d+);/', '&$1;', $text);
-    $group = 'text';
-    $no_tspan = $this->no_tspan;
-
-    if(strpos($text, "\n") === FALSE) {
-      $content = ($text == '' ? ' ' : $text);
-    } else {
-      $lines = explode("\n", $text);
-      $content = '';
-      $line_attr = array('x' => $attribs['x']);
-      if($no_tspan) {
-        $line_attr['y'] = $attribs['y'];
-        $line_element = 'text';
-        $group = 'g';
-      } else {
-        $line_attr['dy'] = 0;
-        $line_element = 'tspan';
-      }
-      $count = 1;
-      foreach($lines as $line) {
-        // blank tspan elements collapse to nothing, so insert a space
-        if($line == '')
-          $line = ' ';
-
-        // trim because spaces in text are significant
-        $content .= trim($this->Element($line_element, $line_attr, NULL, $line));
-        if($no_tspan) {
-          $line_attr['y'] = $attribs['y'] + $line_spacing * $count;
-        } else {
-          $line_attr['dy'] = $line_spacing;
-        }
-        ++$count;
-      }
-      if($no_tspan)
-        unset($attribs['x'], $attribs['y']);
-    }
-    return $this->Element($group, $attribs, $styles, $content);
-  }
-
-  /**
-   * Returns [width,height] of text 
-   */
-  public static function TextSize($text, $font_size, $font_adjust, $encoding,
-    $angle = 0, $line_spacing = 0)
-  {
-    $height = $font_size;
-    if(!is_string($text)) {
-      if(is_numeric($text))
-        $text = Graph::NumString($text);
-      else
-        $text = (string)$text;
-    } else {
-      // replace all entities with an underscore (just for measurement)
-      $text = preg_replace('/&[^;]+;/', '_', $text);
-    }
-
-    if($line_spacing > 0) {
-      $len = 0;
-      $lines = explode("\n", $text);
-      foreach($lines as $l)
-        if(SVGGraphStrlen($l, $encoding) > $len)
-          $len = SVGGraphStrlen($l, $encoding);
-      $height += $line_spacing * (count($lines) - 1);
-    } else {
-      $len = SVGGraphStrlen($text, $encoding);
-    }
-
-    $width = $len * $font_size * $font_adjust;
-    if($angle % 180 != 0) {
-      if($angle % 90 == 0) {
-        $w = $height;
-        $height = $width;
-        $width = $w;
-      } else {
-        $a = deg2rad($angle);
-        $sa = abs(sin($a));
-        $ca = abs(cos($a));
-        $w = $ca * $width + $sa * $height;
-        $h = $sa * $width + $ca * $height;
-        $width = $w;
-        $height = $h;
-      }
-    }
-    return array($width, $height);
-  }
-
-  /**
-   * Returns the number of lines in a string
-   */
-  public static function CountLines($text)
-  {
-    $c = 1;
-    $pos = 0;
-    while(($pos = strpos($text, "\n", $pos)) !== FALSE) {
-      ++$c;
-      ++$pos;
-    }
-    return $c;
-  }
-
-  /**
    * Displays readable (hopefully) error message
    */
   protected function ErrorText($error)
   {
     $text = array('x' => 3, 'y' => $this->height - 3);
     $style = array(
-      'font-family' => 'monospace',
+      'font-family' => 'Courier New',
       'font-size' => '11px',
       'font-weight' => 'bold',
     );
@@ -924,7 +779,7 @@ abstract class Graph {
    * Builds an element
    */
   public function Element($name, $attribs = NULL, $styles = NULL,
-    $content = NULL)
+    $content = NULL, $no_whitespace = FALSE)
   {
     // these properties require units to work well
     $require_units = array('stroke-width' => 1, 'stroke-dashoffset' => 1,
@@ -963,9 +818,11 @@ abstract class Graph {
     }
 
     if(is_null($content))
-      $element .= "/>\n";
+      $element .= "/>";
     else
-      $element .= '>' . $content . '</' . $name . ">\n";
+      $element .= '>' . $content . '</' . $name . ">";
+    if(!$no_whitespace)
+      $element .= "\n";
 
     return $element;
   }
@@ -1547,7 +1404,7 @@ abstract class Graph {
     if($this->show_version) {
       $text = array('x' => $this->pad_left, 'y' => $this->height - 3);
       $style = array(
-        'font-family' => 'monospace', 'font-size' => '12px',
+        'font-family' => 'Courier New', 'font-size' => '12px',
         'font-weight' => 'bold',
       );
       $body .= $this->ContrastText($text['x'], $text['y'], SVGGRAPH_VERSION,

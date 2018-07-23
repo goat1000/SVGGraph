@@ -74,27 +74,6 @@ class SVGGraphJavascript {
 
     switch($name)
     {
-    case 'textFit' :
-      $this->AddFunction('setattr');
-      $fn = <<<JAVASCRIPT
-function textFit(evt,x,y,w,h) {
-  var t = evt.target;
-  var aw = t.getBBox().width;
-  var ah = t.getBBox().height;
-  var trans = '';
-  var s = 1.0;
-  if(aw > w)
-    s = w / aw;
-  if(s * ah > h)
-    s = h / ah;
-  if(s != 1.0)
-    trans = 'scale(' + s + ') ';
-  trans += 'translate(' + (x / s) + ',' + ((y + h) / s) +  ')';
-  setattr(t, 'transform', trans);
-}\n
-JAVASCRIPT;
-      break;
-
     // fadeIn, fadeOut are shortcuts to fader function
     case 'fadeIn' : $name = 'fader';
     case 'fadeOut' : $name = 'fader';
