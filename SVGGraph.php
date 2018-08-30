@@ -1521,9 +1521,14 @@ abstract class Graph {
 
   /**
    * Sets the number format characters
+   *
+   * @throws LogicException if $decimal and $thousands parameters are equal.
    */
   public static function SetNumStringOptions($decimal, $thousands)
   {
+    if ($decimal === $thousands) {
+      throw new LogicException(sprintf('Decimal and thousand separator must not be equal. Please use different settings for "thousands" and "decimal".'));
+    }
     Graph::$decimal = $decimal;
     Graph::$thousands = $thousands;
   }
