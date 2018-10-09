@@ -162,6 +162,15 @@ class DataLabels {
     ));
   }
 
+  /**
+   * Returns label details
+   */
+  public function GetLabel($dataset, $index)
+  {
+    if(isset($this->labels[$dataset][$index]))
+      return $this->labels[$dataset][$index];
+    return NULL;
+  }
 
   /**
    * Updates filter information from label
@@ -235,7 +244,6 @@ class DataLabels {
   public function GetLabels()
   {
     $filters = $this->data_label_filter;
-
     $label_list = array();
     foreach($this->labels as $dataset => $label_set) {
 
@@ -267,10 +275,12 @@ class DataLabels {
       $labels .= $this->DrawLabel($l['content'], $l['w'], $l['h'],
         $l['dataset'], $l['i'], $l['label']);
     }
-    $group = array();
-    if($this->semantic_classes)
-      $group['class'] = 'data-labels';
-    $labels = $this->graph->Element('g', $group, NULL, $labels);
+    if($labels != '') {
+      $group = array();
+      if($this->semantic_classes)
+        $group['class'] = 'data-labels';
+      $labels = $this->graph->Element('g', $group, NULL, $labels);
+    }
     return $labels;
   }
 
@@ -318,8 +328,8 @@ class DataLabels {
 
       foreach($labels as $k => $l) {
         $d = $l['dataset'];
-        if(is_numeric($d) &&
-          Graph::ArrayOption($this->data_label_same_size, $d)) {
+        if(is_numeric($d) && $this->graph->GetOption(
+          array('data_label_same_size', $d))) {
           $labels[$k]['w'] = $max_w[$d];
           $labels[$k]['h'] = $max_h[$d];
         }

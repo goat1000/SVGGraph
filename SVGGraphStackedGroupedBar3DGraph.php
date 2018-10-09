@@ -109,6 +109,8 @@ class StackedGroupedBar3DGraph extends StackedBar3DGraph {
 
             if($this->show_tooltips)
               $this->SetTooltip($group, $item, $j, $item->key, $item->value);
+            if($this->show_context_menu)
+              $this->SetContextMenu($group, $j, $item);
             $link = $this->GetLink($item, $k, $bar_sections);
             $this->SetStroke($group, $item, $j, 'round');
             if($this->semantic_classes)

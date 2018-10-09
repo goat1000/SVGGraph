@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2017 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -91,6 +91,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
             if($this->show_tooltips)
               $this->SetTooltip($bar, $item, $j, $item->key, $item->value,
                 !$this->compat_events && $show_label);
+            if($this->show_context_menu)
+              $this->SetContextMenu($bar, $j, $item, $show_label);
             if($this->semantic_classes)
               $bar['class'] = "series{$j}";
             $rect = $this->Element('rect', $bar, $bar_style);
@@ -227,29 +229,25 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $min_h = $ends['v_min'][0];
     $max_v = $ends['k_max'][0];
     $min_v = $ends['k_min'][0];
-    $x_min_unit = $this->ArrayOption($this->minimum_units_y, 0);
+    $x_min_unit = $this->GetOption(array('minimum_units_y', 0));
     $x_fit = false;
     $y_min_unit = 1;
     $y_fit = true;
-    $x_units_after = (string)$this->ArrayOption($this->units_y, 0);
-    $y_units_after = (string)$this->ArrayOption($this->units_x, 0);
-    $x_units_before = (string)$this->ArrayOption($this->units_before_y, 0);
-    $y_units_before = (string)$this->ArrayOption($this->units_before_x, 0);
-    $x_decimal_digits = $this->GetFirst(
-      $this->ArrayOption($this->decimal_digits_y, 0),
-      $this->decimal_digits);
-    $y_decimal_digits = $this->GetFirst(
-      $this->ArrayOption($this->decimal_digits_x, 0),
-      $this->decimal_digits);
-    $x_text_callback = $this->GetFirst(
-      $this->ArrayOption($this->axis_text_callback_x, 0),
-      $this->axis_text_callback);
-    $y_text_callback = $this->GetFirst(
-      $this->ArrayOption($this->axis_text_callback_y, 0),
-      $this->axis_text_callback);
+    $x_units_after = (string)$this->GetOption(array('units_y', 0));
+    $y_units_after = (string)$this->GetOption(array('units_x', 0));
+    $x_units_before = (string)$this->GetOption(array('units_before_y', 0));
+    $y_units_before = (string)$this->GetOption(array('units_before_x', 0));
+    $x_decimal_digits = $this->GetOption(array('decimal_digits_y', 0),
+      'decimal_digits');
+    $y_decimal_digits = $this->GetOption(array('decimal_digits_x', 0),
+      'decimal_digits');
+    $x_text_callback = $this->GetOption(array('axis_text_callback_x', 0),
+      'axis_text_callback');
+    $y_text_callback = $this->GetOption(array('axis_text_callback_y', 0),
+      'axis_text_callback');
 
-    $this->grid_division_h = $this->ArrayOption($this->grid_division_h, 0);
-    $this->grid_division_v = $this->ArrayOption($this->grid_division_v, 0);
+    $this->grid_division_h = $this->GetOption(array('grid_division_h', 0));
+    $this->grid_division_v = $this->GetOption(array('grid_division_v', 0));
 
     // sanitise grid divisions
     if(is_numeric($this->grid_division_v) && $this->grid_division_v <= 0)
@@ -262,9 +260,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
       throw new Exception('Non-numeric min/max');
 
     if(!is_numeric($this->grid_division_h)) {
-      $x_min_space = $this->GetFirst(
-        $this->ArrayOption($this->minimum_grid_spacing_h, 0),
-        $this->minimum_grid_spacing);
+      $x_min_space = $this->GetOption(array('minimum_grid_spacing_h', 0),
+        'minimum_grid_spacing');
       $x_axis = new AxisDoubleEnded($x_len, $max_h, $min_h, $x_min_unit,
         $x_min_space, $x_fit, $x_units_before, $x_units_after,
         $x_decimal_digits, $x_text_callback);
@@ -276,9 +273,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     }
 
     if(!is_numeric($this->grid_division_v)) {
-      $y_min_space = $this->GetFirst(
-        $this->ArrayOption($this->minimum_grid_spacing_v, 0),
-        $this->minimum_grid_spacing);
+      $y_min_space = $this->GetOption(array('minimum_grid_spacing_v', 0),
+        'minimum_grid_spacing');
       $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
         $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
         $y_text_callback, $this->values);
@@ -289,6 +285,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
         $this->values);
     }
 
+    $y_axis->Bar(); // always a bar graph
     $y_axis->Reverse(); // because axis starts at bottom
     return array(array($x_axis), array($y_axis));
   }

@@ -112,6 +112,7 @@ class SVGGraphLegend {
     $max_width = $max_height = 0;
     $svg_text = new SVGGraphText($this->graph, $this->legend_font,
       $this->legend_font_adjust);
+    $baseline = $svg_text->Baseline($font_size);
     foreach($this->entries as $entry) {
       list($w, $h) = $svg_text->Measure($entry->text, $font_size, 0, $font_size);
       if($w > $max_width)
@@ -124,7 +125,6 @@ class SVGGraphLegend {
 
     $title = '';
     $title_width = $entries_x = 0;
-    $text_columns = $entry_columns = array();
     $start_y = $padding = $this->legend_padding;
 
     $w = $this->legend_entry_width;
@@ -133,14 +133,13 @@ class SVGGraphLegend {
 
     // make room for title
     if($this->legend_title != '') {
-      $title_font = Graph::GetFirst($this->legend_title_font,
-        $this->legend_font);
-      $title_font_size = Graph::GetFirst($this->legend_title_font_size,
-        $this->legend_font_size);
-      $title_font_adjust = Graph::GetFirst($this->legend_title_font_adjust,
-        $this->legend_font_adjust);
-      $title_colour = Graph::GetFirst($this->legend_title_colour,
-        $this->legend_colour);
+      $title_font = $this->graph->GetOption('legend_title_font', 'legend_font');
+      $title_font_size = $this->graph->GetOption('legend_title_font_size',
+        'legend_font_size');
+      $title_font_adjust = $this->graph->GetOption('legend_title_font_adjust',
+        'legend_font_adjust');
+      $title_colour = $this->graph->GetOption('legend_title_colour',
+        'legend_colour');
 
       $svg_text_title = new SVGGraphText($this->graph, $title_font,
         $title_font_adjust);
@@ -161,6 +160,9 @@ class SVGGraphLegend {
 
     $column_entry = 0;
     $y = $start_y;
+    $text_columns = array_fill(0, $columns, '');
+    $entry_columns = array_fill(0, $columns, '');
+    $valid_entries = 0;
     foreach($entries as $entry) {
       // position the graph element
       $e_y = $y + ($entry_height - $this->legend_entry_height) / 2;
@@ -168,19 +170,13 @@ class SVGGraphLegend {
         $this->legend_entry_height, $entry);
       if(!empty($element)) {
         // position the text element
-        $text['y'] = $y + ($font_size * 0.75) +
-          ($entry_height - $entry->height) / 2;
+        $text['y'] = $y + $baseline + ($entry_height - $entry->height) / 2;
         $text_element = $svg_text->Text($entry->text, $font_size, $text);
-        if(isset($text_columns[$column]))
-          $text_columns[$column] .= $text_element;
-        else
-          $text_columns[$column] = $text_element;
-        if(isset($entry_columns[$column]))
-          $entry_columns[$column] .= $element;
-        else
-          $entry_columns[$column] = $element;
+        $text_columns[$column] .= $text_element;
+        $entry_columns[$column] .= $element;
         $y += $entry_height + $padding;
 
+        ++$valid_entries;
         if(++$column_entry == $per_column) {
           $column_entry = 0;
           $y = $start_y;
@@ -189,7 +185,7 @@ class SVGGraphLegend {
       }
     }
     // if there's nothing to go in the legend, stop now
-    if(empty($entry_columns))
+    if(!$valid_entries)
       return '';
 
     if($this->legend_text_side == 'left') {
@@ -245,7 +241,7 @@ class SVGGraphLegend {
     $rect = $this->graph->Element('rect', $box);
     if($this->legend_title != '') {
       $text['x'] = $width / 2;
-      $text['y'] = $padding + $title_font_size * 0.75;
+      $text['y'] = $padding + $svg_text_title->Baseline($title_font_size);
       $text['text-anchor'] = 'middle';
       if($title_font != $this->legend_font)
         $text['font-family'] = $title_font;

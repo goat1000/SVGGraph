@@ -136,6 +136,8 @@ class StackedBarAndLineGraph extends StackedBarGraph {
               if($this->show_tooltips)
                 $this->SetTooltip($bar, $item, $j, $item->key, $item->value,
                   !$this->compat_events && $show_label);
+              if($this->show_context_menu)
+                $this->SetContextMenu($bar, $j, $item, $show_label);
               if($this->semantic_classes)
                 $bar['class'] = "series{$j}";
               $rect = $this->Element('rect', $bar, $bar_style);

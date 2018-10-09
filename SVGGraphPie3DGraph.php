@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2017 Graham Breach
+ * Copyright (C) 2010-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -115,11 +115,15 @@ class Pie3DGraph extends PieGraph {
     $item = $edge->slice['item'];
     $attr = array(
       'fill' => $this->GetColour($item, $edge->slice['colour_index'], NULL,
-        true, false)
+        true, false),
+      'id' => $this->NewID(),
     );
     if($this->show_tooltips)
       $this->SetTooltip($attr, $item, 0, $item->key, $item->value,
         !$this->compat_events);
+    if($this->show_context_menu)
+      $this->SetContextMenu($attr, 0, $item, true);
+    $this->AddLabelClient(0, $edge->slice['original_position'], $attr);
     $content = $edge->Draw($this, $x_centre, $y_centre, $depth, $attr);
 
     // the gradient overlay uses a clip-path

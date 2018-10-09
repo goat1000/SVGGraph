@@ -103,10 +103,10 @@ class LineGraph extends PointGraph {
   {
     $attr = array('fill' => 'none');
     $figure = $this->line_figure;
-    $close = $figure && $this->ArrayOption($this->line_figure_closed, $dataset);
-    $fill = $this->ArrayOption($this->fill_under, $dataset);
-    $dash = $this->ArrayOption($this->line_dash, $dataset);
-    $stroke_width = $this->ArrayOption($this->line_stroke_width, $dataset);
+    $close = $figure && $this->GetOption(array('line_figure_closed', $dataset));
+    $fill = $this->GetOption(array('fill_under', $dataset));
+    $dash = $this->GetOption(array('line_dash', $dataset));
+    $stroke_width = $this->GetOption(array('line_stroke_width', $dataset));
     if(!empty($dash))
       $attr['stroke-dasharray'] = $dash;
     $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
@@ -138,7 +138,7 @@ class LineGraph extends PointGraph {
     $graph_line = $this->Element('path', $attr);
 
     if($fill) {
-      $opacity = $this->ArrayOption($this->fill_opacity, $dataset);
+      $opacity = $this->GetOption(array('fill_opacity', $dataset));
       if(!$figure)
         $fillpath .= "L{$last_x} {$y_bottom}z";
       $fill_style = array(

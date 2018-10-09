@@ -20,6 +20,8 @@
  */
 
 require_once 'SVGGraphLineGraph.php';
+require_once 'SVGGraphDisplayAxisRadar.php';
+require_once 'SVGGraphDisplayAxisRotated.php';
 
 /**
  * RadarGraph - a line graph that goes around in circles
@@ -42,29 +44,33 @@ class RadarGraph extends LineGraph {
   {
     $body = $this->Grid() . $this->UnderShapes();
 
-    $attr = array('stroke' => $this->stroke_colour, 'fill' => 'none');
-    $dash = is_array($this->line_dash) ?
-      $this->line_dash[0] : $this->line_dash;
-    $stroke_width = is_array($this->line_stroke_width) ?
-      $this->line_stroke_width[0] : $this->line_stroke_width;
-    if(!is_null($dash))
+    $dash = $this->GetOption(array('line_dash', 0));
+    $stroke_width = $this->GetOption(array('line_stroke_width', 0));
+    $fill_under = $this->GetOption(array('fill_under', 0));
+    $attr = array(
+      'stroke' => $this->GetOption(array('stroke_colour', 0)),
+      'fill' => 'none',
+      'stroke-width' => ($stroke_width <= 0 ? 1 : $stroke_width),
+    );
+    if(!empty($dash))
       $attr['stroke-dasharray'] = $dash;
-    $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
     $this->ColourSetup($this->values->ItemsCount());
 
     $bnum = 0;
     $cmd = 'M';
 
     $path = '';
-    if($this->fill_under) {
+    if($fill_under) {
       $attr['fill'] = $this->GetColour(null, 0);
       $this->curr_fill_style = array(
         'fill' => $attr['fill'],
         'stroke' => $attr['fill']
       );
-      if($this->fill_opacity < 1.0) {
-        $attr['fill-opacity'] = $this->fill_opacity;
-        $this->curr_fill_style['fill-opacity'] = $this->fill_opacity;
+
+      $fill_opacity = $this->GetOption(array('fill_opacity', 0));
+      if($fill_opacity < 1.0) {
+        $attr['fill-opacity'] = $fill_opacity;
+        $this->curr_fill_style['fill-opacity'] = $fill_opacity;
       }
     }
 
@@ -145,6 +151,29 @@ class RadarGraph extends LineGraph {
   }
 
   /**
+   * Returns a DisplayAxisRadar for the round axis
+   */
+  protected function GetDisplayAxis($axis, $axis_no, $orientation, $type)
+  {
+    $var = "main_{$type}_axis";
+    $main = ($axis_no == $this->{$var});
+    if($orientation == 'h')
+      return new DisplayAxisRadar($this, $axis, $axis_no, $orientation, $type,
+        $main, $this->xc, $this->yc, $this->radius);
+
+    return new DisplayAxisRotated($this, $axis, $axis_no, $orientation, $type,
+      $main, $this->arad);
+  }
+
+  /**
+   * Returns the location of an axis
+   */
+  protected function GetAxisLocation($orientation, $axis_no)
+  {
+    return array($this->xc, $this->yc);
+  }
+
+  /**
    * Convert X, Y in grid space to radial position
    */
   public function TransformCoords($x, $y)
@@ -181,7 +210,7 @@ class RadarGraph extends LineGraph {
   /**
    * Find the bounding box of the axis text for given axis lengths
    */
-  protected function FindAxisTextBBox($length_x, $length_y, $x_axes, $y_axes)
+  protected function FindAxisBBox($length_x, $length_y, $x_axes, $y_axes)
   {
     $this->xc = $length_x / 2;
     $this->yc = $length_y / 2;
@@ -194,97 +223,29 @@ class RadarGraph extends LineGraph {
     foreach($y_axes as $a)
       $a->SetLength($length_y);
 
-    $min_space_h = $this->GetFirst($this->minimum_grid_spacing_h,
-      $this->minimum_grid_spacing);
+    $min_x = array($this->width);
+    $min_y = array($this->height);
+    $max_x = array(0); $max_y = array(0);
 
-    // Code from parent implementation, with minor changes
-    // initialise maxima and minima
-    $min_x = $this->width;
-    $min_y = $this->height;
-    $max_x = $max_y = 0;
+    $display_axis = $this->GetDisplayAxis($x_axes[0], 0, 'h', 'x');
+    $axis_m = $display_axis->Measure();
+    $min_x[] = $axis_m['x'];
+    $max_x[] = $axis_m['x'] + $axis_m['width'];
+    $min_y[] = $axis_m['y'];
+    $max_y[] = $axis_m['y'] + $axis_m['height'];
+    $display_axis = $this->GetDisplayAxis($y_axes[0], 0, 'v', 'y');
+    $axis_m = $display_axis->Measure();
+    $min_x[] = $axis_m['x'] + $this->xc;
+    $max_x[] = $axis_m['x'] + $axis_m['width'] + $this->xc;
+    $min_y[] = $axis_m['y'] + $this->yc;
+    $max_y[] = $axis_m['y'] + $axis_m['height'] + $this->yc;
 
-    // need actual text positions
-    $div_size = $this->DivisionOverlap($x_axes, $y_axes);
-    $inside_x = ('inside' == $this->GetFirst($this->axis_text_position_h,
-      $this->axis_text_position));
-    $font_size = $this->axis_font_size;
+    $min_x = min($min_x);
+    $min_y = min($min_y);
+    $max_x = max($max_x);
+    $max_y = max($max_y);
 
-    // if outside, use the division overlap as starting positions
-    $min_x = - $div_size['l'];
-    $max_y = $length_y + $div_size['b'];
-
-    // only do this if there is x-axis text
-    if($this->show_axis_text_h) {
-      $x_axis = $x_axes[0];
-      $offset = 0;
-      $points = $x_axis->GetGridPoints(0);
-      $positions = $this->XAxisTextPositions($points, $offset,
-        $div_size['b'], $this->axis_text_angle_h, $inside_x);
-      foreach($positions as $p) {
-        switch($p['text-anchor']) {
-        case 'middle' : $off_x = $p['w'] / 2; break;
-        case 'end' : $off_x = $p['w']; break;
-        default : $off_x = 0;
-        }
-        $x = $p['x'] - $off_x;
-        $y = $p['y'] - $font_size;
-        $xw = $x + $p['w'];
-        $yh = $y + $p['h'];
-
-        if($x < $min_x)
-          $min_x = $x;
-        if($xw > $max_x)
-          $max_x = $xw;
-        if($y < $min_y)
-          $min_y = $y;
-        if($yh > $max_y)
-          $max_y = $yh;
-      }
-    }
-    if($this->show_axis_text_v) {
-      $axis_no = -1;
-      foreach($y_axes as $y_axis) {
-        ++$axis_no;
-        if(is_null($y_axis))
-          continue;
-        $offset = 0;
-        $inside_y = ('inside' == $this->GetFirst(
-          $this->ArrayOption($this->axis_text_position_v, $axis_no),
-          $this->axis_text_position));
-        $points = $y_axis->GetGridPoints(0);
-        $positions = $this->YAxisTextPositions($points,
-          $div_size['l'],
-          $offset, $this->ArrayOption($this->axis_text_angle_v, $axis_no),
-          false, $axis_no);
-
-        foreach($positions as $p) {
-          $x = $p['x'];// - ($p['text-anchor'] == 'end' ? $p['w'] : 0);
-          $y = $p['y'];// - $font_size + $length_y; // this messes up Radar graphs padding
-          $xw = $x + $p['w'];
-          $yh = $y + $p['h'];
-
-          if($x < $min_x)
-            $min_x = $x;
-          if($xw > $max_x)
-            $max_x = $xw;
-          if($y < $min_y)
-            $min_y = $y;
-          if($yh > $max_y)
-            $max_y = $yh;
-        }
-      }
-    }
-    // end of GridGraph implementation code
-
-    // normalise the bounding box
-    $w_half = ($max_x - $min_x) / 2;
-    $h_half = ($max_y - $min_y) / 2;
-    $bbox = array(
-      'min_x' => $this->xc - $w_half,
-      'max_x' => $this->xc + $w_half,
-      'min_y' => $this->yc - $h_half,
-      'max_y' => $this->yc + $h_half
-    );
+    $bbox = compact('min_x', 'min_y', 'max_x', 'max_y');
     $this->radius = null;
     return $bbox;
   }
@@ -292,7 +253,7 @@ class RadarGraph extends LineGraph {
   /**
    * Draws concentric Y grid lines
    */
-  protected function YGrid(&$y_points)
+  public function YGrid(&$y_points)
   {
     $path = '';
 
@@ -404,16 +365,14 @@ class RadarGraph extends LineGraph {
       $subpath_h = $this->show_grid_h ? $this->YGrid($y_subdivs) : '';
       $subpath_v = $this->show_grid_v ? $this->XGrid($x_subdivs) : '';
       if($subpath_h != '' || $subpath_v != '') {
-        $colour_h = $this->GetFirst($this->grid_subdivision_colour_h,
-          $this->grid_subdivision_colour, $this->grid_colour_h,
-          $this->grid_colour);
-        $colour_v = $this->GetFirst($this->grid_subdivision_colour_v,
-          $this->grid_subdivision_colour, $this->grid_colour_v,
-          $this->grid_colour);
-        $dash_h = $this->GetFirst($this->grid_subdivision_dash_h,
-          $this->grid_subdivision_dash, $this->grid_dash_h, $this->grid_dash);
-        $dash_v = $this->GetFirst($this->grid_subdivision_dash_v,
-          $this->grid_subdivision_dash, $this->grid_dash_v, $this->grid_dash);
+        $colour_h = $this->GetOption('grid_subdivision_colour_h',
+          'grid_subdivision_colour', 'grid_colour_h', 'grid_colour');
+        $colour_v = $this->GetOption('grid_subdivision_colour_v',
+          'grid_subdivision_colour', 'grid_colour_v', 'grid_colour');
+        $dash_h = $this->GetOption('grid_subdivision_dash_h',
+          'grid_subdivision_dash', 'grid_dash_h', 'grid_dash');
+        $dash_v = $this->GetOption('grid_subdivision_dash_v',
+          'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
 
         if($dash_h == $dash_v && $colour_h == $colour_v) {
           $subpath = $this->GridLines($subpath_h . $subpath_v, $colour_h,
@@ -428,10 +387,10 @@ class RadarGraph extends LineGraph {
     $path_v = $this->show_grid_h ? $this->YGrid($y_points) : '';
     $path_h = $this->show_grid_v ? $this->XGrid($x_points) : '';
 
-    $colour_h = $this->GetFirst($this->grid_colour_h, $this->grid_colour);
-    $colour_v = $this->GetFirst($this->grid_colour_v, $this->grid_colour);
-    $dash_h = $this->GetFirst($this->grid_dash_h, $this->grid_dash);
-    $dash_v = $this->GetFirst($this->grid_dash_v, $this->grid_dash);
+    $colour_h = $this->GetOption('grid_colour_h', 'grid_colour');
+    $colour_v = $this->GetOption('grid_colour_v', 'grid_colour');
+    $dash_h = $this->GetOption('grid_dash_h', 'grid_dash');
+    $dash_v = $this->GetOption('grid_dash_v', 'grid_dash');
 
     if($dash_h == $dash_v && $colour_h == $colour_v) {
       $path = $this->GridLines($path_v . $path_h, $colour_h, $dash_h, 'none');
@@ -462,316 +421,12 @@ class RadarGraph extends LineGraph {
   /**
    * Calculate the extra details for radar axes
    */
-  protected function CalcAxes($h_by_count = false, $bar = false)
+  protected function CalcAxes()
   {
     $this->arad = (90 + $this->start_angle) * M_PI / 180;
     $this->axis_right = false;
-    parent::CalcAxes($h_by_count, $bar);
+    parent::CalcAxes();
   }
-
-  /**
-   * The X-axis is wrapped around the graph
-   */
-  protected function XAxis($yoff)
-  {
-    if(!$this->show_x_axis)
-      return '';
-
-    // use the YGrid function to get the path
-    $points = array(new GridPoint($this->radius, '', 0));
-    $path = array(
-      'd' => $this->YGrid($points),
-      'fill' => 'none' // it's a circle or polygon, don't want it filled
-    );
-    if(!empty($this->axis_colour_h))
-      $path['stroke'] = $this->axis_colour_h;
-    if(!empty($this->axis_stroke_width_h))
-      $path['stroke-width'] = $this->axis_stroke_width_h;
-    return $this->Element('path', $path);
-  }
-
-  /**
-   * The Y-axis is at start angle
-   */
-  protected function YAxis($i)
-  {
-    $radius = $this->radius + $this->axis_overlap;
-    $x1 = $radius * sin($this->arad);
-    $y1 = $radius * cos($this->arad);
-    $path = array('d' => "M{$this->xc} {$this->yc}l$x1 $y1");
-
-    $colour = $this->ArrayOption($this->axis_colour_v, $i);
-    $thickness = $this->ArrayOption($this->axis_stroke_width_v, $i);
-    if(!empty($colour))
-      $path['stroke'] = $colour;
-    if(!empty($thickness))
-      $path['stroke-width'] = $thickness;
-    return $this->Element('path', $path);
-  }
-
-  /**
-   * Division marks around the graph
-   */
-  protected function XAxisDivisions(&$points, $style, $size, $yoff)
-  {
-    $r1 = $this->radius;
-    $path = '';
-    $pos = $this->DivisionsPositions($style, $size, $this->radius, 0, 0, false, false);
-    if(is_null($pos))
-      return '';
-    $r1 = $this->radius - $pos['pos'];
-    foreach($points as $p) {
-      $p = $p->position - $this->pad_left;
-      $a = $this->arad + $p / $this->radius;
-      $x1 = $this->xc + $r1 * sin($a);
-      $y1 = $this->yc + $r1 * cos($a);
-      $x2 = -$pos['sz'] * sin($a);
-      $y2 = -$pos['sz'] * cos($a);
-      $path .= "M$x1 {$y1}l$x2 $y2";
-    }
-    return $path;
-  }
-
-  /**
-   * Draws Y-axis divisions at whatever angle the Y-axis is
-   */
-  protected function YAxisDivisions(&$points, $xoff, $subdiv, $axis_no)
-  {
-    $dz = 'division_size';
-    $ds = 'division_style';
-    $dzv = 'division_size_v';
-    $dsv = 'division_style_v';
-    if($subdiv) {
-      $dz = 'subdivision_size';
-      $ds = 'subdivision_style';
-      $dzv = 'subdivision_size_v';
-      $dsv = 'subdivision_style_v';
-    }
-
-    $style = $this->GetFirst($this->ArrayOption($this->{$dsv}, $axis_no), $this->{$ds});
-    $size = $this->GetFirst($this->ArrayOption($this->{$dzv}, $axis_no), $this->{$dz});
-    $path = '';
-    $pos = $this->DivisionsPositions($style, $size, $size, 0, 0, false, false);
-    if(is_null($pos))
-      return '';
-    $a = $this->arad + ($this->arad <= M_PI_2 ? - M_PI_2 : M_PI_2);
-    $px = $pos['pos'] * sin($a);
-    $py = $pos['pos'] * cos($a);
-    $x2 = $pos['sz'] * sin($a);
-    $y2 = $pos['sz'] * cos($a);
-    $c = cos($this->arad);
-    $s = sin($this->arad);
-    foreach($points as $y) {
-      $y = $y->position;
-      $x1 = ($this->xc + $y * $s) + $px;
-      $y1 = ($this->yc + $y * $c) + $py;
-      $path .= "M$x1 {$y1}l$x2 $y2";
-    }
-    return $path;
-  }
-
-  /**
-   * Returns the positions of the X-axis text
-   */
-  protected function XAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside)
-  {
-    $positions = array();
-    $font = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_h, 0),
-      $this->axis_font);
-    $font_size = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_size_h, 0),
-      $this->axis_font_size);
-    $font_adjust = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_adjust_h, 0),
-      $this->axis_font_adjust);
-    $text_space = $this->GetFirst(
-      $this->ArrayOption($this->axis_text_space_h, 0),
-      $this->axis_text_space);
-    $r = $this->radius + $yoff + $text_space;
-    $text_centre = $font_size * 0.3;
-    $count = count($points);
-    $p = 0;
-    $direction = $this->reverse ? -1 : 1;
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($points as $grid_point) {
-      $key = $grid_point->text;
-      $x = $grid_point->position - $this->pad_left;
-      if($svg_text->Strlen($key) > 0 && ++$p < $count) {
-        $a = $this->arad + $direction * $x / $this->radius;
-        $s = sin($a);
-        $c = cos($a);
-        $x1 = $r * $s;
-        $y1 = $r * $c - $text_centre;
-        $position = array(
-          'x' => $this->xc + $x1,
-          'y' => $this->yc + $y1,
-          // $c == +1 or -1 is a particular case: anchor on middle of text
-          'text-anchor' => (pow($c, 2) == 1 ? 'middle' :
-            ($x1 >= 0 ? 'start' : 'end')),
-          'angle' => $a,
-          'sin' => $s,
-          'cos' => $c
-        );
-        $size = $svg_text->Measure((string)$key, $font_size, $angle, $font_size);
-        // $s == +1 or -1 is a particular case: vertically centre
-        $lines = $svg_text->Lines($key);
-        if(pow($s, 2) == 1)
-          $position['y'] -= ($lines / 2 - 1) * $font_size;
-        elseif($c < 0)
-          $position['y'] -= ($lines - 1) * $font_size;
-        else
-          $position['y'] += $font_size;
-        if($angle != 0) {
-          $rcx = $position['x'];
-          $rcy = $position['y'];
-          if($c < 0)
-            $rcy += $font_size;
-          elseif(pow($s, 2) != 1)
-            $rcy -= $font_size;
-          $position['transform'] = "rotate($angle,$rcx,$rcy)";
-        }
-        // $c == -1 is particular too : XAxis text can bump YAxis texts
-        $y_nudge = $this->GetFirst(
-          $this->ArrayOption($this->axis_font_size_v, 0),
-          $this->axis_font_size) / 2;
-        if($c == -1 && $this->start_angle % 360 == 90) {
-          $position['y'] -= $y_nudge;
-        } elseif($c == 1 && $this->start_angle % 360 == 270) {
-          $position['y'] += $y_nudge;
-        }
-        $position['text'] = $key;
-        $position['w'] = $size[0];
-        $position['h'] = $size[1];
-        $positions[] = $position;
-      }
-    }
-    return $positions;
-  }
-
-  /**
-   * Text labels for the wrapped X-axis
-   */
-  protected function XAxisText(&$points, $xoff, $yoff, $angle)
-  { 
-    $inside = ('inside' == $this->GetFirst($this->axis_text_position_h,
-      $this->axis_text_position));
-    $font = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_h, 0),
-      $this->axis_font);
-    $font_size = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_size_h, 0),
-      $this->axis_font_size);
-    $font_adjust = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_adjust_h, 0),
-      $this->axis_font_adjust);
-    $positions = $this->XAxisTextPositions($points, $xoff, $yoff, $angle,
-      $inside);
-    $labels = '';
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($positions as $pos) {
-      $text = $pos['text'];
-      unset($pos['w'], $pos['h'], $pos['text'], $pos['angle'], $pos['sin'],
-        $pos['cos']);
-      $labels .= $svg_text->Text($text, $font_size, $pos);
-    }
-    $group = array();
-    if(!empty($this->axis_font_h))
-      $group['font-family'] = $this->axis_font_h;
-    if(!empty($this->axis_font_size_h))
-      $group['font-size'] = $font_size;
-    if(!empty($this->axis_text_colour_h))
-      $group['fill'] = $this->axis_text_colour_h;
-
-    if(empty($group))
-      return $labels;
-    return $this->Element('g', $group, NULL, $labels);
-  }
-
-  /**
-   * Returns the positions of the Y-axis text
-   */
-  protected function YAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside, $axis_no)
-  {
-    $positions = array();
-    $labels = '';
-    $font = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_v, $axis_no),
-      $this->axis_font);
-    $font_size = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_size_v, $axis_no),
-      $this->axis_font_size);
-    $font_adjust = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
-      $this->axis_font_adjust);
-    $text_space = $this->GetFirst(
-      $this->ArrayOption($this->axis_text_space_v, $axis_no),
-      $this->axis_text_space);
-    $c = cos($this->arad);
-    $s = sin($this->arad);
-    $a = $this->arad + ($s * $c > 0 ? - M_PI_2 : M_PI_2);
-    $x2 = ($xoff + $text_space) * sin($a);
-    $y2 = ($xoff + $text_space) * cos($a);
-    $x3 = 0;
-    $y3 = $c > 0 ? $font_size : 0;
-    $position = array('text-anchor' => $s < 0 ? 'start' : 'end');
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($points as $grid_point) {
-      $key = $grid_point->text;
-      $y = $grid_point->position;
-      if($svg_text->Strlen($key) > 0) {
-        $x1 = $y * $s;
-        $y1 = $y * $c;
-        $position['x'] = $this->xc + $x1 + $x2 + $x3;
-        $position['y'] = $this->yc + $y1 + $y2 + $y3;
-        if($angle != 0) {
-          $rcx = $position['x'];
-          $rcy = $position['y'];
-          $position['transform'] = "rotate($angle,$rcx,$rcy)";
-        }
-        $size = $svg_text->Measure((string)$key, $font_size, $angle, $font_size);
-        $position['text'] = $key;
-        $position['w'] = $size[0];
-        $position['h'] = $size[1];
-        $positions[] = $position;
-      }
-    }
-    return $positions;
-  }
-
-  /**
-   * Text labels for the Y-axis
-   */
-  protected function YAxisText(&$points, $xoff, $yoff, $angle, $right, $axis_no)
-  { 
-    $positions = $this->YAxisTextPositions($points, $xoff, $yoff, $angle, false, $axis_no);
-    $labels = '';
-    $font = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_v, $axis_no),
-      $this->axis_font);
-    $font_size = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_size_v, $axis_no),
-      $this->axis_font_size);
-    $font_adjust = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
-      $this->axis_font_adjust);
-    $anchor = $positions[0]['text-anchor'];
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($positions as $pos) {
-      $text = $pos['text'];
-      unset($pos['w'], $pos['h'], $pos['text'], $pos['text-anchor']);
-      $labels .= $svg_text->Text($text, $font_size, $pos);
-    }
-    $group = array('text-anchor' => $anchor);
-    if(!empty($this->axis_font_v))
-      $group['font-family'] = $this->ArrayOption($this->axis_font_v, $axis_no);
-    if(!empty($this->axis_font_size_v))
-      $group['font-size'] = $font_size;
-    if(!empty($this->axis_text_colour_v))
-      $group['fill'] = $this->ArrayOption($this->axis_text_colour_v, $axis_no);
-    return $this->Element('g', $group, NULL, $labels);
-  }
-
 
   /**
    * Returns what would be the vertical axis label
@@ -824,8 +479,8 @@ class RadarGraph extends LineGraph {
   {
     $points = $this->y_axes[$axis]->GetGridSubdivisions(
       $this->minimum_subdivision,
-      $this->ArrayOption($this->minimum_units_y, $axis), 0, 
-      $this->ArrayOption($this->subdivision_v, $axis));
+      $this->GetOption(array('minimum_units_y', $axis)), 0, 
+      $this->GetOption(array('subdivision_v', $axis)));
     foreach($points as $k => $p)
       $points[$k]->position = -$p->position;
     return $points;

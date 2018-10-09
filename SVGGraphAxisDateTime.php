@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2017 Graham Breach
+ * Copyright (C) 2016-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -475,6 +475,8 @@ class AxisDateTime extends Axis {
    */
   public function GetGridPoints($start)
   {
+    if(is_null($start))
+      return;
     $c = $pos = 0;
     $dlength = $this->length + 1; // allow 1 pixel overflow
 

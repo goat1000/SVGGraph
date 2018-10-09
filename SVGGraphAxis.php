@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2017 Graham Breach
+ * Copyright (C) 2011-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,6 +65,14 @@ class Axis {
   public function SetLength($l)
   {
     $this->length = $l;
+  }
+
+  /**
+   * Returns the axis length
+   */
+  public function GetLength()
+  {
+    return $this->length;
   }
 
   /**
@@ -359,19 +367,21 @@ class Axis {
 
   /**
    * Returns the grid points as an array of GridPoints
+   *  if $start is NULL, just set up the grid spacing without returning points
    */
   public function GetGridPoints($start)
   {
-    $spacing = $this->Grid();
-    $c = $pos = 0;
+    $this->grid_spacing = $spacing = $this->Grid();
     $dlength = $this->length + $spacing * 0.5;
-    $points = array();
-
     if($dlength / $spacing > 10000) {
       $pcount = $dlength / $spacing;
       throw new Exception("Too many grid points ({$this->min_value}->{$this->max_value} = {$pcount})");
     }
+    if(is_null($start))
+      return;
 
+    $c = $pos = 0;
+    $points = array();
     while($pos < $dlength) {
       $value = ($pos - $this->zero) / $this->unit_size;
       $text = $this->GetText($value);

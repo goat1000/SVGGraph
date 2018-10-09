@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017 Graham Breach
+ * Copyright (C) 2017-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -122,7 +122,7 @@ class PolarArea3DGraph extends Pie3DGraph {
         $yc = -$yc;
 
       if($pos_radius > 1 || $outside) {
-        $space = $this->ArrayOption($this->data_label_space, $dataset);
+        $space = $this->GetOption(array('data_label_space', $dataset));
         $xt = ($rx + $space) * $cos_ac;
         $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * $sin_ac;
       } else {

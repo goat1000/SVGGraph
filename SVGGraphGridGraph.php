@@ -20,6 +20,7 @@
  */
 
 require_once 'SVGGraphAxis.php';
+require_once 'SVGGraphDisplayAxis.php';
 
 abstract class GridGraph extends Graph {
 
@@ -67,8 +68,8 @@ abstract class GridGraph extends Graph {
   {
     $grid_l = $grid_t = $grid_r = $grid_b = NULL;
 
-    $grid_set = $this->GetFirst($this->grid_left, $this->grid_right,
-      $this->grid_top, $this->grid_bottom);
+    $grid_set = $this->GetOption('grid_left', 'grid_right', 'grid_top',
+      'grid_bottom');
     if($grid_set) {
       if(!empty($this->grid_left))
         $grid_l = $this->pad_left = abs($this->grid_left);
@@ -102,72 +103,80 @@ abstract class GridGraph extends Graph {
       $this->label_v = $lv;
 
     $right_labels = array();
-    $svg_text = new SVGGraphText($this);
     if(!empty($this->label_v)) {
-      $lines_left = 0;
-      $lines_right = array();
+      $label_spaces = array();
       if(is_array($this->label_v) && $this->YAxisCount() > 1) {
 
         foreach($this->label_v as $axis_no => $label_text) {
           if(is_null($label_text) || $axis_no > $this->YAxisCount() - 1)
             continue;
-          $count = $svg_text->Lines($label_text);
-          if($axis_no == 0)
-            $lines_left = $count;
-          else
-            $lines_right[$axis_no] = $count;
+          $font = $this->GetOption(array('label_font_v', $axis_no), 'label_font');
+          $font_size = $this->GetOption(array('label_font_size_v', $axis_no),
+            'label_font_size');
+          $label_svg_text = new SVGGraphText($this, $font);
+          $measurement = $label_svg_text->Measure($label_text, $font_size, 90,
+            $font_size);
+          $label_spaces[$axis_no] = array(
+            'width' => $measurement[0],
+            'baseline' => $label_svg_text->Baseline($font_size)
+          );
         }
       } else {
 
+        // single axis, left or right
         $label = is_array($this->label_v) ? $this->label_v[0] : $this->label_v;
+        $font = $this->GetOption(array('label_font_v', 0), 'label_font');
+        $font_size = $this->GetOption(array('label_font_size_v', 0),
+          'label_font_size');
+        $label_svg_text = new SVGGraphText($this, $font);
+        $measurement = $label_svg_text->Measure($label, $font_size, 90,
+          $font_size);
         // increase padding
         if($this->axis_right) {
+          $axis_no = 1;
           $this->label_v = array(1 => $label);
-          $lines_right[1] = $svg_text->Lines($label);
         } else {
+          $axis_no = 0;
           $this->label_v = $label;
-          $lines_left = $svg_text->Lines($label);
         }
+        $label_spaces[$axis_no] = array(
+          'width' => $measurement[0],
+          'baseline' => $label_svg_text->Baseline($font_size)
+        );
       }
 
-      if(!empty($lines_right)) {
-        foreach($lines_right as $axis_no => $num_lines) {
-          $font_size = $this->GetFirst(
-            $this->ArrayOption($this->label_font_size_v, $axis_no),
-            $this->label_font_size);
-
-          // store width and text offset, fix position later
-          $label_width = $num_lines * $font_size + 2 * $this->label_space;
+      foreach($label_spaces as $axis_no => $measurement) {
+        $label_width = $measurement['width'] + 2 * $this->label_space;
+        if($axis_no == 0) {
+          if(is_null($grid_l)) {
+            $this->label_left_offset = $this->pad_left + $this->label_space +
+              $measurement['baseline'];
+            $this->pad_left += $label_width;
+          } else {
+            $this->label_left_offset = $this->label_space + $measurement['baseline'];
+          }
+        } else {
           if(is_null($grid_r))
             $this->pad_right += $label_width;
           $right_labels[$axis_no] = array($label_width,
-            - ($font_size + $this->label_space));
-        }
-      }
-      if($lines_left) {
-        $font_size = $this->GetFirst(
-          $this->ArrayOption($this->label_font_size_v, 0),
-          $this->label_font_size);
-        if(is_null($grid_l)) {
-          $this->label_left_offset = $this->pad_left + $this->label_space +
-            $font_size;
-          $this->pad_left += $lines_left * $font_size + 2 * $this->label_space;
-        } else {
-          $this->label_left_offset = $this->label_space + $font_size;
+            - ($measurement['baseline'] + $this->label_space));
         }
       }
     }
     if(!empty($this->label_h)) {
-      $lines = $svg_text->Lines($this->label_h);
-      $font_size = $this->GetFirst($this->label_font_size_h,
-        $this->label_font_size);
+      $font = $this->GetOption('label_font_h', 'label_font');
+      $font_size = $this->GetOption('label_font_size_h', 'label_font_size');
+      $label_svg_text = new SVGGraphText($this, $font);
+      $measurement = $label_svg_text->Measure($this->label_h, $font_size, 0,
+        $font_size);
+      $baseline = $label_svg_text->Baseline($font_size);
       if(is_null($grid_b)) {
         $this->label_bottom_offset = $this->pad_bottom + $this->label_space +
-          $font_size * ($lines - 1);
-        $this->pad_bottom += $lines * $font_size + 2 * $this->label_space;
+          $measurement[1] - $baseline;
+        $this->pad_bottom += $measurement[1] + 2 * $this->label_space;
       } else {
         $this->label_bottom_offset = $this->label_space +
-          $font_size * ($lines - 1);
+          $measurement[1] - $baseline;
       }
     }
     $pad_l = $pad_r = $pad_b = $pad_t = 0;
@@ -176,77 +185,40 @@ abstract class GridGraph extends Graph {
     if($this->show_axes) {
 
       $ends = $this->GetAxisEnds();
+      $extra_r = $extra_t = 0;
 
-      if($this->show_axis_text_v || $this->show_axis_text_h) {
-        $extra_r = $extra_t = 0;
+      for($i = 0; $i < 10; ++$i) {
+        // find the text bounding box and add overlap to padding
+        // repeat with the new measurements in case overlap increases
+        $x_len = $space_x - $pad_r - $pad_l;
+        $y_len = $space_y - $pad_t - $pad_b;
 
-        for($i = 0; $i < 10; ++$i) {
-          // find the text bounding box and add overlap to padding
-          // repeat with the new measurements in case overlap increases
-          $x_len = $space_x - $pad_r - $pad_l;
-          $y_len = $space_y - $pad_t - $pad_b;
+        // 3D graphs will use this to reduce axis length
+        list($extra_r, $extra_t) = $this->AdjustAxes($x_len, $y_len);
 
-          // 3D graphs will use this to reduce axis length
-          list($extra_r, $extra_t) = $this->AdjustAxes($x_len, $y_len);
+        list($x_axes, $y_axes) = $this->GetAxes($ends, $x_len, $y_len);
+        $bbox = $this->FindAxisBBox($x_len, $y_len, $x_axes, $y_axes);
+        $pr = $pl = $pb = $pt = 0;
 
-          list($x_axes, $y_axes) = $this->GetAxes($ends, $x_len, $y_len);
-          $bbox = $this->FindAxisTextBBox($x_len, $y_len, $x_axes, $y_axes);
-          $pr = $pl = $pb = $pt = 0;
+        if($bbox['max_x'] > $x_len)
+          $pr = ceil($bbox['max_x'] - $x_len);
+        if($bbox['min_x'] < 0)
+          $pl = ceil(abs($bbox['min_x']));
+        if($bbox['min_y'] < 0)
+          $pt = ceil(abs($bbox['min_y']));
+        if($bbox['max_y'] > $y_len)
+          $pb = ceil($bbox['max_y'] - $y_len);
 
-          if($bbox['max_x'] > $x_len)
-            $pr = ceil($bbox['max_x'] - $x_len);
-          if($bbox['min_x'] < 0)
-            $pl = ceil(abs($bbox['min_x']));
-          if($bbox['min_y'] < 0)
-            $pt = ceil(abs($bbox['min_y']));
-          if($bbox['max_y'] > $y_len)
-            $pb = ceil($bbox['max_y'] - $y_len);
-
-          if($pr == $pad_r && $pl == $pad_l && $pt == $pad_t && $pb == $pad_b)
-            break;
-          $pad_r = $pr;
-          $pad_l = $pl;
-          $pad_t = $pt;
-          $pad_b = $pb;
-        }
-
-        $div_size = $this->DivisionOverlap($x_axes, $y_axes);
-        $pad_r = max($pad_r, $div_size['r']);
-        $pad_l = max($pad_l, $div_size['l']);
-        $pad_b = max($pad_b, $div_size['b']);
-        $pad_t = max($pad_t, $div_size['t']);
-        $pad_r += $extra_r;
-        $pad_t += $extra_t;
-      } else {
-
-        // make space for divisions
-        list($x_axes, $y_axes) = $this->GetAxes($ends, $space_x, $space_y);
-        $div_size = $this->DivisionOverlap($x_axes, $y_axes);
-        $pad_b = $div_size['b'];
-        $pad_r = $div_size['r'];
-        $pad_l = $div_size['l'];
-        $pad_t = $div_size['t'];
-
-        // extra axes means extra space
-        if(count($y_axes) > 1) {
-          $first = count($y_axes) - 1;
-          $right_axis = $this->width - $this->pad_right;
-          for($axis_no = $first; $axis_no > 0; --$axis_no) {
-            $axis = $y_axes[$axis_no];
-
-            $ybb = $this->YAxisBBox($axis, $space_y, $axis_no, false,
-              $this->show_axis_v);
-            $axis_width = $this->axis_space + $ybb['max_x'] - $ybb['min_x'];
-            if($axis_no > 1) {
-              $this->y_axis_positions[$axis_no] = $right_axis - $ybb['max_x'];
-              $pad_r += $axis_width;
-            } else {
-              $this->y_axis_positions[$axis_no] = $right_axis;
-            }
-            $right_axis -= $axis_width;
-          }
-        }
+        if($pr == $pad_r && $pl == $pad_l && $pt == $pad_t && $pb == $pad_b)
+          break;
+        $pad_r = $pr;
+        $pad_l = $pl;
+        $pad_t = $pt;
+        $pad_b = $pb;
       }
+
+      $pad_r += $extra_r;
+      $pad_t += $extra_t;
     } else {
       // 3D graphs will use this to reduce axis length
       list($pad_r, $pad_t) = $this->AdjustAxes($space_x, $space_y);
@@ -285,8 +257,7 @@ abstract class GridGraph extends Graph {
         throw new Exception('Not enough space for ' . $this->YAxisCount() . ' axes');
       if(isset($right_labels[$axis_no])) {
         list($width, $offset) = $right_labels[$axis_no];
-        $ybb = $this->YAxisBBox($y_axes[$axis_no], $space_y, $axis_no,
-          $this->show_axis_text_v, $this->show_axis_v);
+        $ybb = $this->YAxisBBox($y_axes[$axis_no], $space_y, $axis_no);
         $this->label_right_position[$axis_no] = $this->pad_left + $pos +
           $ybb['max_x'] + $width + $offset;
         $total_label_space += $width;
@@ -307,253 +278,67 @@ abstract class GridGraph extends Graph {
   /**
    * Find the bounding box of the axis text for given axis lengths
    */
-  protected function FindAxisTextBBox($length_x, $length_y, $x_axes, $y_axes)
+  protected function FindAxisBBox($length_x, $length_y, $x_axes, $y_axes)
   {
     // initialise maxima and minima
-    $min_x = $this->width;
-    $min_y = $this->height;
-    $max_x = $max_y = 0;
+    $min_x = array($this->width);
+    $min_y = array($this->height);
+    $max_x = array(0); $max_y = array(0);
 
-    // need actual text positions
-    $div_size = $this->DivisionOverlap($x_axes, $y_axes);
-    $inside_x = ('inside' == $this->GetFirst($this->axis_text_position_h,
-      $this->axis_text_position));
-    $font_size = $this->axis_font_size;
+    $display_axis = $this->GetDisplayAxis($x_axes[0], 0, 'h',
+      $this->flip_axes ? 'y' : 'x');
+    $m = $display_axis->Measure();
+    $min_x[] = $m['x'];
+    $min_y[] = $m['y'] + $length_y;
+    $max_x[] = $m['x'] + $m['width'];
+    $max_y[] = $m['y'] + $m['height'] + $length_y;
 
-    // if outside, use the division overlap as starting positions
-    $min_x = - $div_size['l'];
-    $max_y = $length_y + $div_size['b'];
+    $axis_no = -1;
+    $right_pos = $length_x;
+    foreach($y_axes as $y_axis) {
+      ++$axis_no;
+      if(is_null($y_axis))
+        continue;
+      $ybb = $this->YAxisBBox($y_axis, $length_y, $axis_no);
 
-    // only do this if there is x-axis text
-    if($this->show_axis_text_h) {
-      $x_axis = $x_axes[0];
-      $offset = 0;
-      if($this->label_centre && !$this->flip_axes) {
-        $x_axis->Bar();
-        $offset = 0.5 * $x_axis->Unit();
+      if($axis_no > 0) {
+        // for offset axes, the inside overlap must be added on too
+        $outer = $ybb['max_x'];
+        $inner = $axis_no > 1 ? abs($ybb['min_x']) : 0;
+
+        $this->y_axis_positions[$axis_no] = $right_pos + $inner;
+        $ybb['max_x'] += $right_pos + $inner;
+        $ybb['min_x'] += $right_pos + $inner;
+        $right_pos += $inner + $outer + $this->axis_space;
+      } else {
+        $this->y_axis_positions[$axis_no] = 0;
       }
-      $points = $x_axis->GetGridPoints(0);
-      $positions = $this->XAxisTextPositions($points, $offset,
-        $div_size['b'], $this->axis_text_angle_h, $inside_x);
-      foreach($positions as $p) {
-        switch($p['text-anchor']) {
-        case 'middle' : $off_x = $p['w'] / 2; break;
-        case 'end' : $off_x = $p['w']; break;
-        default : $off_x = 0;
-        }
-        $x = $p['x'] - $off_x;
-        $y = $p['y'] - $font_size + $length_y;
-        $xw = $x + $p['w'];
-        $yh = $y + $p['h'];
 
-        if($x < $min_x)
-          $min_x = $x;
-        if($xw > $max_x)
-          $max_x = $xw;
-        if($y < $min_y)
-          $min_y = $y;
-        if($yh > $max_y)
-          $max_y = $yh;
-      }
+      $max_x[] = $ybb['max_x'];
+      $min_x[] = $ybb['min_x'];
+      $max_y[] = $ybb['max_y'];
+      $min_y[] = $ybb['min_y'];
     }
-    if($this->show_axis_v || $this->show_axis_text_v) {
-      $axis_no = -1;
-      $right_pos = $length_x;
-      $space = $this->axis_space;
-      foreach($y_axes as $y_axis) {
-        ++$axis_no;
-        if(is_null($y_axis))
-          continue;
-        $ybb = $this->YAxisBBox($y_axis, $length_y, $axis_no,
-          $this->show_axis_text_v, $this->show_axis_v);
-
-        if($axis_no > 0) {
-          // for offset axes, the inside overlap must be added on too
-          $outer = $ybb['max_x'];
-          $inner = $axis_no > 1 ? abs($ybb['min_x']) : 0;
-
-          $this->y_axis_positions[$axis_no] = $right_pos + $inner;
-          $ybb['max_x'] += $right_pos + $inner;
-          $ybb['min_x'] += $right_pos + $inner;
-          $right_pos += $inner + $outer + $space;
-        } else {
-          $this->y_axis_positions[$axis_no] = 0;
-        }
-
-        if($ybb['max_x'] > $max_x)
-          $max_x = $ybb['max_x'];
-        if($ybb['min_x'] < $min_x)
-          $min_x = $ybb['min_x'];
-        if($ybb['max_y'] > $max_y)
-          $max_y = $ybb['max_y'];
-        if($ybb['min_y'] < $min_y)
-          $min_y = $ybb['min_y'];
-      }
-    }
-    return compact('min_x', 'min_y', 'max_x', 'max_y');
+    return array('min_x' => min($min_x), 'min_y' => min($min_y),
+      'max_x' => max($max_x), 'max_y' => max($max_y));
   }
 
   /**
    * Returns bounding box for a Y-axis
    */
-  protected function YAxisBBox($axis, $length, $axis_no, $show_text, $show_axis)
+  protected function YAxisBBox($axis, $length, $axis_no)
   {
-    $min_x = $max_x = $min_y = 0;
-    $max_y = $length;
-    $right = ($axis_no > 0);
+    $display_axis = $this->GetDisplayAxis($axis, $axis_no, 'v',
+      $this->flip_axes ? 'x' : 'y');
+    $measurement = $display_axis->Measure();
 
-    // get size of divisions and subdivisions
-    $div_size = $inner_size = 0;
-    if($show_axis && $this->show_divisions) {
-      $dstyle = $this->GetFirst(
-        $this->ArrayOption($this->division_style_v, $axis_no),
-        $this->division_style);
-      $dsize = $this->GetFirst(
-        $this->ArrayOption($this->division_size_v, $axis_no),
-        $this->division_size);
-      $div_size = $this->DOverlap($dstyle, $dsize);
-      if($this->show_subdivisions) {
-        $sdstyle = $this->GetFirst(
-          $this->ArrayOption($this->subdivision_style_v, $axis_no),
-          $this->subdivision_style);
-        $sdsize = $this->GetFirst(
-          $this->ArrayOption($this->subdivision_size_v, $axis_no),
-          $this->subdivision_size);
-        $subdiv_size = $this->DOverlap($sdstyle, $sdsize);
-        $div_size = max($div_size, $subdiv_size);
-      }
-
-      if($axis_no > 1) {
-        // get inner size of divisions/subdivisions
-        $inner_size = $this->DOverlap($dstyle, $dsize, true);
-        if($this->show_subdivisions) {
-          $inner_sdsize = $this->DOverlap($sdstyle, $sdsize, true);
-          $inner_size = max($inner_size, $inner_sdsize);
-        }
-        if($inner_size > 0)
-          $min_x = -$inner_size;
-      }
-      $max_x = $div_size;
-    }
-
-    if($show_text) {
-      $inside = ('inside' == $this->GetFirst(
-        $this->ArrayOption($this->axis_text_position_v, $axis_no),
-        $this->axis_text_position));
-      $offset = 0;
-      if($this->label_centre && $this->flip_axes) {
-        $axis->Bar();
-        $offset = -0.5 * $axis->Unit();
-      }
-
-      $points = $axis->GetGridPoints(0);
-      $positions = $this->YAxisTextPositions($points,
-        $div_size,
-        $offset, $this->ArrayOption($this->axis_text_angle_v, $axis_no),
-        $inside xor $right, $axis_no);
-
-      $font_size = $this->GetFirst(
-        $this->ArrayOption($this->axis_font_size_v, $axis_no),
-        $this->axis_font_size);
-      foreach($positions as $p) {
-        $x = $p['x'] - ($p['text-anchor'] == 'end' ? $p['w'] : 0);
-        $y = $p['y'] - $font_size + $length;
-        $xw = $x + $p['w'];
-        $yh = $y + $p['h'];
-
-        if($x < $min_x)
-          $min_x = $x;
-        if($xw > $max_x)
-          $max_x = $xw;
-        if($y < $min_y)
-          $min_y = $y;
-        if($yh > $max_y)
-          $max_y = $yh;
-      }
-    }
-
-    return compact('min_x', 'min_y', 'max_x', 'max_y');
-  }
-
-  /**
-   * Returns the amount of overlap the divisions and subdivisions use
-   */
-  protected function DivisionOverlap($x_axes, $y_axes)
-  {
-    $l = $r = $t = $b = 0;
-    if($this->show_divisions || $this->show_subdivisions) {
-
-      $x_count = count($x_axes);
-      $y_count = count($y_axes);
-      for($i = 0; $i < $x_count; ++$i) {
-        if(is_null($x_axes[$i]))
-          continue;
-        $x = $this->DOverlap(
-          $this->GetFirst($this->ArrayOption($this->division_style_h, $i),
-            $this->division_style),
-          $this->GetFirst($this->ArrayOption($this->division_size_h, $i), 
-            $this->division_size));
-        if($this->show_subdivisions) {
-          $sx = $this->DOverlap(
-            $this->GetFirst($this->ArrayOption($this->subdivision_style_h, $i),
-              $this->subdivision_style),
-            $this->GetFirst($this->ArrayOption($this->subdivision_size_h, $i),
-            $this->subdivision_size));
-          $x = max($x, $sx);
-        }
-        if($i > 0)
-          $t = $x;
-        else
-          $b = $x;
-      }
-
-      if($this->show_axis_v) {
-        for($i = 0; $i < $y_count; ++$i) {
-          if(is_null($y_axes[$i]))
-            continue;
-          $y = $this->DOverlap(
-            $this->GetFirst($this->ArrayOption($this->division_style_v, $i),
-              $this->division_style),
-            $this->GetFirst($this->ArrayOption($this->division_size_v, $i),
-              $this->division_size));
-          if($this->show_subdivisions) {
-            $sy = $this->DOverlap(
-              $this->GetFirst($this->ArrayOption($this->subdivision_style_v, $i),
-                $this->subdivision_style),
-              $this->GetFirst($this->ArrayOption($this->subdivision_size_v, $i),
-                $this->subdivision_size));
-            $y = max($y, $sy);
-          }
-          if($i > 0)
-            $r = $y;
-          else
-            $l = $y;
-        }
-      }
-    }
-    return compact('l', 'r', 't', 'b');
-  }
-
-  /**
-   * Calculates the overlap of a division or subdivision
-   * Set $inner for inside overlap
-   */
-  protected function DOverlap($style, $size, $inner = false)
-  {
-    $overlap = 0;
-    switch($style) {
-    case 'none' :
-      return 0;
-    case 'in' :
-    case 'infull' :
-      return $inner ? $size : 0;
-    case 'over' :
-    case 'overfull' :
-      return $size;
-    case 'out' :
-    default :
-      return $inner ? 0 : $size;
-    }
+    $results = array(
+      'min_x' => $measurement['x'],
+      'min_y' => $measurement['y'] + $length,
+      'max_x' => $measurement['x'] + $measurement['width'],
+      'max_y' => $measurement['y'] + $measurement['height'] + $length,
+    );
+    return $results;
   }
 
   /**
@@ -622,18 +407,6 @@ abstract class GridGraph extends Graph {
   }
 
   /**
-   * Returns the minimum key value for an axis
-   */
-  protected function GetAxisMinKey($axis)
-  {
-    return $this->GetMinKey();
-  }
-  protected function GetAxisMaxKey($axis)
-  {
-    return $this->GetMaxKey();
-  }
-
-  /**
    * Returns the minimum value for an axis
    */
   protected function GetAxisMinValue($axis)
@@ -687,20 +460,20 @@ abstract class GridGraph extends Graph {
     $y_axis_count = $this->YAxisCount();
     $x_axis_count = $this->XAxisCount();
     if($this->flip_axes) {
-      $x_min_fixed = $this->axis_min_v;
-      $x_max_fixed = $this->axis_max_v;
-      $y_min_fixed = $this->axis_min_h;
-      $y_max_fixed = $this->axis_max_h;
+      $x_min_fixed = 'axis_min_v';
+      $x_max_fixed = 'axis_max_v';
+      $y_min_fixed = 'axis_min_h';
+      $y_max_fixed = 'axis_max_h';
     } else {
-      $y_min_fixed = $this->axis_min_v;
-      $y_max_fixed = $this->axis_max_v;
-      $x_min_fixed = $this->axis_min_h;
-      $x_max_fixed = $this->axis_max_h;
+      $y_min_fixed = 'axis_min_v';
+      $y_max_fixed = 'axis_max_v';
+      $x_min_fixed = 'axis_min_h';
+      $x_max_fixed = 'axis_max_h';
     }
 
     for($i = 0; $i < $y_axis_count; ++$i) {
-      $fixed_max = $this->ArrayOption($y_max_fixed, $i);
-      $fixed_min = $this->ArrayOption($y_min_fixed, $i);
+      $fixed_max = $this->GetOption(array($y_max_fixed, $i));
+      $fixed_min = $this->GetOption(array($y_min_fixed, $i));
 
       // validate
       if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
@@ -715,7 +488,7 @@ abstract class GridGraph extends Graph {
           $minv_list[] = (float)$g_min_y;
 
         // if not a log axis, start at 0
-        if(!$this->ArrayOption($this->log_axis_y, $i))
+        if(!$this->GetOption(array('log_axis_y', $i)))
           $minv_list[] = 0;
         $v_min[] = min($minv_list);
       }
@@ -728,7 +501,7 @@ abstract class GridGraph extends Graph {
           $maxv_list[] = (float)$g_max_y;
 
         // if not a log axis, start at 0
-        if(!$this->ArrayOption($this->log_axis_y, $i))
+        if(!$this->GetOption(array('log_axis_y', $i)))
           $maxv_list[] = 0;
         $v_max[] = max($maxv_list);
       }
@@ -737,17 +510,17 @@ abstract class GridGraph extends Graph {
     }
 
     for($i = 0; $i < $x_axis_count; ++$i) {
-      $fixed_max = $this->ArrayOption($x_max_fixed, $i);
-      $fixed_min = $this->ArrayOption($x_min_fixed, $i);
+      $fixed_max = $this->GetOption(array($x_max_fixed, $i));
+      $fixed_min = $this->GetOption(array($x_min_fixed, $i));
 
       if($this->datetime_keys) {
         // 0 is 1970-01-01, not a useful minimum
         if(empty($fixed_max)) {
           // guidelines support datetime values too
           if(!is_null($g_max_x))
-            $k_max[] = max($this->GetAxisMaxKey($i), $g_max_x);
+            $k_max[] = max($this->GetMaxKey(), $g_max_x);
           else
-            $k_max[] = $this->GetAxisMaxKey($i);
+            $k_max[] = $this->GetMaxKey();
         } else {
           $d = SVGGraphDateConvert($fixed_max);
           // subtract a se
@@ -758,9 +531,9 @@ abstract class GridGraph extends Graph {
         }
         if(empty($fixed_min)) {
           if(!is_null($g_min_x))
-            $k_min[] = min($this->GetAxisMinKey($i), $g_min_x);
+            $k_min[] = min($this->GetMinKey(), $g_min_x);
           else
-            $k_min[] = $this->GetAxisMinKey($i);
+            $k_min[] = $this->GetMinKey();
         } else {
           $d = SVGGraphDateConvert($fixed_min);
           if(!is_null($d))
@@ -777,11 +550,11 @@ abstract class GridGraph extends Graph {
         if(is_numeric($fixed_max))
           $k_max[] = $fixed_max;
         else
-          $k_max[] = max(0, $this->GetAxisMaxKey($i), (float)$g_max_x);
+          $k_max[] = max(0, $this->GetMaxKey(), (float)$g_max_x);
         if(is_numeric($fixed_min))
           $k_min[] = $fixed_min;
         else
-          $k_min[] = min(0, $this->GetAxisMinKey($i), (float)$g_min_x);
+          $k_min[] = min(0, $this->GetMinKey(), (float)$g_min_x);
       }
       if($k_max[$i] < $k_min[$i])
         throw new Exception("Invalid X axis: min > max ({$k_min[$i]} > {$k_max[$i]})");
@@ -802,10 +575,9 @@ abstract class GridGraph extends Graph {
     $x_axis_count = $this->XAxisCount();
     for($i = 0; $i < $x_axis_count; ++$i) {
 
-      $x_min_space = $this->GetFirst(
-        $this->ArrayOption($this->minimum_grid_spacing_h, $i),
-        $this->minimum_grid_spacing);
-      $grid_division = $this->ArrayOption($this->grid_division_h, $i);
+      $x_min_space = $this->GetOption(array('minimum_grid_spacing_h', $i),
+        'minimum_grid_spacing');
+      $grid_division = $this->GetOption(array('grid_division_h', $i));
       if(is_numeric($grid_division)) {
         if($grid_division <= 0)
           throw new Exception('Invalid grid division');
@@ -816,30 +588,26 @@ abstract class GridGraph extends Graph {
       if($this->flip_axes) {
         $max_h = $ends['v_max'][$i];
         $min_h = $ends['v_min'][$i];
-        $x_min_unit = $this->ArrayOption($this->minimum_units_y, $i);
+        $x_min_unit = $this->GetOption(array('minimum_units_y', $i));
         $x_fit = false;
-        $x_units_after = (string)$this->ArrayOption($this->units_y, $i);
-        $x_units_before = (string)$this->ArrayOption($this->units_before_y, $i);
-        $x_decimal_digits = $this->GetFirst(
-          $this->ArrayOption($this->decimal_digits_y, $i),
-          $this->decimal_digits);
-        $x_text_callback = $this->GetFirst(
-          $this->ArrayOption($this->axis_text_callback_y, $i),
-          $this->axis_text_callback);
+        $x_units_after = (string)$this->GetOption(array('units_y', $i));
+        $x_units_before = (string)$this->GetOption(array('units_before_y', $i));
+        $x_decimal_digits = $this->GetOption(array('decimal_digits_y', $i),
+          'decimal_digits');
+        $x_text_callback = $this->GetOption(array('axis_text_callback_y', $i),
+          'axis_text_callback');
         $x_values = false;
       } else {
         $max_h = $ends['k_max'][$i];
         $min_h = $ends['k_min'][$i];
         $x_min_unit = 1;
         $x_fit = true;
-        $x_units_after = (string)$this->ArrayOption($this->units_x, $i);
-        $x_units_before = (string)$this->ArrayOption($this->units_before_x, $i);
-        $x_decimal_digits = $this->GetFirst(
-          $this->ArrayOption($this->decimal_digits_x, $i),
-          $this->decimal_digits);
-        $x_text_callback = $this->GetFirst(
-          $this->ArrayOption($this->axis_text_callback_x, $i),
-          $this->axis_text_callback);
+        $x_units_after = (string)$this->GetOption(array('units_x', $i));
+        $x_units_before = (string)$this->GetOption(array('units_before_x', $i));
+        $x_decimal_digits = $this->GetOption(array('decimal_digits_x', $i),
+          'decimal_digits');
+        $x_text_callback = $this->GetOption(array('axis_text_callback_x', $i),
+          'axis_text_callback');
         $x_values = $this->multi_graph ? $this->multi_graph : $this->values;
       }
 
@@ -850,11 +618,11 @@ abstract class GridGraph extends Graph {
         require_once 'SVGGraphAxisDateTime.php';
         $x_axis = new AxisDateTime($x_len, $max_h, $min_h, $x_min_space,
           $grid_division, $this->settings);
-      } elseif($this->ArrayOption($this->log_axis_y, $i) && $this->flip_axes) {
+      } elseif($this->GetOption(array('log_axis_y', $i)) && $this->flip_axes) {
         require_once 'SVGGraphAxisLog.php';
         $x_axis = new AxisLog($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
           $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
-          $this->ArrayOption($this->log_axis_y_base, $i),
+          $this->GetOption(array('log_axis_y_base', $i)),
           $grid_division, $x_text_callback);
       } elseif(!is_numeric($grid_division)) {
         $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
@@ -866,6 +634,8 @@ abstract class GridGraph extends Graph {
           $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
           $x_values);
       }
+      if($this->label_centre && !$this->flip_axes)
+        $x_axis->Bar();
       $x_axes[] = $x_axis;
     }
 
@@ -873,14 +643,13 @@ abstract class GridGraph extends Graph {
     $y_axis_count = $this->YAxisCount();
     for($i = 0; $i < $y_axis_count; ++$i) {
 
-      $y_min_space = $this->GetFirst(
-        $this->ArrayOption($this->minimum_grid_spacing_v, $i),
-        $this->minimum_grid_spacing);
+      $y_min_space = $this->GetOption(array('minimum_grid_spacing_v', $i),
+        'minimum_grid_spacing');
       // make sure minimum_grid_spacing option array
       if(!is_array($this->minimum_grid_spacing_v))
         $this->minimum_grid_spacing_v = array();
 
-      $grid_division = $this->ArrayOption($this->grid_division_v, $i);
+      $grid_division = $this->GetOption(array('grid_division_v', $i));
       if(is_numeric($grid_division)) {
         if($grid_division <= 0)
           throw new Exception('Invalid grid division');
@@ -891,34 +660,26 @@ abstract class GridGraph extends Graph {
       }
 
       if($this->flip_axes) {
+        $yx = 'x';
         $max_v = $ends['k_max'][$i];
         $min_v = $ends['k_min'][$i];
         $y_min_unit = 1;
         $y_fit = true;
-        $y_units_after = (string)$this->ArrayOption($this->units_x, $i);
-        $y_units_before = (string)$this->ArrayOption($this->units_before_x, $i);
-        $y_decimal_digits = $this->GetFirst(
-          $this->ArrayOption($this->decimal_digits_x, $i),
-          $this->decimal_digits);
-        $y_text_callback = $this->GetFirst(
-          $this->ArrayOption($this->axis_text_callback_x, $i),
-          $this->axis_text_callback);
         $y_values = $this->multi_graph ? $this->multi_graph : $this->values;
       } else {
+        $yx = 'y';
         $max_v = $ends['v_max'][$i];
         $min_v = $ends['v_min'][$i];
-        $y_min_unit = $this->ArrayOption($this->minimum_units_y, $i);
+        $y_min_unit = $this->GetOption(array('minimum_units_y', $i));
         $y_fit = false;
-        $y_units_after = (string)$this->ArrayOption($this->units_y, $i);
-        $y_units_before = (string)$this->ArrayOption($this->units_before_y, $i);
-        $y_decimal_digits = $this->GetFirst(
-          $this->ArrayOption($this->decimal_digits_y, $i),
-          $this->decimal_digits);
-        $y_text_callback = $this->GetFirst(
-          $this->ArrayOption($this->axis_text_callback_y, $i),
-          $this->axis_text_callback);
         $y_values = false;
       }
+      $y_text_callback = $this->GetOption(array("axis_text_callback_{$yx}", $i),
+        'axis_text_callback');
+      $y_decimal_digits = $this->GetOption(array("decimal_digits_{$yx}", $i),
+        'decimal_digits');
+      $y_units_after = (string)$this->GetOption(array("units_{$yx}", $i));
+      $y_units_before = (string)$this->GetOption(array("units_before_{$yx}", $i));
 
       if(!is_numeric($max_v) || !is_numeric($min_v))
         throw new Exception('Non-numeric min/max');
@@ -927,11 +688,11 @@ abstract class GridGraph extends Graph {
         require_once 'SVGGraphAxisDateTime.php';
         $y_axis = new AxisDateTime($y_len, $max_v, $min_v, $y_min_space,
           $grid_division, $this->settings);
-      } elseif($this->ArrayOption($this->log_axis_y, $i) && !$this->flip_axes) {
+      } elseif($this->GetOption(array('log_axis_y', $i)) && !$this->flip_axes) {
         require_once 'SVGGraphAxisLog.php';
         $y_axis = new AxisLog($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
           $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
-          $this->ArrayOption($this->log_axis_y_base, $i),
+          $this->GetOption(array('log_axis_y_base', $i)),
           $grid_division, $y_text_callback);
       } elseif(!is_numeric($grid_division)) {
         $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
@@ -943,7 +704,8 @@ abstract class GridGraph extends Graph {
           $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
           $y_values);
       }
-
+      if($this->label_centre && $this->flip_axes)
+        $y_axis->Bar();
       $y_axis->Reverse(); // because axis starts at bottom
 
       $y_axes[] = $y_axis;
@@ -978,15 +740,8 @@ abstract class GridGraph extends Graph {
     list($x_axes, $y_axes) = $this->GetAxes($ends, $this->g_width,
       $this->g_height);
 
-    $main_axes = $this->flip_axes ? $y_axes : $x_axes;
-    if($this->label_centre)
-      foreach($main_axes as $axis)
-        if(!is_null($axis))
-          $axis->Bar();
-
     $this->x_axes = $x_axes;
     $this->y_axes = $y_axes;
-
     $this->axes_calc_done = true;
   }
 
@@ -998,13 +753,10 @@ abstract class GridGraph extends Graph {
     if(isset($this->grid_calc_done))
       return;
 
-    $grid_bottom = $this->height - $this->pad_bottom;
-    $grid_left = $this->pad_left;
-
     $y_axis = $this->y_axes[$this->main_y_axis];
     $x_axis = $this->x_axes[$this->main_x_axis];
-    $y_points = $y_axis->GetGridPoints($grid_bottom);
-    $x_points = $x_axis->GetGridPoints($grid_left);
+    $y_axis->GetGridPoints(NULL);
+    $x_axis->GetGridPoints(NULL);
 
     if($this->flip_axes) {
       $this->grid_limit = $this->label_centre ?
@@ -1040,9 +792,9 @@ abstract class GridGraph extends Graph {
   {
     return $this->y_axes[$axis]->GetGridSubdivisions(
       $this->minimum_subdivision,
-      $this->flip_axes ? 1 : $this->ArrayOption($this->minimum_units_y, $axis),
+      $this->flip_axes ? 1 : $this->GetOption(array('minimum_units_y', $axis)),
       $this->height - $this->pad_bottom, 
-      $this->ArrayOption($this->subdivision_v, $axis));
+      $this->GetOption(array('subdivision_v', $axis)));
   }
 
   /**
@@ -1052,367 +804,9 @@ abstract class GridGraph extends Graph {
   {
     return $this->x_axes[$axis]->GetGridSubdivisions(
       $this->minimum_subdivision,
-      $this->flip_axes ? $this->ArrayOption($this->minimum_units_y, $axis) : 1,
+      $this->flip_axes ? $this->GetOption(array('minimum_units_y', $axis)) : 1,
       $this->pad_left,
-      $this->ArrayOption($this->subdivision_h, $axis));
-  }
-
-  /**
-   * Returns the X axis SVG fragment
-   */
-  protected function XAxis($yoff)
-  {
-    $x = $this->pad_left - $this->axis_overlap;
-    $y = $this->height - $this->pad_bottom - $yoff;
-    $len = $this->g_width + 2 * $this->axis_overlap;
-    $path = array('d' => "M$x {$y}h$len");
-    if(!empty($this->axis_colour_h))
-      $path['stroke'] = $this->axis_colour_h;
-    if(!empty($this->axis_stroke_width_h))
-      $path['stroke-width'] = $this->axis_stroke_width_h;
-    return $this->Element('path', $path);
-  }
-
-  /**
-   * Returns the Y axis SVG fragment
-   */
-  protected function YAxis($i)
-  {
-    if($i > 0) {
-      $xoff = $this->y_axis_positions[$i];
-    } else {
-      $x0 = $this->x_axes[$this->main_x_axis]->Zero();
-      $xoff = $x0 > 1 && $x0 < $this->g_width ? $x0 : 0;
-    }
-    $x = $this->pad_left + $xoff;
-    $len = $this->g_height + 2 * $this->axis_overlap;
-    $y = $this->height - $this->pad_bottom + $this->axis_overlap - $len;
-    $path = array('d' => "M$x {$y}v$len");
-
-    $colour = $this->ArrayOption($this->axis_colour_v, $i);
-    $thickness = $this->ArrayOption($this->axis_stroke_width_v, $i);
-    if(!empty($colour))
-      $path['stroke'] = $colour;
-    if(!empty($thickness))
-      $path['stroke-width'] = $thickness;
-    return $this->Element('path', $path);
-  }
-
-  /**
-   * Returns the position and size of divisions
-   * @retval array('pos' => $position, 'sz' => $size)
-   */
-  protected function DivisionsPositions($style, $size, $fullsize, $start,
-    $axis_offset, $axis_opposite, $secondary_axis)
-  {
-    $sz = $size;
-    $pos = $start + $axis_offset;
-    if($secondary_axis)
-      $style = str_replace('full', '', $style);
-
-    switch($style) {
-    case 'none' :
-      return null; // no pos or sz
-    case 'infull' :
-      $pos = $start;
-      $sz = $fullsize;
-      break;
-    case 'over' :
-      $pos -= $size;
-      $sz = $size * 2;
-      break;
-    case 'overfull' :
-      $pos = $axis_opposite ? $start : $start - $size;
-      $sz = $fullsize + $size;
-      break;
-    case 'in' :
-      if($axis_opposite)
-        $pos -= $size;
-      break;
-    case 'out' :
-    default :
-      if(!$axis_opposite)
-        $pos -= $size;
-      $sz = $size;
-    }
-
-    return array('sz' => $sz, 'pos' => $pos);
-  }
-
-  /**
-   * Returns X-axis divisions as a path
-   */
-  protected function XAxisDivisions(&$points, $style, $size, $yoff)
-  {
-    $path = '';
-    $pos = $this->DivisionsPositions($style, $size, $this->g_height,
-      $this->pad_bottom, $yoff, false, false);
-    if(is_null($pos))
-      return '';
-
-    $y = $this->height - $pos['pos'];
-    $height = -$pos['sz'];
-    foreach($points as $x)
-      $path .= "M{$x->position} {$y}v{$height}";
-    return $path;
-  }
-
-  /**
-   * Returns Y-axis divisions as a path
-   */
-  protected function YAxisDivisions(&$points, $xoff, $subdiv, $axis_no)
-  {
-    $dz = 'division_size';
-    $ds = 'division_style';
-    $dzv = 'division_size_v';
-    $dsv = 'division_style_v';
-    if($subdiv) {
-      $dz = 'subdivision_size';
-      $ds = 'subdivision_style';
-      $dzv = 'subdivision_size_v';
-      $dsv = 'subdivision_style_v';
-    }
-
-    $style = $this->GetFirst($this->ArrayOption($this->{$dsv}, $axis_no), $this->{$ds});
-    $size = $this->GetFirst($this->ArrayOption($this->{$dzv}, $axis_no), $this->{$dz});
-    $path = '';
-    $pos = $this->DivisionsPositions($style, $size, $this->g_width,
-      $this->pad_left, $xoff, $axis_no > 0, $axis_no != $this->main_y_axis);
-    if(is_null($pos))
-      return '';
-
-    $x = $pos['pos'];
-    $size = $pos['sz'];
-    foreach($points as $y) {
-      $path .= "M$x {$y->position}h{$size}";
-    }
-    return $path;
-  }
-
-  /**
-   * Returns the X-axis text positions
-   */
-  protected function XAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside)
-  {
-    $positions = array();
-    $x_prev = -$this->width;
-    $count = count($points);
-    $label_centre_x = $this->label_centre && !$this->flip_axes;
-    $font = $this->GetFirst($this->axis_font_h, $this->axis_font);
-    $font_size = $this->GetFirst($this->axis_font_size_h, $this->axis_font_size);
-    $font_adjust = $this->GetFirst($this->axis_font_adjust_h, $this->axis_font_adjust);
-    $text_space = $this->GetFirst($this->axis_text_space_h, $this->axis_text_space);
-    $text_centre = $font_size * 0.3;
-
-    if($inside)
-    {
-      $y = -$yoff - $text_space;
-      $angle = -$angle;
-      $x_rotate_offset = -$text_centre;
-    }
-    else
-    {
-      $y = $yoff + $font_size + $text_space - $text_centre;
-      $x_rotate_offset = $text_centre;
-    }
-    if($angle < 0)
-      $x_rotate_offset = -$x_rotate_offset;
-    $y_rotate_offset = -$text_centre;
-    $position = array('y' => $y);
-    if($angle == 0) {
-      $position['text-anchor'] = 'middle';
-    } else {
-      $position['text-anchor'] = $this->axis_text_angle_h < 0 ? 'end' : 'start';
-    }
-    $p = 0;
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($points as $grid_point) {
-      $key = $grid_point->text;
-      $x = $grid_point->position;
-
-      // don't draw 0 over the axis line
-      if($inside && !$label_centre_x && $key == '0')
-        $key = '';
-
-      if($svg_text->Strlen($key) > 0 && (++$p < $count || !$label_centre_x)) {
-        $position['x'] = $x + $xoff;
-        if($angle != 0) {
-          $position['x'] -= $x_rotate_offset;
-          $rcx = $position['x'] + $x_rotate_offset;
-          $rcy = $position['y'] + $y_rotate_offset;
-          $position['transform'] = "rotate($angle,$rcx,$rcy)";
-        }
-        $size = $svg_text->Measure((string)$key, $font_size, $angle, $font_size);
-        $position['text'] = $key;
-        $position['w'] = $size[0];
-        $position['h'] = $size[1];
-        $positions[] = $position;
-      }
-      $x_prev = $x;
-    }
-    return $positions;
-  }
-
-  /**
-   * Returns the Y-axis text positions
-   */
-  protected function YAxisTextPositions(&$points, $xoff, $yoff, $angle, $inside, $axis_no)
-  {
-    $y_prev = $this->height;
-    $font = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_v, $axis_no),
-      $this->axis_font);
-    $font_size = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_size_v, $axis_no),
-      $this->axis_font_size);
-    $font_adjust = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
-      $this->axis_font_adjust);
-    $text_space = $this->GetFirst(
-      $this->ArrayOption($this->axis_text_space_v, $axis_no),
-      $this->axis_text_space);
-    $label_centre_y = $this->label_centre && $this->flip_axes;
-    $x = $xoff + $text_space;
-    if(!$inside)
-      $x = -$x;
-
-    $position = array('x' => $x);
-    $position['text-anchor'] = $inside ? 'start' : 'end';
-    $positions = array();
-    $count = count($points);
-    $p = 0;
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($points as $grid_point) {
-      $key = $grid_point->text;
-      $y = $grid_point->position;
-
-      // don't draw 0 over the axis line
-      if($inside && !$label_centre_y && !$axis_no && $key == '0')
-        $key = '';
-
-      if($svg_text->Strlen($key) && (++$p < $count || !$label_centre_y)) {
-        // get unrotated width and height first
-        list($t_width, $t_height) = $svg_text->Measure($key, $font_size, 0,
-          $font_size);
-        $text_centre = $font_size * 0.8 - $t_height * 0.5;
-        $position['y'] = $y + $text_centre + $yoff;
-
-        if($angle != 0) {
-          list($tr_width, $tr_height) = $svg_text->Measure($key, $font_size,
-            $angle, $font_size);
-
-          // axes of rotation are Y position and half height away from
-          // start/end of text
-          $rcx = $position['x'] + $t_height * ($inside ? 0.5 : -0.5);
-          $rcy = $y + $yoff;
-          $position['transform'] = compact('angle', 'rcx', 'rcy');
-          $t_width = $tr_width;
-          $t_height = $tr_height;
-        }
-        $position['text'] = $key;
-        $position['w'] = $t_width;
-        $position['h'] = $t_height;
-        $positions[] = $position;
-      }
-      $y_prev = $y;
-    }
-    return $positions;
-  }
-
-  /**
-   * Returns the X-axis text fragment
-   */
-  protected function XAxisText(&$points, $xoff, $yoff, $angle)
-  {
-    $inside = ('inside' == $this->GetFirst($this->axis_text_position_h,
-      $this->axis_text_position));
-    if($inside)
-      $yoff -= $this->height - $this->pad_bottom;
-    else
-      $yoff += $this->height - $this->pad_bottom;
-    $positions = $this->XAxisTextPositions($points, $xoff, $yoff, $angle,
-      $inside);
-    if(empty($positions))
-      return '';
-
-    $labels = '';
-    $font = $this->GetFirst($this->axis_font_h, $this->axis_font);
-    $font_size = $this->GetFirst($this->axis_font_size_h, $this->axis_font_size);
-    $font_adjust = $this->GetFirst($this->axis_font_adjust_h,
-      $this->axis_font_adjust);
-    $anchor = $positions[0]['text-anchor'];
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    foreach($positions as $pos) {
-      $text = $pos['text'];
-      if($inside)
-        $pos['y'] -= $pos['h'] - $font_size;
-      unset($pos['w'], $pos['h'], $pos['text'], $pos['text-anchor']);
-      $labels .= $svg_text->Text($text, $font_size, $pos);
-    }
-    $group = array('text-anchor' => $anchor);
-    if(!empty($this->axis_font_h))
-      $group['font-family'] = $this->axis_font_h;
-    if(!empty($this->axis_font_size_h))
-      $group['font-size'] = $font_size;
-    if(!empty($this->axis_text_colour_h))
-      $group['fill'] = $this->axis_text_colour_h;
-
-    return $this->Element('g', $group, NULL, $labels);
-  }
-
-  /**
-   * Returns the Y-axis text fragment
-   */
-  protected function YAxisText(&$points, $xoff, $yoff, $angle, $right, $axis_no)
-  {
-    $inside = ('inside' == $this->GetFirst(
-      $this->ArrayOption($this->axis_text_position_v, $axis_no),
-      $this->axis_text_position));
-    if($inside xor $right)
-      $xoff += $this->pad_left;
-    else
-      $xoff -= $this->pad_left;
-
-    $positions = $this->YAxisTextPositions($points, $xoff, $yoff, $angle,
-      $inside xor $right, $axis_no);
-    if(empty($positions))
-      return '';
-
-    $labels = '';
-    $font = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_v, $axis_no),
-      $this->axis_font);
-    $font_size = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_size_v, $axis_no),
-      $this->axis_font_size);
-    $font_adjust = $this->GetFirst(
-      $this->ArrayOption($this->axis_font_adjust_v, $axis_no),
-      $this->axis_font_adjust);
-    $svg_text = new SVGGraphText($this, $font, $font_adjust);
-    $anchor = $positions[0]['text-anchor'];
-    foreach($positions as $pos) {
-      $text = $pos['text'];
-      if($right) {
-        $pos['x'] += $this->y_axis_positions[$axis_no];
-        if(isset($pos['transform']['rcx']))
-          $pos['transform']['rcx'] += $this->y_axis_positions[$axis_no];
-      }
-      if(isset($pos['transform'])) {
-        $t = $pos['transform'];
-        $pos['transform'] = "rotate({$t['angle']},{$t['rcx']},{$t['rcy']})";
-      }
-      unset($pos['w'], $pos['h'], $pos['text'], $pos['text-anchor']);
-      $labels .= $svg_text->Text($text, $font_size, $pos);
-    }
-    $group = array('text-anchor' => $anchor);
-    if(!empty($this->axis_font_v))
-      $group['font-family'] = $this->ArrayOption($this->axis_font_v, $axis_no);
-    if(!empty($this->axis_font_size_v))
-      $group['font-size'] = $font_size;
-    if(!empty($this->axis_text_colour_v))
-      $group['fill'] = $this->ArrayOption($this->axis_text_colour_v, $axis_no);
-
-    return $this->Element('g', $group, NULL, $labels);
+      $this->GetOption(array('subdivision_h', $axis)));
   }
 
   /**
@@ -1427,7 +821,7 @@ abstract class GridGraph extends Graph {
       $this->pad_left;
     $y = $this->height - $this->label_bottom_offset;
     $pos = compact('x', 'y');
-    $font = $this->GetFirst($this->label_font_h, $this->label_font);
+    $font = $this->GetOption('label_font_h', 'label_font');
     $svg_text = new SVGGraphText($this, $font);
     return $svg_text->Text($this->label_h, $this->label_font_size,
       array_merge($attribs, $pos));
@@ -1459,28 +853,19 @@ abstract class GridGraph extends Graph {
         $transform = "rotate(270,$x,$y)";
       }
       $pos = compact('x', 'y', 'transform');
-      $font = $this->GetFirst(
-        $this->ArrayOption($this->label_font_v, $i),
-        $this->label_font);
-      $font_weight = $this->GetFirst(
-        $this->ArrayOption($this->label_font_weight_v, $i),
-        $this->label_font_weight);
-      $font_size = $this->GetFirst(
-        $this->ArrayOption($this->label_font_size_v, $i),
-        $this->label_font_size,
-        $this->ArrayOption($this->axis_font_v, $i),
-        $this->axis_font);
+      $font = $this->GetOption(array('label_font_v', $i), 'label_font');
+      $font_weight = $this->GetOption(array('label_font_weight_v', $i),
+        'label_font_weight');
+      $font_size = $this->GetOption(array('label_font_size_v', $i),
+        'label_font_size', array('axis_font_v', $i), 'axis_font');
       if($font != $this->axis_font)
         $pos['font-family'] = $font;
       if($font_weight != 'normal')
         $pos['font-weight'] = $font_weight;
       if($font_size != $this->axis_font_size)
         $pos['font-size'] = $font_size;
-      $pos['fill'] = $this->GetFirst(
-        $this->ArrayOption($this->label_colour_v, $i),
-        $this->label_colour, 
-        $this->ArrayOption($this->axis_text_colour_v, $i),
-        $this->axis_text_colour);
+      $pos['fill'] = $this->GetOption(array('label_colour_v', $i),
+        'label_colour', array('axis_text_colour_v', $i), 'axis_text_colour');
       $svg_text = new SVGGraphText($this, $font);
       $text .= $svg_text->Text($label_text, $font_size, array_merge($attribs, $pos));
     }
@@ -1502,9 +887,8 @@ abstract class GridGraph extends Graph {
         $label_text['font-size'] = $this->label_font_size;
       if($this->label_font_weight != 'normal')
         $label_text['font-weight'] = $this->label_font_weight;
-      $label_text['fill'] = $this->GetFirst($this->label_colour_h,
-        $this->label_colour, $this->axis_text_colour_h,
-        $this->axis_text_colour);
+      $label_text['fill'] = $this->GetOption('label_colour_h', 'label_colour',
+        'axis_text_colour_h', 'axis_text_colour');
 
       if(!empty($this->label_h)) {
         $label_text['y'] = $this->height - $this->label_bottom_offset;
@@ -1522,11 +906,46 @@ abstract class GridGraph extends Graph {
       $font = array(
         'font-size' => $this->axis_font_size,
         'font-family' => $this->axis_font,
-        'fill' => $this->GetFirst($this->axis_text_colour, $this->axis_colour),
+        'fill' => $this->GetOption('axis_text_colour', 'axis_colour'),
       );
       $labels = $this->Element('g', $font, NULL, $labels);
     }
     return $labels;
+  }
+
+  /**
+   * A function to return the DisplayAxis - subclasses should override
+   * to return a different axis type
+   */
+  protected function GetDisplayAxis($axis, $axis_no, $orientation, $type)
+  {
+    $var = "main_{$type}_axis";
+    $main = ($axis_no == $this->{$var});
+    return new DisplayAxis($this, $axis, $axis_no, $orientation, $type, $main,
+      $this->label_centre);
+  }
+
+  /**
+   * Returns the location of an axis
+   */
+  protected function GetAxisLocation($orientation, $axis_no)
+  {
+    $x = $this->pad_left;
+    $y = $this->pad_top + $this->g_height;
+    if($orientation == 'h') {
+      $y0 = $this->y_axes[$this->main_y_axis]->Zero();
+      if($this->show_axis_h && $y0 >= 0 && $y0 <= $this->g_height)
+        $y -= $y0;
+    } else {
+      if($axis_no == 0) {
+        $x0 = $this->x_axes[$this->main_x_axis]->Zero();
+        if($x0 >= 1 && $x0 < $this->g_width)
+          $x += $x0;
+      } else {
+        $x += $this->y_axis_positions[$axis_no];
+      }
+    }
+    return array($x, $y);
   }
 
   /**
@@ -1538,167 +957,28 @@ abstract class GridGraph extends Graph {
       return $this->Labels();
 
     $this->CalcGrid();
-    $main_y_axis = $this->y_axes[$this->main_y_axis];
-    $main_x_axis = $this->x_axes[$this->main_x_axis];
-    $y0 = $main_y_axis->Zero();
-    $x0 = $main_x_axis->Zero();
-    $x_axis_visible = $this->show_axis_h && $y0 >= 0 && $y0 <= $this->g_height;
-    $y_axis_inside = $x0 >= 1 && $x0 < $this->g_width;
-    $yoff = $x_axis_visible ? $y0 : 0;
-    $xoff = $y_axis_inside ? $x0 : 0;
-    $y_count = count($this->y_axes);
+    $axes = $label_group = $axis_text = '';
+    $type = $this->flip_axes ? array('h'=>'y','v'=>'x') : array('h'=>'x','v'=>'y');
 
-    $axis_group = $axes = $label_group = $divisions = $axis_text = '';
-    if($this->show_axis_h)
-      $axes .= $this->XAxis($yoff);
-    if($this->show_axis_v) {
-      for($i = 0; $i < $y_count; ++$i) {
-        if(!is_null($this->y_axes[$i])) {
-          $axes .= $this->YAxis($i);
-        }
+    foreach($this->x_axes as $axis_no => $axis) {
+      if(!is_null($axis)) {
+        $display_axis = $this->GetDisplayAxis($axis, $axis_no, 'h', $type['h']);
+        list($x, $y) = $this->GetAxisLocation('h', $axis_no);
+        $axes .= $display_axis->Draw($x, $y, $this->pad_left, $this->pad_top,
+          $this->g_width, $this->g_height);
       }
     }
-
-    if($axes != '') {
-      $line = array();
-      if(empty($this->axis_colour_h) || empty($this->axis_colour_v))
-        $line['stroke'] = $this->axis_colour;
-      if(empty($this->axis_stroke_width_h) || empty($this->axis_stroke_width_v))
-        $line['stroke-width'] = $this->axis_stroke_width;
-      $axis_group = empty($line) ? $axes : $this->Element('g', $line, NULL, $axes);
-    }
-
-    if($this->show_axis_text_v) {
-      for($i = 0; $i < $y_count; ++$i) {
-        $axis = $this->y_axes[$i];
-        if(!is_null($axis)) {
-          $offset = ($this->label_centre && $this->flip_axes ? -0.5 * $axis->Unit() : 0);
-          $points = $this->GetGridPointsY($i);
-          $text_offset = 0;
-          if($this->show_axis_v && $this->show_divisions) {
-            $text_offset = $this->DOverlap(
-              $this->GetFirst($this->ArrayOption($this->division_style_v, $i),
-                $this->division_style),
-              $this->GetFirst($this->ArrayOption($this->division_size_v, $i),
-                $this->division_size));
-            if($this->show_subdivisions) {
-              $text_offset_sd = $this->DOverlap(
-                $this->GetFirst($this->ArrayOption($this->subdivision_style_v, $i),
-                  $this->subdivision_style),
-                $this->GetFirst($this->ArrayOption($this->subdivision_size_v, $i),
-                $this->subdivision_size));
-              $text_offset = max($text_offset, $text_offset_sd);
-            }
-          }
-          $axis_text .= $this->YAxisText($points, $text_offset,
-            $offset, $this->ArrayOption($this->axis_text_angle_v, $i),
-            $i > 0, $i);
-        }
+    foreach($this->y_axes as $axis_no => $axis) {
+      if(!is_null($axis)) {
+        $display_axis = $this->GetDisplayAxis($axis, $axis_no, 'v', $type['v']);
+        list($x, $y) = $this->GetAxisLocation('v', $axis_no);
+        $axes .= $display_axis->Draw($x, $y, $this->pad_left, $this->pad_top,
+          $this->g_width, $this->g_height);
       }
-    }
-    if($this->show_axis_text_h) {
-      $text_offset = $this->DivisionOverlap($this->x_axes, $this->y_axes);
-      $axis = $main_x_axis;
-      $offset = ($this->label_centre && !$this->flip_axes ? 0.5 * $axis->Unit() : 0);
-      $points = $this->GetGridPointsX(0);
-      $axis_text .= $this->XAxisText($points, $offset,
-        $text_offset['b'], $this->axis_text_angle_h);
     }
 
     $label_group = $this->Labels($axis_text);
-
-    if($this->show_divisions) {
-      // use an array to join paths with same colour
-      $div_paths = array();
-      if($this->show_axis_h) {
-        $points = $this->GetGridPointsX(0);
-        $dx_path = $this->XAxisDivisions($points,
-          $this->GetFirst($this->division_style_h, $this->division_style), 
-          $this->GetFirst($this->division_size_h, $this->division_size),
-          $yoff);
-        if(!empty($dx_path)) {
-          $dx_colour = $this->GetFirst($this->division_colour_h,
-            $this->division_colour, $this->axis_colour);
-          if(isset($div_paths[$dx_colour]))
-            $div_paths[$dx_colour] .= $dx_path;
-          else
-            $div_paths[$dx_colour] = $dx_path;
-        }
-      }
-      if($this->show_axis_v) {
-        for($i = 0; $i < $y_count; ++$i) {
-          if(!is_null($this->y_axes[$i])) {
-            $points = $this->GetGridPointsY($i);
-            $dy_path = $this->YAxisDivisions($points,
-              $i > 0 ? $this->y_axis_positions[$i] : $xoff, false, $i);
-            if(!empty($dy_path)) {
-              $dy_colour = $this->GetFirst(
-                $this->ArrayOption($this->division_colour_v, $i),
-                $this->division_colour,
-                $this->ArrayOption($this->axis_colour_v, $i),
-                $this->axis_colour);
-              if(isset($div_paths[$dy_colour]))
-                $div_paths[$dy_colour] .= $dy_path;
-              else
-                $div_paths[$dy_colour] = $dy_path;
-            }
-          }
-        }
-      }
-
-      if($this->show_subdivisions) {
-        if($this->show_axis_h) {
-          $subdivs = $this->GetSubDivsX(0);
-          $sdx_path = $this->XAxisDivisions($subdivs,
-            $this->GetFirst($this->subdivision_style_h,
-              $this->subdivision_style), 
-            $this->GetFirst($this->subdivision_size_h,
-              $this->subdivision_size), $yoff);
-
-          if(!empty($sdx_path)) {
-            $sdx_colour = $this->GetFirst($this->subdivision_colour_h,
-              $this->subdivision_colour, $this->division_colour_h,
-              $this->division_colour, $this->axis_colour);
-            if(isset($div_paths[$sdx_colour]))
-              $div_paths[$sdx_colour] .= $sdx_path;
-            else
-              $div_paths[$sdx_colour] = $sdx_path;
-          }
-        }
-        if($this->show_axis_v) {
-          for($i = 0; $i < $y_count; ++$i) {
-            if(!is_null($this->y_axes[$i])) {
-              $subdivs = $this->GetSubDivsY($i);
-              $sdy_path = $this->YAxisDivisions($subdivs,
-                $i > 0 ? $this->y_axis_positions[$i] : $xoff, true, $i);
-              if(!empty($sdy_path)) {
-                $sdy_colour = $this->GetFirst(
-                  $this->ArrayOption($this->subdivision_colour_v, $i),
-                  $this->subdivision_colour,
-                  $this->ArrayOption($this->division_colour_v, $i),
-                  $this->division_colour,
-                  $this->ArrayOption($this->axis_colour_v, $i),
-                  $this->axis_colour);
-                if(isset($div_paths[$sdy_colour]))
-                  $div_paths[$sdy_colour] .= $sdy_path;
-                else
-                  $div_paths[$sdy_colour] = $sdy_path;
-              }
-            }
-          }
-        }
-      }
-
-      foreach($div_paths as $colour => $path) {
-        $div = array(
-          'd' => $path,
-          'stroke-width' => 1,
-          'stroke' => $colour
-        );
-        $divisions .= $this->Element('path', $div);
-      }
-    }
-    return $divisions . $axis_group . $label_group;
+    return $axes . $label_group;
   }
 
   /**
@@ -1742,14 +1022,13 @@ abstract class GridGraph extends Graph {
     $hch = array('class' => 'chX', 'x2' => $ch['x1'] + $this->g_width);
     if($this->crosshairs_show_h) {
       $hch['stroke'] = $this->SolidColour(
-        $this->GetFirst($this->crosshairs_colour_h, $this->crosshairs_colour));
-      $hch['stroke-width'] = $this->GetFirst($this->crosshairs_stroke_width_h,
-        $this->crosshairs_stroke_width);
-      $opacity = $this->GetFirst($this->crosshairs_opacity_h,
-        $this->crosshairs_opacity);
+        $this->GetOption('crosshairs_colour_h', 'crosshairs_colour'));
+      $hch['stroke-width'] = $this->GetOption('crosshairs_stroke_width_h',
+        'crosshairs_stroke_width');
+      $opacity = $this->GetOption('crosshairs_opacity_h', 'crosshairs_opacity');
       if($opacity > 0 && $opacity < 1)
         $hch['opacity'] = $opacity;
-      $dash = $this->GetFirst($this->crosshairs_dash_h, $this->crosshairs_dash);
+      $dash = $this->GetOption('crosshairs_dash_h', 'crosshairs_dash');
       if(!empty($dash))
         $hch['stroke-dasharray'] = $dash;
     }
@@ -1759,14 +1038,13 @@ abstract class GridGraph extends Graph {
     $hch = array('class' => 'chY', 'y2' => $ch['y1'] + $this->g_height);
     if($this->crosshairs_show_v) {
       $hch['stroke'] = $this->SolidColour(
-        $this->GetFirst($this->crosshairs_colour_v, $this->crosshairs_colour));
-      $hch['stroke-width'] = $this->GetFirst($this->crosshairs_stroke_width_v,
-        $this->crosshairs_stroke_width);
-      $opacity = $this->GetFirst($this->crosshairs_opacity_v,
-        $this->crosshairs_opacity);
+        $this->GetOption('crosshairs_colour_v', 'crosshairs_colour'));
+      $hch['stroke-width'] = $this->GetOption('crosshairs_stroke_width_v',
+        'crosshairs_stroke_width');
+      $opacity = $this->GetOption('crosshairs_opacity_v', 'crosshairs_opacity');
       if($opacity > 0 && $opacity < 1)
         $hch['opacity'] = $opacity;
-      $dash = $this->GetFirst($this->crosshairs_dash_v, $this->crosshairs_dash);
+      $dash = $this->GetOption('crosshairs_dash_v', 'crosshairs_dash');
       if(!empty($dash))
         $hch['stroke-dasharray'] = $dash;
     }
@@ -1808,9 +1086,9 @@ abstract class GridGraph extends Graph {
     $scale_x = $x_axis->Unit();
     $zero_y = $y_axis->Zero();
     $scale_y = $y_axis->Unit();
-    $prec_x = $this->GetFirst($this->crosshairs_text_precision_h,
+    $prec_x = $this->GetOption('crosshairs_text_precision_h',
       max(0, ceil(log10($scale_x))));
-    $prec_y = $this->GetFirst($this->crosshairs_text_precision_v,
+    $prec_y = $this->GetOption('crosshairs_text_precision_v',
       max(0, ceil(log10($scale_y))));
 
     $units = $base_y = $base_x = '';
@@ -2009,16 +1287,14 @@ XML;
       }
 
       if($subpath_h != '' || $subpath_v != '') {
-        $colour_h = $this->GetFirst($this->grid_subdivision_colour_h,
-          $this->grid_subdivision_colour, $this->grid_colour_h,
-          $this->grid_colour);
-        $colour_v = $this->GetFirst($this->grid_subdivision_colour_v,
-          $this->grid_subdivision_colour, $this->grid_colour_v,
-          $this->grid_colour);
-        $dash_h = $this->GetFirst($this->grid_subdivision_dash_h,
-          $this->grid_subdivision_dash, $this->grid_dash_h, $this->grid_dash);
-        $dash_v = $this->GetFirst($this->grid_subdivision_dash_v,
-          $this->grid_subdivision_dash, $this->grid_dash_v, $this->grid_dash);
+        $colour_h = $this->GetOption('grid_subdivision_colour_h',
+          'grid_subdivision_colour', 'grid_colour_h', 'grid_colour');
+        $colour_v = $this->GetOption('grid_subdivision_colour_v',
+          'grid_subdivision_colour', 'grid_colour_v', 'grid_colour');
+        $dash_h = $this->GetOption('grid_subdivision_dash_h',
+          'grid_subdivision_dash', 'grid_dash_h', 'grid_dash');
+        $dash_v = $this->GetOption('grid_subdivision_dash_v',
+          'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
 
         if($dash_h == $dash_v && $colour_h == $colour_v) {
           $subpath = $this->GridLines($subpath_h . $subpath_v, $colour_h,
@@ -2041,10 +1317,10 @@ XML;
         $path_h .= "M{$x->position} {$this->pad_top}v{$this->g_height}";
     }
 
-    $colour_h = $this->GetFirst($this->grid_colour_h, $this->grid_colour);
-    $colour_v = $this->GetFirst($this->grid_colour_v, $this->grid_colour);
-    $dash_h = $this->GetFirst($this->grid_dash_h, $this->grid_dash);
-    $dash_v = $this->GetFirst($this->grid_dash_v, $this->grid_dash);
+    $colour_h = $this->GetOption('grid_colour_h', 'grid_colour');
+    $colour_v = $this->GetOption('grid_colour_v', 'grid_colour');
+    $dash_h = $this->GetOption('grid_dash_h', 'grid_dash');
+    $dash_v = $this->GetOption('grid_dash_v', 'grid_dash');
 
     if($dash_h == $dash_v && $colour_h == $colour_v) {
       $path = $this->GridLines($path_v . $path_h, $colour_h, $dash_h);

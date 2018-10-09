@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -85,25 +85,25 @@ class AxisLog extends Axis {
    */
   public function GetGridPoints($start)
   {
-    $points = array();
-    $max_div = $this->length / $this->min_space;
     $pow_div = $this->lgmax - $this->lgmin;
+    $this->grid_space = $this->length / $pow_div;
 
-    $div = 1;
-    $this->grid_space = $this->length / $pow_div * $div;
+    if(is_null($start))
+      return;
 
-    $spoints = array();
     if($this->divisions)
       $this->grid_split = $this->divisions;
     else
       $this->grid_split = $this->FindDivision($this->grid_space, $this->min_space);
 
+    $spoints = array();
     if($this->grid_split) {
       for($l = $this->grid_split; $l < $this->base; $l += $this->grid_split)
         $spoints[] = log($l, $this->base);
     }
 
     $l = $this->lgmin;
+    $points = array();
     while($l <= $this->lgmax) {
       $val = pow($this->base, $l) * ($this->negative ? -1 : 1);
       $text = $this->GetText($val);

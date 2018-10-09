@@ -48,21 +48,22 @@ class SVGGraphText {
 
   /**
    * Measures a block of text
+   *  returns array($width, $height)
    */
   public function Measure($text, $font_size, $angle = 0, $line_spacing = 0)
   {
-    // convert to UTF-8
-    $text = $this->Convert($text);
-    $cached = $this->MeasureCached($text, $font_size, $angle, $line_spacing);
-    if(!is_null($cached))
-      return $cached;
-
     if(!is_string($text)) {
       if(is_numeric($text))
         $text = Graph::NumString($text);
       else
         $text = (string)$text;
     }
+
+    // convert to UTF-8
+    $text = $this->Convert($text);
+    $cached = $this->MeasureCached($text, $font_size, $angle, $line_spacing);
+    if(!is_null($cached))
+      return $cached;
 
     if($line_spacing > 0)
       $lines = $this->SplitLines($text);
@@ -99,6 +100,53 @@ class SVGGraphText {
     $this->CacheMeasurement($text, $font_size, $angle, $line_spacing, $width,
       $height);
     return array($width, $height);
+  }
+
+  /**
+   * Measures a block of text and finds its position
+   *  returns array($x, $y, $width, $height)
+   */
+  public function MeasurePosition($text, $font_size, $line_spacing, $x, $y,
+    $anchor, $angle = 0, $rcx = NULL, $rcy = NULL)
+  {
+    $baseline = $this->Baseline($font_size);
+    $y -= $baseline;
+    list($width, $height) = $this->Measure($text, $font_size, 0,
+      $line_spacing);
+    if($anchor == 'end')
+      $x -= $width;
+    elseif($anchor == 'middle')
+      $x -= $width / 2;
+
+    if($angle) {
+      // the four corners of the bounding box
+      $points = array(array($x, $y), array($x + $width, $y),
+        array($x, $y + $height), array($x + $width, $y + $height));
+      $arad = deg2rad($angle);
+      $s = sin($arad);
+      $c = cos($arad);
+      $xp = array();
+      $yp = array();
+      foreach($points as $point) {
+        // translate to origin
+        $point[0] -= $rcx;
+        $point[1] -= $rcy;
+        // rotate
+        $x1 = $point[0] * $c - $point[1] * $s;
+        $y1 = $point[0] * $s + $point[1] * $c;
+        // translate back
+        $xp[] = $x1 + $rcx;
+        $yp[] = $y1 + $rcy;
+      }
+      // find extents
+      $x = min($xp);
+      $max_x = max($xp);
+      $y = min($yp);
+      $max_y = max($yp);
+      $width = $max_x - $x;
+      $height = $max_y - $y;
+    }
+    return array($x, $y, $width, $height);
   }
 
   /**
@@ -454,7 +502,7 @@ class SVGGraphText {
       0x2005 => 'four-per-em space',
       0x2006 => 'six-per-em space',
       0x2007 => 'figure space',
-      0x2008 => 'puctuation space',
+      0x2008 => 'punctuation space',
       0x2009 => 'thin space',
       0x200a => 'hair space',
       0x202f => 'narrow no-break space',

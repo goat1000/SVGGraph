@@ -212,11 +212,11 @@ class Guidelines {
       'font-family' => $this->guideline_font,
       'font-size' => $this->guideline_font_size,
       'font-weight' => $this->guideline_font_weight,
-      'fill' => $this->graph->GetFirst($this->guideline_text_colour, 
-        $this->guideline_colour),
+      'fill' => $this->graph->GetOption('guideline_text_colour',
+        'guideline_colour'),
     );
-    $text_opacity = $this->graph->GetFirst($this->guideline_text_opacity, 
-      $this->guideline_opacity);
+    $text_opacity = $this->graph->GetOption('guideline_text_opacity',
+      'guideline_opacity');
 
     foreach($this->guidelines as $line) {
       if($line['depth'] == $depth) {
@@ -324,7 +324,7 @@ class Guidelines {
         $text_pos, $y, $x, $y + $h, $x + $w,
         $text_w, $text_h, $text_pad, true);
 
-      $t = array('x' => $x, 'y' => $y + $font_size);
+      $t = array('x' => $x, 'y' => $y + $svg_text->Baseline($font_size));
       if(empty($text_align) && $text_pos_align != 'start') {
         $t['text-anchor'] = $text_pos_align;
       } else {

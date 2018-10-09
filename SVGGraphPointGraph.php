@@ -120,6 +120,8 @@ abstract class PointGraph extends GridGraph {
       $use['class'] = "series{$set}";
     if($this->show_tooltips)
       $this->SetTooltip($use, $marker->item, $set, $marker->key, $marker->value);
+    if($this->show_context_menu)
+      $this->SetContextMenu($use, $set, $marker->item);
 
     if($this->GetLinkURL($marker->item, $marker->key)) {
       $id = $this->marker_link_ids[$id];
@@ -418,7 +420,7 @@ abstract class PointGraph extends GridGraph {
    */
   public function MarkerLabel($dataset, $index, &$item, $x, $y)
   {
-    if(!$this->ArrayOption($this->show_data_labels, $dataset))
+    if(!$this->GetOption(array('show_data_labels', $dataset)))
       return false;
     $s = $this->GetFromItemOrMember('marker_size', 0, $item);
     $s2 = $s / 2;
@@ -442,7 +444,7 @@ abstract class PointGraph extends GridGraph {
 
       $start = null;
       $end = null;
-      $range = $this->ArrayOption($this->best_fit_range, $dataset);
+      $range = $this->GetOption(array('best_fit_range', $dataset));
       if(!is_array($range))
         $range = $this->best_fit_range;
       if(is_array($range)) {
@@ -459,19 +461,19 @@ abstract class PointGraph extends GridGraph {
           throw new Exception('Best fit range start >= end');
       }
 
-      $bftype = $this->ArrayOption($this->best_fit, $dataset);
-      $project = $this->ArrayOption($this->best_fit_project, $dataset);
+      $bftype = $this->GetOption(array('best_fit', $dataset));
+      $project = $this->GetOption(array('best_fit_project', $dataset));
       $project_start = $project == 'start' || $project == 'both';
       $project_end = $project == 'end' || $project == 'both';
       list($best_fit, $projection) = $this->BestFit($bftype, $dataset, $start,
         $end, $project_start, $project_end);
 
       if($best_fit !== '') {
-        $colour = $this->ArrayOption($this->best_fit_colour, $dataset);
-        $stroke_width = $this->ArrayOption($this->best_fit_width, $dataset);
-        $dash = $this->ArrayOption($this->best_fit_dash, $dataset);
-        $opacity = $this->ArrayOption($this->best_fit_opacity, $dataset);
-        $above = $this->ArrayOption($this->best_fit_above, $dataset);
+        $colour = $this->GetOption(array('best_fit_colour', $dataset));
+        $stroke_width = $this->GetOption(array('best_fit_width', $dataset));
+        $dash = $this->GetOption(array('best_fit_dash', $dataset));
+        $opacity = $this->GetOption(array('best_fit_opacity', $dataset));
+        $above = $this->GetOption(array('best_fit_above', $dataset));
         $path = array(
           'd' => $best_fit,
           'stroke' => empty($colour) ? '#000' : $colour,
@@ -487,10 +489,10 @@ abstract class PointGraph extends GridGraph {
 
         if($projection !== '') {
           $path['d'] = $projection;
-          $p_colour = $this->ArrayOption($this->best_fit_project_colour, $dataset);
-          $p_stroke_width = $this->ArrayOption($this->best_fit_project_width, $dataset);
-          $p_dash = $this->ArrayOption($this->best_fit_project_dash, $dataset);
-          $p_opacity = $this->ArrayOption($this->best_fit_project_opacity, $dataset);
+          $p_colour = $this->GetOption(array('best_fit_project_colour', $dataset));
+          $p_stroke_width = $this->GetOption(array('best_fit_project_width', $dataset));
+          $p_dash = $this->GetOption(array('best_fit_project_dash', $dataset));
+          $p_opacity = $this->GetOption(array('best_fit_project_opacity', $dataset));
 
           if(!empty($p_colour))
             $path['stroke'] = $p_colour;

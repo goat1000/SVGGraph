@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.28');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.29');
 
 require_once 'SVGGraphColours.php';
 require_once 'SVGGraphText.php';
@@ -247,18 +247,23 @@ abstract class Graph {
 
 
   /**
-   * Retrieves properties from the settings array if they are not
-   * already available as properties
+   * Retrieves properties from the settings array if they are not already
+   * available as properties, also sets up javascript and data_labels
    */
   public function __get($name)
   {
-    if('javascript' == $name) {
+    switch($name) {
+    case 'javascript':
       // $this->javascript will forward to the static Graph::$javascript
       if(!isset(Graph::$javascript)) {
         include_once 'SVGGraphJavascript.php';
         Graph::$javascript = new SVGGraphJavascript($this->settings, $this);
       }
       return Graph::$javascript;
+    case 'data_labels':
+      include_once 'SVGGraphDataLabels.php';
+      $this->data_labels = new DataLabels($this);
+      return $this->data_labels;
     }
     $this->{$name} = isset($this->settings[$name]) ? $this->settings[$name] : null;
     return $this->{$name};
@@ -596,53 +601,49 @@ abstract class Graph {
   protected function DrawTitle()
   {
     $svg_text = new SVGGraphText($this, $this->graph_title_font);
-
-    // graph_title is available for all graph types
     if($svg_text->Strlen($this->graph_title) <= 0)
       return '';
 
     $pos = $this->graph_title_position;
+    if($pos != 'bottom' && $pos != 'left' && $pos != 'right')
+      $pos = 'top';
+    $pad_side = 'pad_' . $pos;
+    $font_size = $this->graph_title_font_size;
+    list($width, $height) = $svg_text->Measure($this->graph_title, $font_size,
+      0, $font_size);
+    $baseline = $svg_text->Baseline($font_size);
     $text = array(
-      'font-size' => $this->graph_title_font_size,
+      'font-size' => $font_size,
       'font-family' => $this->graph_title_font,
       'font-weight' => $this->graph_title_font_weight,
       'text-anchor' => 'middle',
       'fill' => $this->graph_title_colour
     );
-    $lines = $svg_text->Lines($this->graph_title);
-    $title_space = $this->graph_title_font_size * $lines +
-      $this->graph_title_space;
-    if($pos != 'top' && $pos != 'bottom' && $pos != 'left' && $pos != 'right')
-      $pos = 'top';
-    $pad_side = 'pad_' . $pos;
 
     // ensure outside padding is at least the title space
     if($this->{$pad_side} < $this->graph_title_space)
       $this->{$pad_side} = $this->graph_title_space;
 
     if($pos == 'left') {
-      $text['x'] = $this->pad_left + $this->graph_title_font_size;
+      $text['x'] = $this->pad_left + $baseline;
       $text['y'] = $this->height / 2;
       $text['transform'] = "rotate(270,$text[x],$text[y])";
     } elseif($pos == 'right') {
-      $text['x'] = $this->width - $this->pad_right -
-        $this->graph_title_font_size;
+      $text['x'] = $this->width - $this->pad_right - $baseline;
       $text['y'] = $this->height / 2;
       $text['transform'] = "rotate(90,$text[x],$text[y])";
     } elseif($pos == 'bottom') {
       $text['x'] = $this->width / 2;
-      $text['y'] = $this->height - $this->pad_bottom -
-        $this->graph_title_font_size * ($lines-1);
+      $text['y'] = $this->height - $this->pad_bottom - $height + $baseline;
     } else {
       $text['x'] = $this->width / 2;
-      $text['y'] = $this->pad_top + $this->graph_title_font_size;
+      $text['y'] = $this->pad_top + $baseline;
     }
     // increase padding by size of text
-    $this->{$pad_side} += $title_space;
+    $this->{$pad_side} += $height + $this->graph_title_space;
 
     // the Text function will break it into lines
-    return $svg_text->Text($this->graph_title, $this->graph_title_font_size,
-      $text);
+    return $svg_text->Text($this->graph_title, $font_size, $text);
   }
 
 
@@ -939,24 +940,35 @@ abstract class Graph {
   }
 
   /**
-   * Returns the first non-empty argument
+   * Returns the first non-empty option in named argument list.
+   * Arguments must be "opt_name" or array("opt_name", $index), optionally
+   * ending with default value (non-string or array('@', $value))
    */
-  public static function GetFirst()
+  public function GetOption()
   {
     $opts = func_get_args();
-    foreach($opts as $opt)
-      if(!empty($opt) || $opt === 0)
-        return $opt;
-  }
+    foreach($opts as $opt) {
+      if(is_array($opt)) {
+        // default value?
+        if($opt[0] == '@')
+          return $opt[1];
 
-  /**
-   * Returns an option from array, or non-array option
-   */
-  public static function ArrayOption($o, $i)
-  {
-    if(!is_numeric($i))
-      $i = 0;
-    return is_array($o) ? $o[$i % count($o)] : $o;
+        // member in $opt[0]
+        $val = $this->{$opt[0]};
+        $i = is_numeric($opt[1]) ? $opt[1] : 0;
+        if(is_array($val))
+          $val = $val[$i % count($val)];
+      } elseif(is_string($opt)) {
+        $val = $this->{$opt};
+      } else {
+        // not string or array, default value
+        return $opt;
+      }
+
+      // most values are acceptable
+      if($val === FALSE || $val === 0.0 || $val === 0 || !empty($val))
+        return $val;
+    }
   }
 
   /**
@@ -999,6 +1011,14 @@ abstract class Graph {
   public function NewID()
   {
     return $this->id_prefix . 'e' . base_convert(++Graph::$last_id, 10, 36);
+  }
+
+  /**
+   * Adds to the defs section of the document
+   */
+  public function AddDefs($def)
+  {
+    $this->defs[] = $def;
   }
 
   /**
@@ -1110,6 +1130,54 @@ abstract class Graph {
   }
 
   /**
+   * Adds context menu for item
+   */
+  protected function SetContextMenu(&$element, $dataset, &$item,
+    $duplicate = FALSE)
+  {
+    $menu = NULL;
+    if(is_callable($this->context_callback)) {
+      $menu = call_user_func($this->context_callback, $dataset, $item->key,
+        $item->value);
+    } elseif(is_array($this->structure) &&
+      isset($this->structure['context_menu'])) {
+      $menu = $item->Data('context_menu');
+    }
+    $this->javascript->SetContextMenu($element, $menu, $duplicate);
+
+    if(!isset($this->root_menu)) {
+
+      $global = $this->GetOption('context_global');
+      if($global === FALSE) {
+        $this->root_menu = TRUE;
+        return;
+      }
+
+      if(is_null($global))
+        $global = array(array(SVGGRAPH_VERSION, NULL));
+
+      $entries = '';
+      foreach($global as $entry) {
+        $entries .= '<svggraph:menuitem name="';
+        $entries .= htmlspecialchars($entry[0], ENT_COMPAT, $this->encoding);
+        if(!is_null($entry[1])) {
+          $entries .= '" link="';
+          $entries .= htmlspecialchars($entry[1], ENT_COMPAT, $this->encoding);
+        }
+        $entries .= '"/>' . "\n";
+      }
+      $xml = <<<XML
+<svggraph:data xmlns:svggraph="http://www.goat1000.com/svggraph">
+<svggraph:menu>
+{$entries}</svggraph:menu>
+</svggraph:data>
+XML;
+      $this->AddDefs($xml);
+      $this->root_menu = TRUE;
+    }
+  }
+
+  /**
    * Default tooltip contents are key and value, or whatever
    * $key is if $value is not set
    */
@@ -1147,19 +1215,15 @@ abstract class Graph {
   protected function AddDataLabel($dataset, $index, &$element, &$item,
     $x, $y, $w, $h, $content = NULL, $duplicate = TRUE)
   {
-    if(!$this->ArrayOption($this->show_data_labels, $dataset))
+    if(!$this->GetOption(array('show_data_labels', $dataset)))
       return false;
-    if(!isset($this->data_labels)) {
-      include_once 'SVGGraphDataLabels.php';
-      $this->data_labels = new DataLabels($this);
-    }
 
     // set up fading for this label?
     $id = NULL;
-    $fade_in = $this->ArrayOption($this->data_label_fade_in_speed, $dataset);
-    $fade_out = $this->ArrayOption($this->data_label_fade_out_speed, $dataset);
-    $click = $this->ArrayOption($this->data_label_click, $dataset);
-    $popup = $this->ArrayOption($this->data_label_popfront, $dataset);
+    $fade_in = $this->GetOption(array('data_label_fade_in_speed', $dataset));
+    $fade_out = $this->GetOption(array('data_label_fade_out_speed', $dataset));
+    $click = $this->GetOption(array('data_label_click', $dataset));
+    $popup = $this->GetOption(array('data_label_popfront', $dataset));
     if($click == 'hide' || $click == 'show') {
       $id = $this->NewID();
       $this->javascript->SetClickShow($element, $id, $click == 'hide',
@@ -1185,15 +1249,37 @@ abstract class Graph {
   }
 
   /**
+   * Adds an element as a client of existing label
+   */
+  protected function AddLabelClient($dataset, $index, &$element)
+  {
+    $label = $this->data_labels->GetLabel($dataset, $index);
+    if(is_null($label))
+      return false;
+
+    $id = $label['id'];
+    $fade_in = $this->GetOption(array('data_label_fade_in_speed', $dataset));
+    $fade_out = $this->GetOption(array('data_label_fade_out_speed', $dataset));
+    $click = $this->GetOption(array('data_label_click', $dataset));
+    $popup = $this->GetOption(array('data_label_popfront', $dataset));
+    if($click == 'hide' || $click == 'show')
+      $this->javascript->SetClickShow($element, $id, $click == 'hide',
+        !$this->compat_events);
+    if($popup)
+      $this->javascript->SetPopFront($element, $id, !$this->compat_events);
+    if($fade_in || $fade_out) {
+      $speed_in = $fade_in ? $fade_in / 100 : 0;
+      $speed_out = $fade_out ? $fade_out / 100 : 0;
+      $this->javascript->SetFader($element, $speed_in, $speed_out, $id,
+        !$this->compat_events);
+    }
+  }
+
+  /**
    * Adds a label for non-data text
    */
   protected function AddContentLabel($dataset, $index, $x, $y, $w, $h, $content)
   {
-    if(!isset($this->data_labels)) {
-      include_once 'SVGGraphDataLabels.php';
-      $this->data_labels = new DataLabels($this);
-    }
-
     $this->data_labels->AddContentLabel($dataset, $index, $x, $y, $w, $h,
       $content);
     return true;
@@ -1204,16 +1290,9 @@ abstract class Graph {
    */
   protected function DrawDataLabels()
   {
-    if(isset($this->settings['label'])) {
-      if(!isset($this->data_labels)) {
-        include_once 'SVGGraphDataLabels.php';
-        $this->data_labels = new DataLabels($this);
-      }
+    if(isset($this->settings['label']))
       $this->data_labels->Load($this->settings);
-    }
-    if(isset($this->data_labels))
-      return $this->data_labels->GetLabels();
-    return '';
+    return $this->data_labels->GetLabels();
   }
 
   /**
@@ -1222,7 +1301,7 @@ abstract class Graph {
   public function DataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
     $label_w, $label_h)
   {
-    $pos = $this->ArrayOption($this->data_label_position, $dataset);
+    $pos = $this->GetOption(array('data_label_position', $dataset));
     if(empty($pos))
       $pos = 'above';
     $end = array($x + $w * 0.5, $y + $h * 0.5);
@@ -1268,16 +1347,14 @@ abstract class Graph {
     $map = $this->data_labels->GetStyleMap();
     $style = array();
     foreach($map as $key => $option) {
-      $style[$key] = $this->ArrayOption($this->{$option}, $dataset);
+      $style[$key] = $this->GetOption(array($option, $dataset));
     }
 
     // padding x/y options override single value
-    $style['pad_x'] = $this->GetFirst(
-        $this->ArrayOption($this->data_label_padding_x, $dataset),
-        $this->ArrayOption($this->data_label_padding, $dataset));
-    $style['pad_y'] = $this->GetFirst(
-        $this->ArrayOption($this->data_label_padding_y, $dataset),
-        $this->ArrayOption($this->data_label_padding, $dataset));
+    $style['pad_x'] = $this->GetOption(array('data_label_padding_x', $dataset),
+        array('data_label_padding', $dataset));
+    $style['pad_y'] = $this->GetOption(array('data_label_padding_y', $dataset),
+        array('data_label_padding', $dataset));
     return $style;
   }
 

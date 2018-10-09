@@ -1,3 +1,13 @@
+Version 2.29 (09/10/2018)
+------------
+- Added context menu options.
+- Added "box" division and subdivision style.
+- Added axis_text_location option for text position on graphs with negative
+  values.
+- Moved axis measurement and drawing out of GridGraph and subclasses into new
+  DisplayAxis classes.
+- Replaced GetFirst() and ArrayOption() functions with GetOption().
+
 Version 2.28 (23/07/2018)
 ------------
 - Added text measurement class using font metrics and/or character widths.

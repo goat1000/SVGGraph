@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2017 Graham Breach
+ * Copyright (C) 2009-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -162,7 +162,7 @@ class PieGraph extends Graph {
     if(!$this->calc_done)
       $this->Calc();
 
-    $min_slice_angle = $this->ArrayOption($this->data_label_min_space, 0);
+    $min_slice_angle = $this->GetOption(array('data_label_min_space', 0));
     $vcount = 0;
 
     // need to store the original position of each value, because the
@@ -281,6 +281,8 @@ class PieGraph extends Graph {
       if($this->show_tooltips)
         $this->SetTooltip($slice['attr'], $item, 0, $item->key, $item->value,
           !$this->compat_events);
+      if($this->show_context_menu)
+        $this->SetContextMenu($slice['attr'], 0, $item, true);
       $path = $this->GetSlice($item,
         $slice['angle_start'], $slice['angle_end'],
         $slice['radius_x'], $slice['radius_y'],
@@ -412,7 +414,7 @@ class PieGraph extends Graph {
       $pos = "$xc $yc";
 
       if($pos_radius > 1) {
-        $space = $this->ArrayOption($this->data_label_space, $dataset);
+        $space = $this->GetOption(array('data_label_space', $dataset));
         $xt = ($rx + $space) * cos($ac);
         $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * sin($ac);
       } else {

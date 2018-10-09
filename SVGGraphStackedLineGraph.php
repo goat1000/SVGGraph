@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2016 Graham Breach
+ * Copyright (C) 2012-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -47,10 +47,9 @@ class StackedLineGraph extends MultiLineGraph {
       $cmd = 'M';
       $path = $fillpath = '';
       $attr = array('fill' => 'none');
-      $fill = $this->ArrayOption($this->fill_under, $i);
-      $dash = $this->ArrayOption($this->line_dash, $i);
-      $stroke_width = 
-        $this->ArrayOption($this->line_stroke_width, $i);
+      $fill = $this->GetOption(array('fill_under', $i));
+      $dash = $this->GetOption(array('line_dash', $i));
+      $stroke_width = $this->GetOption(array('line_stroke_width', $i));
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
@@ -93,7 +92,7 @@ class StackedLineGraph extends MultiLineGraph {
         if($fill) {
           // complete the fill area with the previous stack total
           $cmd = 'L';
-          $opacity = $this->ArrayOption($this->fill_opacity, $i);
+          $opacity = $this->GetOption(array('fill_opacity', $i));
           $bpoints = array_reverse($bottom, TRUE);
           foreach($bpoints as $x => $pos) {
             $y = $this->GridY($pos);

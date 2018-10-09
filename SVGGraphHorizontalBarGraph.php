@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2017 Graham Breach
+ * Copyright (C) 2011-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,6 +65,8 @@ class HorizontalBarGraph extends GridGraph {
           if($this->show_tooltips)
             $this->SetTooltip($bar, $item, 0, $item->key, $item->value,
               !$this->compat_events && $show_label);
+          if($this->show_context_menu)
+            $this->SetContextMenu($bar, 0, $item, $show_label);
           if($this->semantic_classes)
             $bar['class'] = "series0";
           $rect = $this->Element('rect', $bar, $bar_style);
@@ -127,7 +129,7 @@ class HorizontalBarGraph extends GridGraph {
   protected function AddDataLabel($dataset, $index, &$element, &$item,
     $x, $y, $w, $h, $content = NULL, $duplicate = TRUE)
   {
-    if($w < $this->ArrayOption($this->data_label_min_space, $dataset))
+    if($w < $this->GetOption(array('data_label_min_space', $dataset)))
       return false;
     return parent::AddDataLabel($dataset, $index, $element, $item, $x, $y,
       $w, $h, $content, $duplicate);

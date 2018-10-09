@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,7 @@ require_once 'SVGGraphAxis.php';
 class AxisDoubleEnded extends Axis{
 
   /**
-   * Constructor calls Axis constructor with 1/5 length
+   * Constructor calls Axis constructor with 0.5 * length
    */
   public function __construct($length, $max_val, $min_val, $min_unit, $min_space,
     $fit, $units_before, $units_after, $decimal_digits, $label_callback)
@@ -36,6 +36,14 @@ class AxisDoubleEnded extends Axis{
       throw new Exception('Negative value for double-ended axis');
     parent::__construct($length / 2, $max_val, $min_val, $min_unit, $min_space,
       $fit, $units_before, $units_after, $decimal_digits, $label_callback, false);
+  }
+
+  /**
+   * Return the full axis length, not the 1/2 length
+   */
+  public function GetLength()
+  {
+    return $this->length * 2;
   }
 
   /**
@@ -52,6 +60,8 @@ class AxisDoubleEnded extends Axis{
   public function GetGridPoints($start)
   {
     $points = parent::GetGridPoints($start);
+    if(is_null($start))
+      return;
     $new_points = array();
     $z = $this->Zero();
     foreach($points as $p) {

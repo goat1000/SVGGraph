@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2017 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -59,6 +59,8 @@ class HorizontalFloatingBarGraph extends HorizontalBarGraph {
           if($this->show_tooltips)
             $this->SetTooltip($bar, $item, 0, $item->key, $value,
               !$this->compat_events && $show_label);
+          if($this->show_context_menu)
+            $this->SetContextMenu($bar, 0, $item, $show_label);
           if($this->semantic_classes)
             $bar['class'] = "series0";
           $rect = $this->Element('rect', $bar, $bar_style);

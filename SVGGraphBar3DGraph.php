@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2016 Graham Breach
+ * Copyright (C) 2009-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -75,6 +75,8 @@ class Bar3DGraph extends ThreeDGraph {
           $group = array_merge($group, $bar_style);
           if($this->show_tooltips)
             $this->SetTooltip($group, $item, 0, $item->key, $item->value);
+          if($this->show_context_menu)
+            $this->SetContextMenu($group, 0, $item, $show_label);
           $this->SetStroke($group, $item, 0, 'round');
           $bars .= $this->Element('g', $group, NULL, $link);
           unset($group['id']); // make sure a new one is generated
@@ -245,7 +247,7 @@ class Bar3DGraph extends ThreeDGraph {
   protected function AddDataLabel($dataset, $index, &$element, &$item,
     $x, $y, $w, $h, $content = NULL, $duplicate = TRUE)
   {
-    if($h < $this->ArrayOption($this->data_label_min_space, $dataset))
+    if($h < $this->GetOption(array('data_label_min_space', $dataset)))
       return false;
     return parent::AddDataLabel($dataset, $index, $element, $item, $x, $y,
       $w, $h, $content, $duplicate);

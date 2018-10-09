@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2016 Graham Breach
+ * Copyright (C) 2011-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,20 +40,20 @@ class MultiRadarGraph extends RadarGraph {
       $cmd = 'M';
       $path = '';
       $attr = array('fill' => 'none');
-      $fill = $this->ArrayOption($this->fill_under, $i);
-      $dash = $this->ArrayOption($this->line_dash, $i);
-      $stroke_width = $this->ArrayOption($this->line_stroke_width, $i);
+      $fill = $this->GetOption(array('fill_under', $i));
+      $dash = $this->GetOption(array('line_dash', $i));
+      $stroke_width = $this->GetOption(array('line_stroke_width', $i));
       $fill_style = null;
       if($fill) {
         $attr['fill'] = $this->GetColour(null, 0, $i);
         $fill_style = array('fill' => $attr['fill']);
-        $opacity = $this->ArrayOption($this->fill_opacity, $i);
+        $opacity = $this->GetOption(array('fill_opacity', $i));
         if($opacity < 1.0) {
           $attr['fill-opacity'] = $opacity;
           $fill_style['fill-opacity'] = $opacity;
         }
       }
-      if(!is_null($dash))
+      if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2016 Graham Breach
+ * Copyright (C) 2013-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,6 +72,8 @@ class GroupedCylinderGraph extends CylinderGraph {
 
             if($this->show_tooltips)
               $this->SetTooltip($group, $item, $j, $item->key, $item->value);
+            if($this->show_context_menu)
+              $this->SetContextMenu($group, $j, $item);
             $link = $this->GetLink($item, $k, $bar_sections);
             $this->SetStroke($group, $item, $j, 'round');
             if($this->semantic_classes)

@@ -65,6 +65,8 @@ class BubbleGraph extends PointGraph {
           if($this->show_tooltips)
             $this->SetTooltip($circle, $item, 0, $item->key, $area,
               !$this->compat_events);
+          if($this->show_context_menu)
+            $this->SetContextMenu($circle, 0, $item, true);
           if($this->semantic_classes)
             $circle['class'] = "series0";
           $bubble = $this->Element('circle', array_merge($circle, $circle_style));

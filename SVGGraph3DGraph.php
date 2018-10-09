@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2017 Graham Breach
+ * Copyright (C) 2009-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -147,16 +147,14 @@ abstract class ThreeDGraph extends GridGraph {
           $subpath_h .= "M{$x->position} {$ybottom}l$xd {$yd}l0 " . -$y_h;
       }
       if($subpath_h != '' || $subpath_v != '') {
-        $colour_h = $this->GetFirst($this->grid_subdivision_colour_h,
-          $this->grid_subdivision_colour, $this->grid_colour_h,
-          $this->grid_colour);
-        $colour_v = $this->GetFirst($this->grid_subdivision_colour_v,
-          $this->grid_subdivision_colour, $this->grid_colour_v,
-          $this->grid_colour);
-        $dash_h = $this->GetFirst($this->grid_subdivision_dash_h,
-          $this->grid_subdivision_dash, $this->grid_dash_h, $this->grid_dash);
-        $dash_v = $this->GetFirst($this->grid_subdivision_dash_v,
-          $this->grid_subdivision_dash, $this->grid_dash_v, $this->grid_dash);
+        $colour_h = $this->GetOption('grid_subdivision_colour_h',
+          'grid_subdivision_colour', 'grid_colour_h', 'grid_colour');
+        $colour_v = $this->GetOption('grid_subdivision_colour_v',
+          'grid_subdivision_colour', 'grid_colour_v', 'grid_colour');
+        $dash_h = $this->GetOption('grid_subdivision_dash_h',
+          'grid_subdivision_dash', 'grid_dash_h', 'grid_dash');
+        $dash_v = $this->GetOption('grid_subdivision_dash_v',
+          'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
 
         if($dash_h == $dash_v && $colour_h == $colour_v) {
           $subpath = $this->GridLines($subpath_h . $subpath_v, $colour_h,
@@ -181,10 +179,10 @@ abstract class ThreeDGraph extends GridGraph {
         $path_h .= "M{$x->position} {$ybottom}l$xd {$yd}l0 " . -$y_h;
     }
 
-    $colour_h = $this->GetFirst($this->grid_colour_h, $this->grid_colour);
-    $colour_v = $this->GetFirst($this->grid_colour_v, $this->grid_colour);
-    $dash_h = $this->GetFirst($this->grid_dash_h, $this->grid_dash);
-    $dash_v = $this->GetFirst($this->grid_dash_v, $this->grid_dash);
+    $colour_h = $this->GetOption('grid_colour_h', 'grid_colour');
+    $colour_v = $this->GetOption('grid_colour_v', 'grid_colour');
+    $dash_h = $this->GetOption('grid_dash_h', 'grid_dash');
+    $dash_v = $this->GetOption('grid_dash_v', 'grid_dash');
 
     if($dash_h == $dash_v && $colour_h == $colour_v) {
       $path = $this->GridLines($path_v . $path_h, $colour_h, $dash_h, 'none');
