@@ -36,6 +36,8 @@ class DisplayAxis {
   protected $show_divisions;
   protected $show_subdivisions;
   protected $show_text;
+  protected $show_label;
+  protected $label = '';
   protected $block_label;
   protected $boxed_text;
   protected $minimum_subdivision;
@@ -61,9 +63,25 @@ class DisplayAxis {
 
     // set up options, styles
     $o = $orientation;
-    $this->show_axis = $graph->GetOption(array("show_axis_$o", $axis_no),
-      'show_axes');
-    $this->show_text = $graph->GetOption("show_axis_text_$o");
+    if(!$graph->GetOption('show_axes')) {
+      $this->show_axis = false;
+      $this->show_text = false;
+    } else {
+      $this->show_axis = $graph->GetOption(array("show_axis_$o", $axis_no));
+      $this->show_text = $graph->GetOption("show_axis_text_$o");
+    }
+
+    // gridgraph moves label_[xy] into label_[hv]
+    $o_labels = $graph->GetOption("label_$o");
+    if(is_array($o_labels)) {
+      // use array entry if one exists for this axis
+      if(isset($o_labels[$axis_no]))
+        $this->label = $o_labels[$axis_no];
+    } elseif($axis_no == 0 && !empty($o_labels)) {
+      // not an array, so only valid for axis 0
+      $this->label = $o_labels;
+    }
+    $this->show_label = ($this->label != '');
 
     // axis and text both need colour
     $styles['colour'] = $graph->GetOption(array("axis_colour_$o", $axis_no),
@@ -133,6 +151,22 @@ class DisplayAxis {
       }
     }
 
+    if($this->show_label) {
+      $styles['l_font'] = $graph->GetOption(
+        array("label_font_$o", $axis_no), "label_font",
+        array("axis_font_$o", $axis_no), "axis_font");
+      $styles['l_font_size'] = $graph->GetOption(
+        array("label_font_size_$o", $axis_no), "label_font_size",
+        array("axis_font_size_$o", $axis_no), "axis_font_size");
+      $styles['l_font_weight'] = $graph->GetOption(
+        array("label_font_weight_$o", $axis_no), "label_font_weight");
+      $styles['l_colour'] = $graph->GetOption(
+        array("label_colour_$o", $axis_no), "label_colour",
+        array("axis_text_colour_$o", $axis_no), "axis_text_colour",
+        array('@', $styles['colour']));
+      $styles['l_space'] = $graph->GetOption("label_space");
+    }
+
     $this->styles = $styles;
     $this->axis =& $axis;
     $this->graph =& $graph;
@@ -142,7 +176,7 @@ class DisplayAxis {
    * Returns the extents of the axis, relative to where it will be drawn from
    *  returns array('x', 'y', 'width', 'height')
    */
-  public function Measure()
+  public function Measure($with_label = true)
   {
     $x = $y = $max_x = $max_y = 0;
     if($this->show_axis) {
@@ -161,6 +195,14 @@ class DisplayAxis {
       $y = min($y, $ty);
       $max_x = max($max_x, $tmax_x);
       $max_y = max($max_y, $tmax_y);
+    }
+
+    if($with_label && $this->show_label) {
+      $lpos = $this->GetLabelPosition();
+      $x = min($x, $lpos['x']);
+      $y = min($y, $lpos['y']);
+      $max_x = max($max_x, $lpos['x'] + $lpos['width']);
+      $max_y = max($max_y, $lpos['y'] + $lpos['height']);
     }
 
     $width = $max_x - $x;
@@ -259,8 +301,9 @@ class DisplayAxis {
       $content .= $this->DrawAxisLine($x, $y, $length);
     }
 
-    if($this->show_text)
+    if($this->show_text || $this->show_label)
       $content .= $this->DrawText($x, $y, $gx, $gy, $g_width, $g_height);
+
     return $content;
   }
 
@@ -332,31 +375,108 @@ class DisplayAxis {
   public function DrawText($x, $y, $gx, $gy, $g_width, $g_height)
   {
     $labels = '';
-    list($x_offset, $y_offset, $opposite) = $this->GetTextOffset($x, $y,
-      $gx, $gy, $g_width, $g_height);
+    if($this->show_text) {
+      list($x_offset, $y_offset, $opposite) = $this->GetTextOffset($x, $y,
+        $gx, $gy, $g_width, $g_height);
 
-    $points = $this->axis->GetGridPoints(0);
-    $count = count($points);
-    if($this->block_label)
-      --$count;
-    for($p = 0; $p < $count; ++$p) {
+      $points = $this->axis->GetGridPoints(0);
+      $count = count($points);
+      if($this->block_label)
+        --$count;
+      for($p = 0; $p < $count; ++$p) {
 
-      $point = $points[$p];
-      if($point->text == '')
-        continue;
+        $point = $points[$p];
+        if($point->text == '')
+          continue;
 
-      $labels .= $this->GetText($x + $x_offset, $y + $y_offset, $point,
-        $opposite);
+        $labels .= $this->GetText($x + $x_offset, $y + $y_offset, $point,
+          $opposite);
+      }
+      if($labels != '') {
+        $group = array(
+          'font-family' => $this->styles['t_font'],
+          'font-size' => $this->styles['t_font_size'],
+          'fill' => $this->styles['t_colour'],
+        );
+        $labels = $this->graph->Element('g', $group, NULL, $labels);
+      }
     }
-    if($labels != '') {
-      $group = array(
-        'font-family' => $this->styles['t_font'],
-        'font-size' => $this->styles['t_font_size'],
-        'fill' => $this->styles['t_colour'],
-      );
-      $labels = $this->graph->Element('g', $group, NULL, $labels);
-    }
+    if($this->show_label)
+      $labels .= $this->GetLabel($x, $y, $gx, $gy, $g_width, $g_height);
+
     return $labels;
+  }
+
+  /**
+   * Returns the label
+   */
+  protected function GetLabel($x, $y, $gx, $gy, $g_width, $g_height)
+  {
+    $pos = $this->GetLabelPosition($x, $y, $g_width, $g_height);
+    $tx = $x + $pos['tx'];
+    $ty = $y + $pos['ty'];
+    $label = array(
+      'text-anchor' => 'middle',
+      'font-family' => $this->styles['l_font'],
+      'font-size' => $this->styles['l_font_size'],
+      'fill' => $this->styles['l_colour'],
+      'x' => $tx,
+      'y' => $ty,
+    );
+    if(!empty($this->styles['l_font_weight']) &&
+      $this->styles['l_font_weight'] != 'normal')
+      $label['font-weight'] = $this->styles['l_font_weight'];
+    if($pos['angle'])
+      $label['transform'] = "rotate({$pos['angle']},$tx,$ty)";
+
+    $svg_text = new SVGGraphText($this->graph, $this->styles['l_font']);
+    return $svg_text->Text($this->label, $this->styles['l_font_size'], $label);
+  }
+
+  /**
+   * Returns the dimensions of the label
+   * x, y, width, height = position and size
+   * tx, tx = text anchor point
+   * angle = text angle
+   */
+  protected function GetLabelPosition()
+  {
+    $bbox = $this->Measure(false);
+    $font_size = $this->styles['l_font_size'];
+    $svg_text = new SVGGraphText($this->graph, $this->styles['l_font']);
+    $tsize = $svg_text->Measure($this->label, $font_size, 0, $font_size);
+    $baseline = $svg_text->Baseline($font_size);
+    $a_length = $this->axis->GetLength();
+    $space = $this->styles['l_space'];
+
+    if($this->orientation == 'h') {
+      $width = $tsize[0];
+      $height = $tsize[1];
+      $y = $bbox['y'] + $bbox['height'] + $space;
+      $tx = $a_length / 2;
+      $ty = $y + $baseline;
+      $x = $tx - $width / 2;
+
+      $height += $space;
+      $angle = 0;
+    } else {
+      $width = $tsize[1];
+      $height = $tsize[0];
+      if($this->axis_no > 0) {
+        $x = $bbox['x'] + $bbox['width'] + $space;
+        $tx = $x + $width - $baseline;
+      } else {
+        $x = $bbox['x'] - $space - $width;
+        $tx = $x + $baseline;
+        $x -= $space;
+      }
+      $ty = -$a_length / 2;
+      $y = $ty - $height / 2;
+      $width += $space;
+      $angle = $this->axis_no > 0 ? 90 : 270;
+    }
+
+    return compact('x', 'y', 'width', 'height', 'tx', 'ty', 'angle');
   }
 
   /**

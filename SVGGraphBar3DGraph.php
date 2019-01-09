@@ -35,7 +35,7 @@ class Bar3DGraph extends ThreeDGraph {
 
     // make the top parallelogram, set it as a symbol for re-use
     list($this->bx, $this->by) = $this->Project(0, 0, $bar_width);
-    $top = $this->BarTop();
+    $top_id = $this->BarTop();
 
     $bnum = 0;
     $bspace = max(0, ($this->x_axes[$this->main_x_axis]->Unit() - $bar_width) / 2);
@@ -66,7 +66,7 @@ class Bar3DGraph extends ThreeDGraph {
       if(!is_null($item->value) && !is_null($bar_pos)) {
         $bar['x'] = $bspace + $bar_pos;
 
-        $bar_sections = $this->Bar3D($item, $bar, $top, $bnum);
+        $bar_sections = $this->Bar3D($item, $bar, $top_id, $bnum);
         if($bar_sections != '') {
           $show_label = $this->AddDataLabel(0, $bnum, $group, $item,
             $bar['x'] + $tx, $bar['y'] + $ty, $bar['width'], $bar['height']);
@@ -106,13 +106,11 @@ class Bar3DGraph extends ThreeDGraph {
   }
 
   /**
-   * Returns the bar top path details array
+   * Returns the bar top id
    */
   protected function BarTop()
   {
     $bw = $this->block_width;
-    $top_id = $this->NewID();
-    $g = array('id' => $top_id);
     $bar_top = '';
 
     if($this->skew_top) {
@@ -129,16 +127,15 @@ class Bar3DGraph extends ThreeDGraph {
     if($this->skew_top)
       $top['fill'] = 'none';
     $bar_top .= $this->Element('path', $top);
-    $this->defs[] = $this->Element('symbol', NULL, NULL,
-      $this->Element('g', $g, NULL, $bar_top));
+    $top_id = $this->symbols->Define($bar_top);
 
-    return array('xlink:href' => '#' . $top_id);
+    return $top_id;
   }
 
   /**
    * Returns the SVG code for a 3D bar
    */
-  protected function Bar3D($item, &$bar, &$top, $index, $dataset = NULL,
+  protected function Bar3D($item, &$bar, $top_id, $index, $dataset = NULL,
     $start = NULL, $axis = NULL)
   {
     $pos = $this->Bar($item->value, $bar, $start, $axis);
@@ -149,7 +146,7 @@ class Bar3DGraph extends ThreeDGraph {
     $top_overlay = min(1, max(0, $this->bar_top_overlay_opacity));
     $front_overlay = min(1, max(0, $this->bar_front_overlay_opacity));
 
-    $bar_side = '';
+    $bar_side = $bar_top = '';
     $bw = $this->block_width;
     $bh = $bar['height'];
     $side_x = $bar['x'] + $bw;
@@ -180,22 +177,19 @@ class Bar3DGraph extends ThreeDGraph {
       $bar_side .= $this->Element('path', $side);
     }
 
-    if(is_null($top)) {
-      $bar_top = '';
-    } else {
-      $top['transform'] = "translate($bar[x],$bar[y])";
+    if(!is_null($top_id)) {
+      $top = array('transform' => "translate($bar[x],$bar[y])");
       $top['fill'] = $this->GetColour($item, $index, $dataset,
         $this->skew_top ? FALSE : TRUE);
       if($top_overlay)
         $top['stroke'] = 'none';
-      $bar_top = $this->Element('use', $top, null, $this->empty_use ? '' : null);
+      $bar_top = $this->symbols->UseSymbol($top_id, $top);
 
       if($top_overlay) {
         unset($top['stroke']);
-        $otop = $top;
-        $otop['fill-opacity'] = $top_overlay;
-        $otop['fill'] = $this->bar_top_overlay_colour;
-        $bar_top .= $this->Element('use', $otop, null, $this->empty_use ? '' : null);
+        $top['fill-opacity'] = $top_overlay;
+        $top['fill'] = $this->bar_top_overlay_colour;
+        $bar_top .= $this->symbols->UseSymbol($top_id, $top);
       }
     }
 

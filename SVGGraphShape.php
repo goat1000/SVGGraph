@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2016 Graham Breach
+ * Copyright (C) 2015-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -75,6 +75,14 @@ class SVGGraphShapeList {
    */
   private function AddShape(&$shape_array)
   {
+    $this->shapes[] = $this->GetShape($shape_array);
+  }
+
+  /**
+   * Returns a shape class
+   */
+  public function GetShape(&$shape_array)
+  {
     $shape = $shape_array[0];
     unset($shape_array[0]);
 
@@ -86,6 +94,9 @@ class SVGGraphShapeList {
       'polyline' => 'SVGGraphPolyLine',
       'polygon' => 'SVGGraphPolygon',
       'path' => 'SVGGraphPath',
+      'marker' => 'SVGGraphMarker',
+      'figure' => 'SVGGraphFigureShape',
+      'image' => 'SVGGraphImage',
     );
 
     if(isset($class_map[$shape]) && class_exists($class_map[$shape])) {
@@ -100,10 +111,9 @@ class SVGGraphShapeList {
         $shape_array['clip-path'] = "url(#{$clip_id})";
       }
       unset($shape_array['depth'], $shape_array['clip_to_grid']);
-      $this->shapes[] = new $class_map[$shape]($shape_array, $depth);
-    } else {
-      throw new Exception("Unknown shape [{$shape}]");
+      return new $class_map[$shape]($shape_array, $depth);
     }
+    throw new Exception("Unknown shape [{$shape}]");
   }
 }
 
@@ -309,5 +319,86 @@ class SVGGraphPolyLine extends SVGGraphShape {
 
 class SVGGraphPolygon extends SVGGraphPolyLine {
   protected $element = 'polygon';
+}
+
+class SVGGraphMarker extends SVGGraphShape {
+  protected $element = 'use';
+  protected $required = array('type', 'x', 'y');
+  protected $transform = array('size' => 'y');
+  protected $transform_pairs = array(array('x', 'y'));
+
+  /**
+   * Override to draw a marker
+   */
+  protected function DrawElement(&$graph, &$attributes)
+  {
+    require_once "SVGGraphMarkers.php";
+    $markers = new SVGGraphMarkers($graph);
+    $size = isset($attributes['size']) ? $attributes['size'] : 10;
+    $stroke_width = isset($attributes['stroke-width']) ?
+      $attributes['stroke-width'] : 1;
+    $opacity = isset($attributes['opacity']) ?
+      $attributes['opacity'] : 1;
+    $angle = isset($attributes['angle']) ?
+      $attributes['angle'] : 0;
+    $id = $markers->Create($attributes['type'], $size,
+      $attributes['fill'], $stroke_width, $attributes['stroke'],
+      $opacity, $angle);
+
+    $remove = array('type', 'size', 'fill', 'stroke', 'stroke-width',
+      'opacity', 'angle');
+    $use = $attributes;
+    foreach($remove as $key) {
+      unset($use[$key]);
+    }
+
+    // clip-path must be applied to <g> to prevent being offset with <use>
+    if(isset($use['clip-path'])) {
+      $group = array('clip-path' => $use['clip-path']);
+      unset($use['clip-path']);
+      $e = $graph->Element('g', $group, null,
+        $graph->symbols->UseSymbol($id, $use));
+    } else {
+      $e = $graph->symbols->UseSymbol($id, $use);
+    }
+    return $e;
+  }
+}
+
+class SVGGraphFigureShape extends SVGGraphMarker {
+  protected $required = array('name', 'x', 'y');
+
+  /**
+   * Override to draw a marker
+   */
+  protected function DrawElement(&$graph, &$attributes)
+  {
+    $attributes['type'] = 'figure:' . $attributes['name'];
+    unset($attributes['name']);
+    return parent::DrawElement($graph, $attributes);
+  }
+}
+
+class SVGGraphImage extends SVGGraphShape {
+  protected $element = 'image';
+  protected $required = array('src', 'x', 'y');
+  protected $transform = array('width' => 'x', 'height' => 'y');
+  protected $transform_pairs = array(array('x', 'y'));
+
+  protected $attrs = array(
+    'preserveAspectRatio' => 'xMinYMin',
+  );
+
+  /**
+   * Override to draw an image
+   */
+  protected function DrawElement(&$graph, &$attributes)
+  {
+    $attributes['xlink:href'] = $attributes['src'];
+    if(isset($attributes['stretch']) && $attributes['stretch'])
+      $attributes['preserveAspectRatio'] = 'none';
+    unset($attributes['src'], $attributes['stretch']);
+    return parent::DrawElement($graph, $attributes);
+  }
 }
 

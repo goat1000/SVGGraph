@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018 Graham Breach
+ * Copyright (C) 2018-2019 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,7 +67,7 @@ class DisplayAxisRadar extends DisplayAxis {
    * Returns the extents of the axis, relative to where it will be drawn from
    *  returns array('x', 'y', 'width', 'height')
    */
-  public function Measure()
+  public function Measure($with_label = true)
   {
     $min_x = array($this->xc);
     $min_y = array($this->yc);
@@ -115,6 +115,14 @@ class DisplayAxisRadar extends DisplayAxis {
         $max_x[] = $lbl['x'] + $lbl['width'];
         $max_y[] = $lbl['y'] + $lbl['height'];
       }
+    }
+
+    if($with_label && $this->show_label) {
+      $lpos = $this->GetLabelPosition();
+      $min_x[] = $lpos['x'];
+      $min_y[] = $lpos['y'];
+      $max_x[] = $lpos['x'] + $lpos['width'];
+      $max_y[] = $lpos['y'] + $lpos['height'];
     }
 
     $x = min($min_x);
@@ -236,6 +244,43 @@ class DisplayAxisRadar extends DisplayAxis {
       return compact('x', 'y', 'width', 'height');
     }
     return $svg_text->Text($point->text, $font_size, $attr);
+  }
+
+  /**
+   * Returns the label
+   */
+  protected function GetLabel($x, $y, $gx, $gy, $g_width, $g_height)
+  {
+    // GetLabelPosition returns absolute text position, so ignore $x and $y
+    return parent::GetLabel(0, 0, $gx, $gy, $g_width, $g_height);
+  }
+
+  /**
+   * Returns the dimensions of the label
+   * x, y, width, height = position and size
+   * tx, tx = text anchor point
+   * angle = text angle
+   */
+  protected function GetLabelPosition()
+  {
+    $bbox = $this->Measure(false);
+    $font_size = $this->styles['l_font_size'];
+    $svg_text = new SVGGraphText($this->graph, $this->styles['l_font']);
+    $tsize = $svg_text->Measure($this->label, $font_size, 0, $font_size);
+    $baseline = $svg_text->Baseline($font_size);
+    $space = $this->styles['l_space'];
+
+    $width = $tsize[0];
+    $height = $tsize[1];
+    $y = $bbox['y'] + $bbox['height'] + $space;
+    $tx = $this->xc;
+    $ty = $y + $baseline;
+    $x = $tx - $width / 2;
+
+    $height += $space;
+    $angle = 0;
+    $res = compact('x', 'y', 'width', 'height', 'tx', 'ty', 'angle', 'bbox');
+    return $res;
   }
 
 }

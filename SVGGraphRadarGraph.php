@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2018 Graham Breach
+ * Copyright (C) 2012-2019 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,7 +32,6 @@ class RadarGraph extends LineGraph {
   protected $yc;
   protected $radius;
   protected $arad;
-  private $pad_v_axis_label;
 
   // in the case of radar graphs, $label_centre means we want an axis that
   // ends at N points + 1
@@ -426,39 +425,6 @@ class RadarGraph extends LineGraph {
     $this->arad = (90 + $this->start_angle) * M_PI / 180;
     $this->axis_right = false;
     parent::CalcAxes();
-  }
-
-  /**
-   * Returns what would be the vertical axis label
-   */
-  protected function VLabel(&$attribs)
-  {
-    if(empty($this->label_v))
-      return '';
-
-    $svg_text = new SVGGraphText($this);
-    $c = cos($this->arad);
-    $s = sin($this->arad);
-    $a = $this->arad + ($s * $c > 0 ? - M_PI_2 : M_PI_2);
-    $offset = max($this->division_size * (int)$this->show_divisions,
-      $this->subdivision_size * (int)$this->show_subdivisions) +
-      $this->pad_v_axis_label + $this->label_space;
-    $offset += ($c < 0 ? ($svg_text->Lines($this->label_v) - 1) : 1) *
-      $this->label_font_size;
-
-    $x2 = $offset * sin($a);
-    $y2 = $offset * cos($a);
-    $p = $this->radius / 2;
-    $x = $this->xc + $p * sin($this->arad) + $x2;
-    $y = $this->yc + $p * cos($this->arad) + $y2;
-    $a = $s < 0 ? 180 - $this->start_angle : -$this->start_angle;
-    $pos = array(
-      'x' => $x,
-      'y' => $y,
-      'transform' => "rotate($a,$x,$y)",
-    );
-    return $svg_text->Text($this->label_v, $this->label_font_size,
-      array_merge($attribs, $pos));
   }
 
   /**

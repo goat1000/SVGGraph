@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2016 Graham Breach
+ * Copyright (C) 2012-2018 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,22 +64,20 @@ class CylinderGraph extends Bar3DGraph {
   }
 
   /**
-   * Creates the ellipse for the top of the cylinder
+   * Creates the ellipse for the top of the cylinder, returns id of symbol
    */
   protected function CreateEllipse($ellipse, $angle)
   {
-    $top_id = $this->NewID();
     $r = -$angle / 2;
     $top = array(
-      'id' => $top_id,
       'cx' => 0, 'cy' => 0,
       'rx' => $ellipse['a'], 'ry' => $ellipse['b'],
       'transform' => "rotate({$r})",
     );
 
-    $this->defs[] = $this->Element('symbol', NULL, NULL,
-      $this->Element('ellipse', $top));
-    return array('xlink:href' => '#' . $top_id);
+    $ellipse = $this->Element('ellipse', $top);
+    $top_id = $this->symbols->Define($ellipse);
+    return $top_id;
   }
 
   /**
@@ -121,7 +119,7 @@ class CylinderGraph extends Bar3DGraph {
   /**
    * Returns the SVG code for a 3D cylinder
    */
-  protected function Bar3D($item, &$bar, &$top, $index, $dataset = NULL,
+  protected function Bar3D($item, &$bar, $top_id, $index, $dataset = NULL,
     $start = NULL, $axis = NULL)
   {
     if(is_null($this->arc_path))
@@ -131,12 +129,12 @@ class CylinderGraph extends Bar3DGraph {
       return '';
 
     $side_x = $bar['x'] + $this->block_width;
-    if(is_null($top)) {
+    if(is_null($top_id)) {
       $cyl_top = '';
     } else {
-      $top['transform'] = "translate({$bar['x']},{$bar['y']})";
+      $top = array('transform' => "translate({$bar['x']},{$bar['y']})");
       $top['fill'] = $this->GetColour($item, $index, $dataset, TRUE);
-      $cyl_top = $this->Element('use', $top, null, $this->empty_use ? '' : null);
+      $cyl_top = $this->symbols->UseSymbol($top_id, $top);
     }
 
     $group = array('transform' => $this->transform);

@@ -190,6 +190,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
     // add in the markers created by line graph
     $body .= $this->linegraph->DrawMarkers();
+    $this->defs[] = $this->linegraph->symbols->Definitions();
 
     return $body;
   }

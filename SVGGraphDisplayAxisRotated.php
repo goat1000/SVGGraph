@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018 Graham Breach
+ * Copyright (C) 2018-2019 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,8 @@ class DisplayAxisRotated extends DisplayAxis {
   protected $arad;
   protected $anchor;
   protected $top;
+  protected $label_offset = 0;
+  protected $label_angle = 0;
 
   /**
    * $arad = angle in radians
@@ -163,7 +165,7 @@ class DisplayAxisRotated extends DisplayAxis {
       $attr['y'] = $y + $y_add + $baseline - $h / 2;
 
     $angle = $this->styles['t_angle'];
-    $rcx = $rcy = NULL;
+    $rcx = $rcy = null;
     if($angle) {
       $rcx = $x + $x_add;
       $rcy = $y + $y_add;
@@ -177,6 +179,45 @@ class DisplayAxisRotated extends DisplayAxis {
       return compact('x', 'y', 'width', 'height');
     }
     return $svg_text->Text($point->text, $font_size, $attr);
+  }
+
+  /**
+   * Returns the dimensions of the label
+   */
+  protected function GetLabelPosition()
+  {
+    $font_size = $this->styles['l_font_size'];
+    $svg_text = new SVGGraphText($this->graph, $this->styles['l_font']);
+    $tsize = $svg_text->Measure($this->label, $font_size, 0, $font_size);
+    $baseline = $svg_text->Baseline($font_size);
+    $c = cos($this->arad);
+    $s = sin($this->arad);
+
+    // use plain axis for calculating distance from axis
+    $plain = new DisplayAxis($this->graph, $this->axis, $this->axis_no,
+      $this->orientation, $this->type, $this->main, false);
+    $bbox = $plain->Measure(false);
+    $space = $this->styles['l_space'];
+
+    if($s < 0) {
+      $offset = $bbox['width'] + $bbox['x'] + $space + $tsize[1] - $baseline;
+      $angle = 180 - (rad2deg($this->arad) - 90);
+    } else {
+      $offset = -$bbox['x'] + $space + $tsize[1] - $baseline;
+      $angle = - (rad2deg($this->arad) - 90);
+    }
+
+    $a = $this->arad + M_PI_2;
+    $x2 = $offset * sin($a);
+    $y2 = $offset * cos($a);
+    $p = $this->axis->GetLength() / 2;
+    $tx = $p * sin($this->arad) + $x2;
+    $ty = $p * cos($this->arad) + $y2;
+
+    // these don't matter - the text is over the graph anyway
+    $x = $y = $width = $height = 0;
+
+    return compact('x', 'y', 'width', 'height', 'tx', 'ty', 'angle');
   }
 
 }

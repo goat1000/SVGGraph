@@ -1,3 +1,12 @@
+Version 2.30 (04/01/2019)
+------------
+- Added "image" shape support.
+- Added "marker" shape support.
+- Added "figure" option for creating predefined shapes.
+- Added "figure" shape support.
+- Added "figure" marker support.
+- Improved axis label positioning.
+
 Version 2.29 (09/10/2018)
 ------------
 - Added context menu options.

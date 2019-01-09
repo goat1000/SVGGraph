@@ -54,10 +54,6 @@ abstract class GridGraph extends Graph {
   protected $min_guide = array('x' => null, 'y' => null);
   protected $max_guide = array('x' => null, 'y' => null);
 
-  private $label_left_offset;
-  private $label_bottom_offset;
-  private $label_right_position = array();
-  private $label_top_offset;
   private $grid_limit;
   private $grid_clip_id;
 
@@ -95,134 +91,55 @@ abstract class GridGraph extends Graph {
     // if the label_x or label_y are set but not _h and _v, assign them
     $lh = $this->flip_axes ? $this->label_y : $this->label_x;
     $lv = $this->flip_axes ? $this->label_x : $this->label_y;
-    if(empty($this->label_h) && !empty($lh)) {
-      // cope with multiple Y axis labels on horizontal graph
-      $this->label_h = is_array($lh) ? array_shift($lh) : $lh;
-    }
+    if(empty($this->label_h) && !empty($lh))
+      $this->label_h = $lh;
     if(empty($this->label_v) && !empty($lv))
       $this->label_v = $lv;
 
-    $right_labels = array();
-    if(!empty($this->label_v)) {
-      $label_spaces = array();
-      if(is_array($this->label_v) && $this->YAxisCount() > 1) {
-
-        foreach($this->label_v as $axis_no => $label_text) {
-          if(is_null($label_text) || $axis_no > $this->YAxisCount() - 1)
-            continue;
-          $font = $this->GetOption(array('label_font_v', $axis_no), 'label_font');
-          $font_size = $this->GetOption(array('label_font_size_v', $axis_no),
-            'label_font_size');
-          $label_svg_text = new SVGGraphText($this, $font);
-          $measurement = $label_svg_text->Measure($label_text, $font_size, 90,
-            $font_size);
-          $label_spaces[$axis_no] = array(
-            'width' => $measurement[0],
-            'baseline' => $label_svg_text->Baseline($font_size)
-          );
-        }
-      } else {
-
-        // single axis, left or right
-        $label = is_array($this->label_v) ? $this->label_v[0] : $this->label_v;
-        $font = $this->GetOption(array('label_font_v', 0), 'label_font');
-        $font_size = $this->GetOption(array('label_font_size_v', 0),
-          'label_font_size');
-        $label_svg_text = new SVGGraphText($this, $font);
-        $measurement = $label_svg_text->Measure($label, $font_size, 90,
-          $font_size);
-        // increase padding
-        if($this->axis_right) {
-          $axis_no = 1;
-          $this->label_v = array(1 => $label);
-        } else {
-          $axis_no = 0;
-          $this->label_v = $label;
-        }
-        $label_spaces[$axis_no] = array(
-          'width' => $measurement[0],
-          'baseline' => $label_svg_text->Baseline($font_size)
-        );
-      }
-
-      foreach($label_spaces as $axis_no => $measurement) {
-        $label_width = $measurement['width'] + 2 * $this->label_space;
-        if($axis_no == 0) {
-          if(is_null($grid_l)) {
-            $this->label_left_offset = $this->pad_left + $this->label_space +
-              $measurement['baseline'];
-            $this->pad_left += $label_width;
-          } else {
-            $this->label_left_offset = $this->label_space + $measurement['baseline'];
-          }
-        } else {
-          if(is_null($grid_r))
-            $this->pad_right += $label_width;
-          $right_labels[$axis_no] = array($label_width,
-            - ($measurement['baseline'] + $this->label_space));
-        }
-      }
+    if($this->axis_right && !empty($this->label_v) && $this->YAxisCount() <= 1) {
+      $label = is_array($this->label_v) ? $this->label_v[0] : $this->label_v;
+      $this->label_v = array(0 => '', 1 => $label);
     }
-    if(!empty($this->label_h)) {
-      $font = $this->GetOption('label_font_h', 'label_font');
-      $font_size = $this->GetOption('label_font_size_h', 'label_font_size');
-      $label_svg_text = new SVGGraphText($this, $font);
-      $measurement = $label_svg_text->Measure($this->label_h, $font_size, 0,
-        $font_size);
-      $baseline = $label_svg_text->Baseline($font_size);
-      if(is_null($grid_b)) {
-        $this->label_bottom_offset = $this->pad_bottom + $this->label_space +
-          $measurement[1] - $baseline;
-        $this->pad_bottom += $measurement[1] + 2 * $this->label_space;
-      } else {
-        $this->label_bottom_offset = $this->label_space +
-          $measurement[1] - $baseline;
-      }
-    }
+
     $pad_l = $pad_r = $pad_b = $pad_t = 0;
     $space_x = $this->width - $this->pad_left - $this->pad_right;
     $space_y = $this->height - $this->pad_top - $this->pad_bottom;
-    if($this->show_axes) {
+    $ends = $this->GetAxisEnds();
+    $extra_r = $extra_t = 0;
 
-      $ends = $this->GetAxisEnds();
-      $extra_r = $extra_t = 0;
+    for($i = 0; $i < 10; ++$i) {
+      // find the text bounding box and add overlap to padding
+      // repeat with the new measurements in case overlap increases
+      $x_len = $space_x - $pad_r - $pad_l;
+      $y_len = $space_y - $pad_t - $pad_b;
 
-      for($i = 0; $i < 10; ++$i) {
-        // find the text bounding box and add overlap to padding
-        // repeat with the new measurements in case overlap increases
-        $x_len = $space_x - $pad_r - $pad_l;
-        $y_len = $space_y - $pad_t - $pad_b;
-
-        // 3D graphs will use this to reduce axis length
-        list($extra_r, $extra_t) = $this->AdjustAxes($x_len, $y_len);
-
-        list($x_axes, $y_axes) = $this->GetAxes($ends, $x_len, $y_len);
-        $bbox = $this->FindAxisBBox($x_len, $y_len, $x_axes, $y_axes);
-        $pr = $pl = $pb = $pt = 0;
-
-        if($bbox['max_x'] > $x_len)
-          $pr = ceil($bbox['max_x'] - $x_len);
-        if($bbox['min_x'] < 0)
-          $pl = ceil(abs($bbox['min_x']));
-        if($bbox['min_y'] < 0)
-          $pt = ceil(abs($bbox['min_y']));
-        if($bbox['max_y'] > $y_len)
-          $pb = ceil($bbox['max_y'] - $y_len);
-
-        if($pr == $pad_r && $pl == $pad_l && $pt == $pad_t && $pb == $pad_b)
-          break;
-        $pad_r = $pr;
-        $pad_l = $pl;
-        $pad_t = $pt;
-        $pad_b = $pb;
-      }
-
-      $pad_r += $extra_r;
-      $pad_t += $extra_t;
-    } else {
       // 3D graphs will use this to reduce axis length
-      list($pad_r, $pad_t) = $this->AdjustAxes($space_x, $space_y);
+      list($extra_r, $extra_t) = $this->AdjustAxes($x_len, $y_len);
+
+      list($x_axes, $y_axes) = $this->GetAxes($ends, $x_len, $y_len);
+      $bbox = $this->FindAxisBBox($x_len, $y_len, $x_axes, $y_axes);
+      $pr = $pl = $pb = $pt = 0;
+
+      if($bbox['max_x'] > $x_len)
+        $pr = ceil($bbox['max_x'] - $x_len);
+      if($bbox['min_x'] < 0)
+        $pl = ceil(abs($bbox['min_x']));
+      if($bbox['min_y'] < 0)
+        $pt = ceil(abs($bbox['min_y']));
+      if($bbox['max_y'] > $y_len)
+        $pb = ceil($bbox['max_y'] - $y_len);
+
+      if($pr == $pad_r && $pl == $pad_l && $pt == $pad_t && $pb == $pad_b)
+        break;
+      $pad_r = $pr;
+      $pad_l = $pl;
+      $pad_t = $pt;
+      $pad_b = $pb;
     }
+
+    $pad_r += $extra_r;
+    $pad_t += $extra_t;
+
     // apply the extra padding
     if(is_null($grid_l))
       $this->pad_left += $pad_l;
@@ -249,19 +166,10 @@ abstract class GridGraph extends Graph {
       }
     }
 
-    // axis labels need to be readjusted along with axes
-    $total_label_space = 0;
+    // see if the axes fit
     foreach($this->y_axis_positions as $axis_no => $pos) {
-      $pos = $this->y_axis_positions[$axis_no] += $total_label_space;
       if($axis_no > 0 && $pos <= 0)
         throw new Exception('Not enough space for ' . $this->YAxisCount() . ' axes');
-      if(isset($right_labels[$axis_no])) {
-        list($width, $offset) = $right_labels[$axis_no];
-        $ybb = $this->YAxisBBox($y_axes[$axis_no], $space_y, $axis_no);
-        $this->label_right_position[$axis_no] = $this->pad_left + $pos +
-          $ybb['max_x'] + $width + $offset;
-        $total_label_space += $width;
-      }
     }
     $this->label_adjust_done = true;
   }
@@ -810,110 +718,6 @@ abstract class GridGraph extends Graph {
   }
 
   /**
-   * Returns the horizontal axis label
-   */
-  protected function HLabel(&$attribs)
-  {
-    if(empty($this->label_h))
-      return '';
-
-    $x = ($this->width - $this->pad_left - $this->pad_right) / 2 +
-      $this->pad_left;
-    $y = $this->height - $this->label_bottom_offset;
-    $pos = compact('x', 'y');
-    $font = $this->GetOption('label_font_h', 'label_font');
-    $svg_text = new SVGGraphText($this, $font);
-    return $svg_text->Text($this->label_h, $this->label_font_size,
-      array_merge($attribs, $pos));
-  }
-
-  /**
-   * Returns the vertical axis label
-   */
-  protected function VLabel(&$attribs)
-  {
-    if(empty($this->label_v))
-      return '';
-
-    $y = ($this->height - $this->pad_bottom + $this->pad_top) / 2;
-
-    $text = '';
-    $label = is_array($this->label_v) ? $this->label_v : array($this->label_v);
-
-    foreach($label as $i => $label_text) {
-      if(is_null($label_text))
-        continue;
-      if($i > 0) {
-        if(!isset($this->label_right_position[$i]))
-          continue;
-        $x = $this->label_right_position[$i];
-        $transform = "rotate(90,$x,$y)";
-      } else {
-        $x = $this->label_left_offset;
-        $transform = "rotate(270,$x,$y)";
-      }
-      $pos = compact('x', 'y', 'transform');
-      $font = $this->GetOption(array('label_font_v', $i), 'label_font');
-      $font_weight = $this->GetOption(array('label_font_weight_v', $i),
-        'label_font_weight');
-      $font_size = $this->GetOption(array('label_font_size_v', $i),
-        'label_font_size', array('axis_font_v', $i), 'axis_font');
-      if($font != $this->axis_font)
-        $pos['font-family'] = $font;
-      if($font_weight != 'normal')
-        $pos['font-weight'] = $font_weight;
-      if($font_size != $this->axis_font_size)
-        $pos['font-size'] = $font_size;
-      $pos['fill'] = $this->GetOption(array('label_colour_v', $i),
-        'label_colour', array('axis_text_colour_v', $i), 'axis_text_colour');
-      $svg_text = new SVGGraphText($this, $font);
-      $text .= $svg_text->Text($label_text, $font_size, array_merge($attribs, $pos));
-    }
-
-    return $text;
-  }
-
-  /**
-   * Returns the labels grouped with the provided axis division labels
-   */
-  protected function Labels($axis_text = '')
-  {
-    $labels = $axis_text;
-    if(!empty($this->label_h) || !empty($this->label_v)) {
-      $label_text = array('text-anchor' => 'middle');
-      if($this->label_font != $this->axis_font)
-        $label_text['font-family'] = $this->label_font;
-      if($this->label_font_size != $this->axis_font_size)
-        $label_text['font-size'] = $this->label_font_size;
-      if($this->label_font_weight != 'normal')
-        $label_text['font-weight'] = $this->label_font_weight;
-      $label_text['fill'] = $this->GetOption('label_colour_h', 'label_colour',
-        'axis_text_colour_h', 'axis_text_colour');
-
-      if(!empty($this->label_h)) {
-        $label_text['y'] = $this->height - $this->label_bottom_offset;
-        $label_text['x'] = $this->pad_left +
-          ($this->width - $this->pad_left - $this->pad_right) / 2;
-        $svg_text = new SVGGraphText($this, $this->label_font);
-        $labels .= $svg_text->Text($this->label_h, $this->label_font_size,
-          $label_text);
-      }
-
-      $labels .= $this->VLabel($label_text);
-    }
-
-    if(!empty($labels)) {
-      $font = array(
-        'font-size' => $this->axis_font_size,
-        'font-family' => $this->axis_font,
-        'fill' => $this->GetOption('axis_text_colour', 'axis_colour'),
-      );
-      $labels = $this->Element('g', $font, NULL, $labels);
-    }
-    return $labels;
-  }
-
-  /**
    * A function to return the DisplayAxis - subclasses should override
    * to return a different axis type
    */
@@ -953,9 +757,6 @@ abstract class GridGraph extends Graph {
    */
   protected function Axes()
   {
-    if(!$this->show_axes)
-      return $this->Labels();
-
     $this->CalcGrid();
     $axes = $label_group = $axis_text = '';
     $type = $this->flip_axes ? array('h'=>'y','v'=>'x') : array('h'=>'x','v'=>'y');
@@ -977,8 +778,7 @@ abstract class GridGraph extends Graph {
       }
     }
 
-    $label_group = $this->Labels($axis_text);
-    return $axes . $label_group;
+    return $axes;
   }
 
   /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2018 Graham Breach
+ * Copyright (C) 2009-2019 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
  * For more information, please contact <graham@goat1000.com>
  */
 
-define('SVGGRAPH_VERSION', 'SVGGraph 2.29');
+define('SVGGRAPH_VERSION', 'SVGGraph 2.30');
 
 require_once 'SVGGraphColours.php';
 require_once 'SVGGraphText.php';
@@ -248,7 +248,8 @@ abstract class Graph {
 
   /**
    * Retrieves properties from the settings array if they are not already
-   * available as properties, also sets up javascript and data_labels
+   * available as properties, also sets up members javascript, data_labels and
+   * symbols
    */
   public function __get($name)
   {
@@ -264,6 +265,22 @@ abstract class Graph {
       include_once 'SVGGraphDataLabels.php';
       $this->data_labels = new DataLabels($this);
       return $this->data_labels;
+    case 'symbols':
+      include_once 'SVGGraphSymbols.php';
+      $this->symbols = new SVGGraphSymbols($this);
+      return $this->symbols;
+    case 'shapes':
+      include_once 'SVGGraphShape.php';
+      $this->shapes = new SVGGraphShapeList($this);
+      $this->shapes->Load($this->settings);
+      return $this->shapes;
+    case 'figures':
+      if(!isset($this->settings['figure']))
+        throw new Exception('No figures defined');
+      include_once 'SVGGraphFigures.php';
+      $this->figures = new SVGGraphFigures($this);
+      $this->figures->Load($this->settings);
+      return $this->figures;
     }
     $this->{$name} = isset($this->settings[$name]) ? $this->settings[$name] : null;
     return $this->{$name};
@@ -1308,26 +1325,18 @@ XML;
     return array($pos, $end);
   }
 
-
-  public function LoadShapes()
-  {
-    include_once 'SVGGraphShape.php';
-    $this->shapes = new SVGGraphShapeList($this);
-
-    $this->shapes->Load($this->settings);
-  }
-
   public function UnderShapes()
   {
-    if(!isset($this->shapes) && isset($this->settings['shape'])) {
-      $this->LoadShapes();
-    }
-    return isset($this->shapes) ? $this->shapes->Draw(SVGG_SHAPE_BELOW) : '';
+    if(!isset($this->settings['shape']))
+      return '';
+    return $this->shapes->Draw(SVGG_SHAPE_BELOW);
   }
 
   public function OverShapes()
   {
-    return isset($this->shapes) ? $this->shapes->Draw(SVGG_SHAPE_ABOVE) : '';
+    if(!isset($this->settings['shape']))
+      return '';
+    return $this->shapes->Draw(SVGG_SHAPE_ABOVE);
   }
 
   /**
@@ -1466,8 +1475,11 @@ XML;
       $this->pattern_list->MakePatterns($this->defs);
 
     // show defs and body content
-    if(count($this->defs))
-      $heading .= $this->Element('defs', NULL, NULL, implode('', $this->defs));
+    if(count($this->defs) || isset($this->symbols)) {
+      $defs = implode('', $this->defs);
+      $defs .= $this->symbols->Definitions();
+      $heading .= $this->Element('defs', null, null, $defs);
+    }
     if($this->namespace)
       $svg['xmlns:svg'] = "http://www.w3.org/2000/svg";
     else
