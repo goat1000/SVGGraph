@@ -4,7 +4,7 @@
   "homepage": "http://www.goat1000.com/svggraph.php",
   "license": "LGPL-3.0-only",
   "require": {
-    "php": ">=5.2.0",
+    "php": ">=5.4.0",
     "lib-pcre": "*",
     "ext-json": "*"
   },
@@ -12,6 +12,8 @@
     "ext-iconv": "For non-ASCII text measurement support"
   },
   "autoload": {
-    "classmap": ["SVGGraph.php"]
+    "psr-4": {
+      "Goat1000\\SVGGraph\\": ""
+    }
   }
 }

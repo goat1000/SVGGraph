@@ -1,0 +1,270 @@
+<?php
+/**
+ * Copyright (C) 2019 Graham Breach
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/**
+ * For more information, please contact <graham@goat1000.com>
+ */
+
+namespace Goat1000\SVGGraph;
+
+class CrossHairs {
+
+  private $graph;
+  private $show_h = false;
+  private $show_v = false;
+
+  private $left, $top, $width, $height;
+  private $x_axis, $y_axis;
+  private $assoc;
+  private $encoding;
+
+  public function __construct(&$graph, $left, $top, $w, $h, $x_axis, $y_axis,
+    $assoc, $encoding)
+  {
+    if($graph->getOption('crosshairs')) {
+      $this->show_h = $graph->getOption('crosshairs_show_h');
+      $this->show_v = $graph->getOption('crosshairs_show_v');
+    }
+
+    if(!$this->show_h && !$this->show_v)
+      return;
+
+    $this->left = $left;
+    $this->top = $top;
+    $this->width = $w;
+    $this->height = $h;
+    $this->x_axis = $x_axis;
+    $this->y_axis = $y_axis;
+    $this->assoc = $assoc;
+    $this->encoding = $encoding;
+    $this->graph =& $graph;
+  }
+
+  /**
+   * Returns TRUE if the crosshairs are enabled
+   */
+  public function enabled()
+  {
+    return $this->show_h || $this->show_v;
+  }
+
+  /**
+   * Returns a horizontal or vertical hair
+   */
+  private function getHair($orientation, $ch)
+  {
+    // line is always added, stays hidden if not enabled
+    if($orientation == 'h')
+      $hch = ['class' => 'chX', 'x2' => $ch['x1'] + $this->width];
+    else
+      $hch = ['class' => 'chY', 'y2' => $ch['y1'] + $this->height];
+
+    $show = "show_{$orientation}";
+    if($this->$show) {
+      $hch['stroke'] = $this->graph->solidColour(
+        $this->graph->getOption(
+          "crosshairs_colour_{$orientation}", 'crosshairs_colour'));
+      $hch['stroke-width'] = $this->graph->getOption(
+        "crosshairs_stroke_width_{$orientation}", 'crosshairs_stroke_width');
+      $opacity = $this->graph->getOption(
+        "crosshairs_opacity_{$orientation}", 'crosshairs_opacity');
+      if($opacity > 0 && $opacity < 1)
+        $hch['opacity'] = $opacity;
+      $dash = $this->graph->getOption(
+        "crosshairs_dash_{$orientation}", 'crosshairs_dash');
+      if(!empty($dash))
+        $hch['stroke-dasharray'] = $dash;
+    }
+    return $this->graph->element('line', array_merge($ch, $hch));
+  }
+
+  /**
+   * Returns the crosshair code and also adds the JS and defs
+   */
+  public function getCrossHairs()
+  {
+    if(!($this->show_v || $this->show_h))
+      return '';
+
+    // make the crosshair lines
+    $crosshairs = '';
+    $ch = [
+      'x1' => $this->left, 'y1' => $this->top,
+      'x2' => $this->left, 'y2' => $this->top,
+      'visibility' => 'hidden', // don't show them to start with!
+    ];
+
+    $crosshairs .= $this->getHair('h', $ch);
+    $crosshairs .= $this->getHair('v', $ch);
+
+    $text_options = [
+      'back_colour', 'round', 'stroke_width', 'colour', 'font_size', 'font',
+      'font_weight', 'padding', 'space',
+    ];
+    $t_opt = [];
+    foreach($text_options as $opt)
+      $t_opt[$opt] = $this->graph->getOption("crosshairs_text_{$opt}");
+
+    // text group for grid details
+    $text_group = ['id' => $this->graph->newId(), 'visibility' => 'hidden'];
+    $text_rect = [
+      'x' => '0', 'y' => '0', 'width' => '10', 'height' => '10',
+      'fill' => $this->graph->parseColour($t_opt['back_colour']),
+    ];
+    if($t_opt['round'])
+      $text_rect['rx'] = $text_rect['ry'] = $t_opt['round'];
+    if($t_opt['stroke_width']) {
+      $text_rect['stroke-width'] = $t_opt['stroke_width'];
+      $text_rect['stroke'] = $t_opt['colour'];
+    }
+    $font_size = max(3, (int)$t_opt['font_size']);
+    $text_element = [
+      'x' => 0, 'y' => $font_size,
+      'font-family' => $t_opt['font'],
+      'font-size' => $font_size,
+      'fill' => $t_opt['colour'],
+    ];
+    $weight = $t_opt['font_weight'];
+    if($weight && $weight != 'normal')
+      $text_element['font-weight'] = $weight;
+
+    $svg_text = new Text($this->graph);
+    $text = $this->graph->element('g', $text_group, null,
+      $this->graph->element('rect', $text_rect) .
+      $svg_text->text('', $font_size, $text_element));
+    $this->graph->addBackMatter($text);
+
+    // add in the details of the grid scales
+    $zero_x = $this->x_axis->zero();
+    $scale_x = $this->x_axis->unit();
+    $zero_y = $this->y_axis->zero();
+    $scale_y = $this->y_axis->unit();
+    $prec_x = $this->graph->getOption('crosshairs_text_precision_h',
+      max(0, ceil(log10($scale_x))));
+    $prec_y = $this->graph->getOption('crosshairs_text_precision_v',
+      max(0, ceil(log10($scale_y))));
+
+    $units = $base_y = $base_x = '';
+    $u = $this->x_axis->afterUnits();
+    if(!empty($u)) $units .= " unitsx=\"{$u}\"";
+    $u = $this->y_axis->afterUnits();
+    if(!empty($u)) $units .= " unitsy=\"{$u}\"";
+    $u = $this->x_axis->beforeUnits();
+    if(!empty($u)) $units .= " unitsbx=\"{$u}\"";
+    $u = $this->y_axis->beforeUnits();
+    if(!empty($u)) $units .= " unitsby=\"{$u}\"";
+
+    // names of which string function to use for each axis
+    $function_x = 'strValueX';
+    $function_y = 'strValueY';
+    $extra_x = $extra_y = '';
+
+    $flip_axes = $this->graph->getOption('flip_axes');
+    if($this->graph->getOption('log_axis_y')) {
+      $base = $this->graph->getOption('log_axis_y_base');
+      if($flip_axes) {
+        $base_x = " base=\"{$base}\"";
+        $zero_x = $this->x_axis->value(0);
+        $scale_x = $this->x_axis->value($this->width);
+        $this->graph->javascript->addFunction('logStrValueX');
+        $function_x = 'logStrValueX';
+      } else {
+        $base_y = " base=\"{$base}\"";
+        $zero_y = $this->y_axis->value(0);
+        $scale_y = $this->y_axis->value($this->height);
+        $this->graph->javascript->addFunction('logStrValueY');
+        $function_y = 'logStrValueY';
+      }
+    }
+
+    if($this->graph->getOption('datetime_keys') &&
+      (method_exists($this->x_axis, 'GetFormat') ||
+      method_exists($this->y_axis, 'GetFormat'))) {
+      if($flip_axes) {
+        $zy = (int)$this->y_axis->value(0);
+        $ey = (int)$this->y_axis->value($this->width);
+        $scale_y = ($ey - $zy) / $this->height;
+        $dt = new \DateTime('@' . $zy);
+        $zero_y = $dt->format('c');
+        $this->graph->javascript->addFunction('dateStrValueY');
+        $function_y = 'dateStrValueY';
+        $extra_y = ' format="' .
+          htmlspecialchars($this->y_axis->getFormat(), ENT_COMPAT,
+            $this->encoding) . '"';
+      } else {
+        $zx = (int)$this->x_axis->value(0);
+        $ex = (int)$this->x_axis->value($this->width);
+        $scale_x = ($ex - $zx) / $this->width;
+        $dt = new \DateTime('@' . $zx);
+        $zero_x = $dt->format('c');
+        $this->graph->javascript->addFunction('dateStrValueX');
+        $function_x = 'dateStrValueX';
+        $extra_x = ' format="' .
+          htmlspecialchars($this->x_axis->getFormat(), ENT_COMPAT,
+            $this->encoding) . '"';
+      }
+    }
+
+    // build associative data keys XML
+    $keys_xml = '';
+    if($this->assoc) {
+
+      $k_max = $this->graph->getMaxKey();
+      $keys_xml .= "  <svggraph:keys>\n";
+      for($i = 0; $i <= $k_max; ++$i) {
+        $k = $this->graph->getKey($i);
+        $key = htmlspecialchars($k, ENT_COMPAT, $this->encoding);
+        $keys_xml .= "    <svggraph:key value=\"{$key}\"/>\n";
+      }
+      $keys_xml .= "  </svggraph:keys>\n";
+
+      // choose a rounding function
+      $round_function = 'kround';
+      if($this->graph->getOption('label_centre'))
+        $round_function = 'kroundDown';
+      $this->graph->javascript->addFunction($round_function);
+
+      // set the string function
+      if($flip_axes) {
+        $this->graph->javascript->addFunction('keyStrValueY');
+        $function_y = 'keyStrValueY';
+        $extra_y = " round=\"{$round_function}\"";
+      } else {
+        $this->graph->javascript->addFunction('keyStrValueX');
+        $function_x = 'keyStrValueX';
+        $extra_x = " round=\"{$round_function}\"";
+      }
+    }
+    // add details of scale to defs section for use by JS functions
+    $defs = <<<XML
+<svggraph:data xmlns:svggraph="http://www.goat1000.com/svggraph">
+  <svggraph:gridx function="{$function_x}"{$extra_x} zero="{$zero_x}" scale="{$scale_x}" precision="{$prec_x}"{$base_x}/>
+  <svggraph:gridy function="{$function_y}"{$extra_y} zero="{$zero_y}" scale="{$scale_y}" precision="{$prec_y}"{$base_y}/>
+  <svggraph:chtext>
+    <svggraph:chtextitem type="xy" groupid="{$text_group['id']}"$units/>
+  </svggraph:chtext>
+{$keys_xml}</svggraph:data>
+
+XML;
+    $this->graph->addDefs($defs);
+
+    // add the main function at the end - it can fill in any defaults
+    $this->graph->javascript->addFunction('crosshairs');
+    return $crosshairs;
+  }
+}
+
