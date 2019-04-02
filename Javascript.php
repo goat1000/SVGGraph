@@ -27,6 +27,7 @@ class Javascript {
   protected $functions = [];
   protected $variables = [];
   protected $comments = [];
+  protected $init_functions = [];
   protected $onload = false;
   protected $fader_enabled = false;
   protected $clickshow_enabled = false;
@@ -230,7 +231,7 @@ JAVASCRIPT;
       break;
     case 'ttEvent' :
       $this->addFuncs('finditem', 'init');
-      $this->insertVariable('initfns', null, 'ttEvt');
+      $this->addInitFunction('ttEvt');
       $fn = <<<JAVASCRIPT
 function ttEvt() {
   document.addEventListener && document.addEventListener('mousemove',
@@ -244,7 +245,7 @@ JAVASCRIPT;
       break;
     case 'popFront' :
       $this->addFuncs('getE', 'init', 'finditem');
-      $this->insertVariable('initfns', null, 'popFrontInit');
+      $this->addInitFunction('popFrontInit');
       $fn = <<<JAVASCRIPT
 function popFrontInit() {
   var c, e;
@@ -282,7 +283,7 @@ JAVASCRIPT;
         return $this->fadeAndClick();
 
       $this->addFuncs('getE', 'init', 'finditem', 'setattr');
-      $this->insertVariable('initfns', null, 'clickShowInit');
+      $this->addInitFunction('clickShowInit');
       $fn = <<<JAVASCRIPT
 function clickShowInit() {
   var c, e;
@@ -305,7 +306,7 @@ JAVASCRIPT;
         return $this->fadeAndClick();
 
       $this->addFuncs('getE', 'init', 'setattr', 'textAttr');
-      $this->insertVariable('initfns', null, 'fade');
+      $this->addInitFunction('fade');
       $fn = <<<JAVASCRIPT
 function fade() {
   var f,f1,e,o;
@@ -325,7 +326,7 @@ JAVASCRIPT;
       break;
     case 'fadeEventIn' :
       $this->addFuncs('init', 'finditem');
-      $this->insertVariable('initfns', null, 'fiEvt');
+      $this->addInitFunction('fiEvt');
       $fn = <<<JAVASCRIPT
 function fiEvt() {
   var f;
@@ -339,7 +340,7 @@ JAVASCRIPT;
       break;
     case 'fadeEventOut' :
       $this->addFuncs('init', 'finditem');
-      $this->insertVariable('initfns', null, 'foEvt');
+      $this->addInitFunction('foEvt');
       $fn = <<<JAVASCRIPT
 function foEvt() {
   document.addEventListener && document.addEventListener('mouseout',
@@ -352,7 +353,7 @@ JAVASCRIPT;
       break;
     case 'duplicate' :
       $this->addFuncs('getE', 'newel', 'init', 'setattr');
-      $this->insertVariable('initfns', null, 'initDups');
+      $this->addInitFunction('initDups');
       $fn = <<<JAVASCRIPT
 function duplicate(f,t) {
   var e = getE(f), g, a, p = e && e.parentNode, m;
@@ -406,7 +407,7 @@ JAVASCRIPT;
       break;
     case 'autoHide' :
       $this->addFuncs('init', 'getE', 'setattr', 'finditem');
-      $this->insertVariable('initfns', null, 'autoHide');
+      $this->addInitFunction('autoHide');
       $fn = <<<JAVASCRIPT
 function autoHide() {
   if(document.addEventListener) {
@@ -426,7 +427,7 @@ JAVASCRIPT;
       break;
     case 'chEvt' :
       $this->addFunction('init');
-      $this->insertVariable('initfns', null, 'chEvt');
+      $this->addInitFunction('chEvt');
       $fn = <<<JAVASCRIPT
 function chEvt() {
   if(document.addEventListener) {
@@ -732,7 +733,7 @@ JAVASCRIPT;
     case 'dragEvent' :
       $this->addFuncs('init', 'newel', 'getE', 'setattr', 'finditem',
         'svgCursorCoords');
-      $this->insertVariable('initfns', null, 'initDrag');
+      $this->addInitFunction('initDrag');
       $fn = <<<JAVASCRIPT
 function initDrag() {
   var d, e;
@@ -855,6 +856,15 @@ JAVASCRIPT;
   }
 
   /**
+   * Adds an init function to the list
+   */
+  public function addInitFunction($name)
+  {
+    $quoted = "'{$name}'";
+    $this->init_functions[$quoted] = 1;
+  }
+
+  /**
    * Insert a comment into the Javascript section - handy for debugging!
    */
   public function insertComment($details)
@@ -868,9 +878,8 @@ JAVASCRIPT;
   private function fadeAndClick()
   {
     $this->addFuncs('getE', 'init', 'finditem', 'fading', 'textAttr', 'setattr');
-    $this->insertVariable('initfns', null, 'clickShowInit');
-    $this->insertVariable('initfns', null, 'fade');
-    $this->variables['initfns'] = array_unique($this->variables['initfns']);
+    $this->addInitFunction('clickShowInit');
+    $this->addInitFunction('fade');
 
     $fn = <<<JAVASCRIPT
 function clickShowInit() {
@@ -1031,6 +1040,10 @@ JAVASCRIPT;
   public function getVariables()
   {
     $variables = '';
+    if(count($this->init_functions)) {
+      $this->variables['initfns'] = array_keys($this->init_functions);
+    }
+
     if(count($this->variables)) {
       $vlist = [];
       foreach($this->variables as $name => $value) {

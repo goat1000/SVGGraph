@@ -83,7 +83,7 @@ XML;
   {
     $this->js->addFuncs('init', 'getE', 'finditem', 'newel', 'newtext',
       'svgNode', 'setattr', 'getData', 'svgCursorCoords');
-    $this->js->insertVariable('initfns', null, 'contextMenuInit');
+    $this->js->addInitFunction('contextMenuInit');
 
     $opts = ['colour', 'link_colour', 'link_hover_colour', 'link_target',
       'link_underline', 'stroke_width', 'round', 'font', 'font_size',
