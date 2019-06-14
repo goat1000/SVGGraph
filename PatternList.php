@@ -96,8 +96,11 @@ class PatternList {
       'width' => $pattern['width'], 'height' => $pattern['height'],
       'patternUnits' => 'userSpaceOnUse',
     ];
-    if(isset($pattern['angle']))
-      $pat['patternTransform'] = "rotate({$pattern['angle']})";
+    if(isset($pattern['angle'])) {
+      $xform = new Transform;
+      $xform->rotate($pattern['angle']);
+      $pat['patternTransform'] = $xform;
+    }
 
     $this->patterns[$id] = $this->graph->element('pattern', $pat, null,
       $pattern['pattern']);
@@ -183,7 +186,7 @@ class PatternList {
     $w = $pattern['size'];
     $y = $w / 2;
     $line = [
-      'd' => "M0 {$y}h{$w}",
+      'd' => new PathData('M', 0,  $y, 'h', $w),
       'stroke' => $pattern['colour'],
       'stroke-width' => $pattern['size'] * $thickness
     ];
@@ -201,7 +204,7 @@ class PatternList {
     $w = $pattern['size'];
     $y = $w / 2;
     $line = [
-      'd' => "M0 {$y}h{$w}M{$y} 0v{$w}",
+      'd' => new PathData('M', 0,  $y, 'h', $w, 'M', $y, 0, 'v', $w),
       'stroke' => $pattern['colour'],
       'stroke-width' => $pattern['size'] * $thickness
     ];

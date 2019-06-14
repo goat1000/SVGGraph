@@ -137,7 +137,7 @@ class DisplayAxisRadar extends DisplayAxis {
    */
   public function drawAxisLine($x, $y, $len)
   {
-    // the "show_x_axis" option turns the line off
+    // the 'show_x_axis' option turns the line off
     if($this->no_axis)
       return '';
     $points = [new GridPoint($this->radius, '', 0)];
@@ -157,7 +157,7 @@ class DisplayAxisRadar extends DisplayAxis {
    */
   protected function getDivisionPath($x, $y, $points, $path_info)
   {
-    $path = '';
+    $path = new PathData;
     $len = -$path_info['sz'];
     $r1 = $this->radius - $path_info['pos'];
     foreach($points as $p) {
@@ -166,11 +166,11 @@ class DisplayAxisRadar extends DisplayAxis {
       $y1 = $y + $r1 * cos($a);
       $x2 = $len * sin($a);
       $y2 = $len * cos($a);
-      $path .= "M$x1 {$y1}l$x2 $y2";
+      $path->add('M', $x1, $y1, 'l', $x2, $y2);
     }
-    if($path != '' && $path_info['box']) {
+    if(!$path->isEmpty() && $path_info['box']) {
       $points = [new GridPoint($this->radius + $path_info['sz'], '', 0)];
-      $path .= $this->graph->yGrid($points);
+      $path->add($this->graph->yGrid($points));
     }
     return $path;
   }
@@ -234,7 +234,9 @@ class DisplayAxisRadar extends DisplayAxis {
     if($text_angle) {
       $rcx = $x1;
       $rcy = $y1;
-      $attr['transform'] = "rotate({$text_angle},{$rcx},{$rcy})";
+      $xform = new Transform;
+      $xform->rotate($text_angle, $rcx, $rcy);
+      $attr['transform'] = $xform;
     }
     $attr['text-anchor'] = $anchor;
     if($measure) {

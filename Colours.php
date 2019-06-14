@@ -92,7 +92,7 @@ class Colours implements \Countable {
    */
   public function count()
   {
-    throw new \Exception("Cannot count Colours class");
+    throw new \Exception('Cannot count Colours class');
   }
 
   /**

@@ -56,14 +56,14 @@ class Symbols {
   public function useSymbol($id, $attr, $style = null)
   {
     if(!isset($this->symbols[$id]))
-      throw new \Exception("Symbol {$id} not defined");
+      throw new \Exception('Symbol ' . $id . ' not defined');
 
     if(isset($this->use_count[$id]))
       ++$this->use_count[$id];
     else
       $this->use_count[$id] = 1;
 
-    $uattr = array_merge($attr, ['xlink:href' => "#{$id}"]);
+    $uattr = array_merge($attr, ['xlink:href' => '#' . $id]);
     return $this->graph->element('use', $uattr, $style,
       $this->empty_use ? '' : null);
   }

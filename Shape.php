@@ -72,7 +72,7 @@ abstract class Shape {
         $missing[] = $opt;
 
     if(count($missing))
-      throw new \Exception("{$this->element} attribute(s) not found: " .
+      throw new \Exception($this->element . ' attribute(s) not found: ' .
         implode(', ', $missing));
 
     if(isset($this->attrs['href']))

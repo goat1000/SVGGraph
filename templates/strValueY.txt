@@ -1,0 +1,5 @@
+function strValueY(de,y,h,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision');
+  return ub + ((y - z) / s).toFixed(p) + ua;
+}

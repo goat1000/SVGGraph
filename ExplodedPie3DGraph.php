@@ -60,9 +60,10 @@ class ExplodedPie3DGraph extends Pie3DGraph {
       $this->s_angle, $angle_end + $this->s_angle);
 
     $translated = $attr;
-    $xform = "translate({$xo},{$yo})";
+    $xform = new Transform;
+    $xform->translate($xo, $yo);
     if(isset($translated['transform']))
-      $translated['transform'] .= ' ' . $xform;
+      $translated['transform']->add($xform);
     else
       $translated['transform'] = $xform;
     return parent::getSlice($item, $angle_start, $angle_end, $radius_x,
@@ -109,7 +110,7 @@ class ExplodedPie3DGraph extends Pie3DGraph {
       $target[0] += $xo;
       $target[1] += $yo;
 
-      $pos = "$x1 $y1";
+      $pos = new Number($x1) . ' ' . new Number($y1);
     } else {
       $pos = 'middle centre';
     }

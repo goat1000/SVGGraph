@@ -1,0 +1,17 @@
+function keyStrValueY(de,y,h,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision'), keys = getData(de, 'keys'),
+    rfnc = g.getAttributeNS(null, 'round'), str = '', n = 0, i = 0,
+    v = window[rfnc]((y - z) / s);
+  if(keys) {
+    while(i <= v && n < keys.childNodes.length) {
+      if(keys.childNodes[n].nodeName == 'svggraph:key') {
+        if(i == v)
+          str = keys.childNodes[n].getAttributeNS(null,'value');
+        ++i;
+      }
+      ++n;
+    }
+  }
+  return str;
+}

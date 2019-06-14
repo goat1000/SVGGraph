@@ -96,7 +96,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
             if($this->show_context_menu)
               $this->setContextMenu($bar, $j, $item, $show_label);
             if($this->semantic_classes)
-              $bar['class'] = "series{$j}";
+              $bar['class'] = 'series' . $j;
             $rect = $this->element('rect', $bar, $bar_style);
             $bars .= $this->getLink($item, $k, $rect);
             unset($bar['id']);
@@ -105,21 +105,25 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
         if($this->show_bar_totals) {
           if($xpos) {
             $this->barY($xpos, $bar);
-            if(is_callable($this->bar_total_callback))
+            if(is_callable($this->bar_total_callback)) {
               $bar_total = call_user_func($this->bar_total_callback, $item->key,
                 $xpos);
-            else
-              $bar_total = $xpos;
+            } else {
+              $bar_total = new Number($xpos);
+              $bar_total = $bar_total->format();
+            }
             $this->addContentLabel('totalpos', $bnum, $bar['x'], $bar['y'],
               $bar['width'], $bar['height'], $bar_total);
           }
           if($xneg) {
             $this->barY($xneg, $bar);
-            if(is_callable($this->bar_total_callback))
+            if(is_callable($this->bar_total_callback)) {
               $bar_total = call_user_func($this->bar_total_callback, $item->key,
                 -$xneg);
-            else
-              $bar_total = -$xneg;
+            } else {
+              $bar_total = new Number(-$xneg);
+              $bar_total = $bar_total->format();
+            }
             $this->addContentLabel('totalneg', $bnum, $bar['x'], $bar['y'],
               $bar['width'], $bar['height'], $bar_total);
           }

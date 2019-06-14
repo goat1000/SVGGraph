@@ -93,8 +93,8 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
         }
       }
       if(!empty($missing)) {
-        $missing = implode(', ', $missing);
-        $this->error = "Required field(s) [{$missing}] not set in data structure";
+        $this->error = 'Required field(s) [' . implode(', ', $missing) .
+          '] not set in data structure';
         return;
       }
     }
@@ -179,7 +179,7 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
    */
   private function notIterator()
   {
-    throw new \Exception("Cannot iterate " . __CLASS__);
+    throw new \Exception('Cannot iterate ' . __CLASS__);
   }
   public function current() { $this->notIterator(); }
   public function key() { $this->notIterator(); }

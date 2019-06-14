@@ -191,7 +191,8 @@ class PieSliceEdge {
   {
     $x1 = $x_centre + $this->slice['radius_x'] * cos($angle);
     $y1 = $y_centre + $this->slice['radius_y'] * sin($angle) + $depth;
-    return "M{$x_centre},{$y_centre} v{$depth} L{$x1},{$y1} v-{$depth}z";
+    return new PathData('M', $x_centre, $y_centre, 'v', $depth, 'L', $x1, $y1,
+      'v', -$depth, 'z');
   }
 
   /**
@@ -210,10 +211,10 @@ class PieSliceEdge {
     $outer = 0; // edge is never > PI
     $sweep = 1;
 
-    $path = "M{$x1},{$y1} v{$depth} A{$rx} {$ry} 0 " .
-      "$outer,$sweep {$x2},{$y2d} v-{$depth} ";
+    $path = new PathData('M', $x1, $y1, 'v', $depth, 'A', $rx, $ry, 0,
+      $outer, $sweep, $x2, $y2d, 'v', -$depth);
     $sweep = $sweep ? 0 : 1;
-    $path .= "A{$rx} {$ry} 0 $outer,$sweep {$x1},{$y1}";
+    $path->add('A', $rx, $ry, 0, $outer, $sweep, $x1, $y1);
     return $path;
   }
 }

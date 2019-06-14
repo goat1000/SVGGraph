@@ -61,7 +61,7 @@ class Data implements \Countable, \ArrayAccess, \Iterator {
    */
   private function notIterator()
   {
-    throw new \Exception("Cannot iterate " . __CLASS__);
+    throw new \Exception('Cannot iterate ' . __CLASS__);
   }
   public function current() { $this->notIterator(); }
   public function key() { $this->notIterator(); }

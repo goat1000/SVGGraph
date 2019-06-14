@@ -1,0 +1,16 @@
+function clickShowEvent() {
+  var c, e;
+  for(c in clickElements) {
+    e = getE(c);
+    e.addEventListener && e.addEventListener('click', function(e) {
+      var t = finditem(e,clickElements), te;
+      if(t) {
+        clickMap[t] = !clickMap[t];
+        if(!(fading(t))) {
+          te = getE(t);
+          te && setattr(te,'opacity',clickMap[t] ? 1 : 0);
+        }
+      }
+    },false);
+  }
+}

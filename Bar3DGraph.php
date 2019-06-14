@@ -52,14 +52,21 @@ class Bar3DGraph extends ThreeDGraph {
     if($this->skew_top) {
       $sc = abs($this->by / $bw);
       $a = 90 - $this->project_angle;
+      $path = new PathData('M', 0, 0, 'l', 0, -$bw,
+        'l', $bw, 0, 'l', 0, $bw, 'z');
+      $xform = new Transform;
+      $xform->skewX(-$a);
+      $xform->scale(1, $sc);
       $top = [
-        'd' => "M0,0 l0,-{$bw} l{$bw},0 l0,{$bw} z",
-        'transform' => "skewX(-{$a}) scale(1,{$sc})",
+        'd' => $path,
+        'transform' => $xform,
         'stroke' => 'none'
       ];
       $bar_top = $this->element('path', $top);
     }
-    $top = ['d' => "M0,0 l{$bw},0 l{$this->bx},{$this->by} l-{$bw},0 z"];
+    $path = new PathData('M', 0, 0, 'l', $bw, 0,
+      'l', $this->bx, $this->by, 'l', -$bw, 0, 'z');
+    $top = ['d' => $path];
     if($this->skew_top)
       $top['fill'] = 'none';
     $bar_top .= $this->element('path', $top);
@@ -87,16 +94,26 @@ class Bar3DGraph extends ThreeDGraph {
     if($this->skew_side) {
       $sc = $this->bx / $bw;
       $a = $this->project_angle;
+      $path = new PathData('M', 0, 0, 'L', $bw, 0,
+        'l', 0, $bh, 'l', -$bw, 0, 'z');
+      $xform = new Transform;
+      $xform->translate($side_x, $bar['y']);
+      $xform->skewY(-$a);
+      $xform->scale($sc, 1);
       $side = [
-        'd' => "M0,0 L{$bw},0 l0,{$bh} l-{$bw},0 z",
-        'transform' => "translate($side_x,{$bar['y']}) skewY(-{$a}) scale({$sc},1)",
+        'd' => $path,
+        'transform' => $xform,
         'stroke' => 'none',
       ];
       $bar_side = $this->element('path', $side);
     }
+    $path = new PathData('M', 0, 0, 'l', $this->bx, $this->by,
+      'l', 0, $bh, 'l', -$this->bx, -$this->by, 'z');
+    $xform = new Transform;
+    $xform->translate($side_x, $bar['y']);
     $side = [
-      'd' => "M0,0 l{$this->bx},{$this->by} l0,{$bh} l-{$this->bx}," . -$this->by . " z",
-      'transform' => "translate($side_x,$bar[y])"
+      'd' => $path,
+      'transform' => $xform,
     ];
     if($this->skew_side)
       $side['fill'] = 'none';
@@ -112,7 +129,9 @@ class Bar3DGraph extends ThreeDGraph {
     }
 
     if($top) {
-      $top = ['transform' => "translate($bar[x],$bar[y])"];
+      $xform = new Transform;
+      $xform->translate($bar['x'], $bar['y']);
+      $top = ['transform' => $xform];
       $top['fill'] = $this->getColour($item, $index, $dataset,
         $this->skew_top ? false : true);
       if($top_overlay)
@@ -161,8 +180,11 @@ class Bar3DGraph extends ThreeDGraph {
   protected function barGroup()
   {
     $group = $this->traitBarGroup();
-    if($this->tx || $this->ty)
-      $group['transform'] = "translate({$this->tx},{$this->ty})";
+    if($this->tx || $this->ty) {
+      $xform = new Transform;
+      $xform->translate($this->tx, $this->ty);
+      $group['transform'] = $xform;
+    }
     return $group;
   }
 

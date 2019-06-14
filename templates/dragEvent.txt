@@ -1,0 +1,47 @@
+function dragEvent() {
+  var d, e;
+  if(document.addEventListener) {
+    for(d in draggable) {
+      e = draggable[d] = getE(d);
+      e.draginfo = [0,0,0,0,newel('g',{cursor:'move'})];
+      (e.nearestViewportElement || document.documentElement).appendChild(e.draginfo[4]);
+      e.parentNode.removeChild(e);
+      e.draginfo[4].appendChild(e);
+    }
+    document.addEventListener('mouseup', function(e) {
+      var t = finditem(e,draggable);
+      if(t && t.dragging) {
+        t.dragging = null;
+      }
+    });
+    document.addEventListener('mousedown', function(e) {
+      var t = finditem(e,draggable), m;
+      if(t && !t.dragging) {
+        var pos = svgCursorCoords(e);
+        t.draginfo[0] = pos[0];
+        t.draginfo[1] = pos[1];
+        t.dragging = 1;
+        e.cancelBubble = true;
+        e.preventDefault && e.preventDefault();
+        return false;
+      }
+    });
+    function dragmove(e) {
+      var t = finditem(e,draggable), d;
+      if(t && t.dragging) {
+        d = t.draginfo;
+        var pos = svgCursorCoords(e);
+        d[2] = d[2] - d[0] + pos[0];
+        d[3] = d[3] - d[1] + pos[1];
+        d[0] = pos[0];
+        d[1] = pos[1];
+        setattr(d[4], 'transform', 'translate(' + d[2] + ',' + d[3] + ')');
+        e.cancelBubble = true;
+        e.preventDefault && e.preventDefault();
+        return false;
+      }
+    };
+    document.addEventListener('mousemove', dragmove);
+    document.addEventListener('mouseout', dragmove);
+  }
+}

@@ -67,12 +67,12 @@ class DisplayAxis {
     $this->show_axis = false;
     $this->show_text = false;
     if($graph->getOption('show_axes')) {
-      $this->show_axis = $graph->getOption(["show_axis_$o", $axis_no]);
-      $this->show_text = $graph->getOption("show_axis_text_$o");
+      $this->show_axis = $graph->getOption(['show_axis_' . $o, $axis_no]);
+      $this->show_text = $graph->getOption('show_axis_text_' . $o);
     }
 
     // gridgraph moves label_[xy] into label_[hv]
-    $o_labels = $graph->getOption("label_$o");
+    $o_labels = $graph->getOption('label_' . $o);
     if(is_array($o_labels)) {
       // use array entry if one exists for this axis
       if(isset($o_labels[$axis_no]))
@@ -84,61 +84,61 @@ class DisplayAxis {
     $this->show_label = ($this->label != '');
 
     // axis and text both need colour
-    $styles['colour'] = $graph->getOption(["axis_colour_$o", $axis_no],
+    $styles['colour'] = $graph->getOption(['axis_colour_' . $o, $axis_no],
       'axis_colour');
     if($this->show_axis) {
       $styles['overlap'] = $graph->getOption('axis_overlap');
       $styles['stroke_width'] = $graph->getOption(
-        ["axis_stroke_width_$o", $axis_no], 'axis_stroke_width');
+        ['axis_stroke_width_' . $o, $axis_no], 'axis_stroke_width');
 
       if($graph->getOption('show_divisions')) {
         $this->show_divisions = true;
         $styles['d_style'] = $graph->getOption(
-          ["division_style_$o", $axis_no], 'division_style');
+          ['division_style_' . $o, $axis_no], 'division_style');
         $styles['d_size'] = $graph->getOption(
-          ["division_size_$o", $axis_no], 'division_size');
+          ['division_size_' . $o, $axis_no], 'division_size');
         $styles['d_colour'] = $graph->getOption(
-          ["division_colour_$o", $axis_no], 'division_colour',
+          ['division_colour_' . $o, $axis_no], 'division_colour',
           ['@', $styles['colour']]
         );
 
         if($graph->getOption('show_subdivisions')) {
           $this->show_subdivisions = true;
           $styles['s_style'] = $graph->getOption(
-            ["subdivision_style_$o", $axis_no], 'subdivision_style');
+            ['subdivision_style_' . $o, $axis_no], 'subdivision_style');
           $styles['s_size'] = $graph->getOption(
-            ["subdivision_size_$o", $axis_no], 'subdivision_size');
+            ['subdivision_size_' . $o, $axis_no], 'subdivision_size');
           $styles['s_colour'] = $graph->getOption(
-            ["subdivision_colour_$o", $axis_no], 'subdivision_colour',
-            ["division_colour_$o", $axis_no], 'division_colour',
+            ['subdivision_colour_' . $o, $axis_no], 'subdivision_colour',
+            ['division_colour_' . $o, $axis_no], 'division_colour',
             ['@', $styles['colour']]
           );
           $this->minimum_subdivision = $graph->getOption('minimum_subdivision');
           $this->minimum_units = ($type == 'x' ? 1 :
             $graph->getOption(['minimum_units_y', $axis_no]));
           $this->subdivisions_fixed = $graph->getOption(
-            ["subdivision_$o", $axis_no]);
+            ['subdivision_' . $o, $axis_no]);
         }
       }
     }
 
     if($this->show_text) {
       $styles['t_angle'] = $graph->getOption(
-        ["axis_text_angle_$o", $axis_no], 0);
+        ['axis_text_angle_' . $o, $axis_no], 0);
       $styles['t_position'] = $graph->getOption(
-        ["axis_text_position_$o", $axis_no], "axis_text_position");
+        ['axis_text_position_' . $o, $axis_no], 'axis_text_position');
       $styles['t_location'] = $graph->getOption(
-        ["axis_text_location_$o", $axis_no], "axis_text_location");
+        ['axis_text_location_' . $o, $axis_no], 'axis_text_location');
       $styles['t_font'] = $graph->getOption(
-        ["axis_font_$o", $axis_no], "axis_font");
+        ['axis_font_' . $o, $axis_no], 'axis_font');
       $styles['t_font_size'] = $graph->getOption(
-        ["axis_font_size_$o", $axis_no], "axis_font_size");
+        ['axis_font_size_' . $o, $axis_no], 'axis_font_size');
       $styles['t_font_adjust'] = $graph->getOption(
-        ["axis_font_adjust_$o", $axis_no], "axis_font_adjust");
+        ['axis_font_adjust_' . $o, $axis_no], 'axis_font_adjust');
       $styles['t_space'] = $graph->getOption(
-        ["axis_text_space_$o", $axis_no], "axis_text_space");
+        ['axis_text_space_' . $o, $axis_no], 'axis_text_space');
       $styles['t_colour'] = $graph->getOption(
-        ["axis_text_colour_$o", $axis_no], "axis_text_colour",
+        ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]);
 
       // text is boxed only if it is outside and block labelling
@@ -153,18 +153,18 @@ class DisplayAxis {
 
     if($this->show_label) {
       $styles['l_font'] = $graph->getOption(
-        ["label_font_$o", $axis_no], "label_font",
-        ["axis_font_$o", $axis_no], "axis_font");
+        ['label_font_' . $o, $axis_no], 'label_font',
+        ['axis_font_' . $o, $axis_no], 'axis_font');
       $styles['l_font_size'] = $graph->getOption(
-        ["label_font_size_$o", $axis_no], "label_font_size",
-        ["axis_font_size_$o", $axis_no], "axis_font_size");
+        ['label_font_size_' . $o, $axis_no], 'label_font_size',
+        ['axis_font_size_' . $o, $axis_no], 'axis_font_size');
       $styles['l_font_weight'] = $graph->getOption(
-        ["label_font_weight_$o", $axis_no], "label_font_weight");
+        ['label_font_weight_' . $o, $axis_no], 'label_font_weight');
       $styles['l_colour'] = $graph->getOption(
-        ["label_colour_$o", $axis_no], "label_colour",
-        ["axis_text_colour_$o", $axis_no], "axis_text_colour",
+        ['label_colour_' . $o, $axis_no], 'label_colour',
+        ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]);
-      $styles['l_space'] = $graph->getOption("label_space");
+      $styles['l_space'] = $graph->getOption('label_space');
     }
 
     $this->styles = $styles;
@@ -324,7 +324,7 @@ class DisplayAxis {
 
     $attr = [
       'stroke' => $this->styles['colour'],
-      'd' => "M{$x} {$y}{$line}{$length}"
+      'd' => new PathData('M', $x, $y, $line, $length),
     ];
 
     if($this->styles['stroke_width'] != 1)
@@ -429,8 +429,11 @@ class DisplayAxis {
     if(!empty($this->styles['l_font_weight']) &&
       $this->styles['l_font_weight'] != 'normal')
       $label['font-weight'] = $this->styles['l_font_weight'];
-    if($pos['angle'])
-      $label['transform'] = "rotate({$pos['angle']},$tx,$ty)";
+    if($pos['angle']) {
+      $xform = new Transform;
+      $xform->rotate($pos['angle'], $tx, $ty);
+      $label['transform'] = $xform;
+    }
 
     $svg_text = new Text($this->graph, $this->styles['l_font']);
     return $svg_text->text($this->label, $this->styles['l_font_size'], $label);
@@ -574,7 +577,9 @@ class DisplayAxis {
         $rcx = $attr['x'] + $h * ($opposite ? 0.5 : -0.5);
         $rcy = $y + $point->position;
       }
-      $attr['transform'] = "rotate({$angle},{$rcx},{$rcy})";
+      $xform = new Transform;
+      $xform->rotate($angle, $rcx, $rcy);
+      $attr['transform'] = $xform;
     }
     $attr['text-anchor'] = $anchor;
 
@@ -610,19 +615,19 @@ class DisplayAxis {
     }
 
     $line = $path_info['line'];
-    $path = '';
+    $path = new PathData;
     foreach($points as $point) {
       $x = $x0 + $point->position * $xinc;
       $y = $y0 + $point->position * $yinc;
-      $path .= "M{$x} {$y}{$line}{$len}";
+      $path->add('M', $x, $y, $line, $len);
     }
 
-    if($path != '' && $path_info['box']) {
+    if(!$path->isEmpty() && $path_info['box']) {
       $x = $x0 + $path_info['box_pos'] * $yinc;
       $y = $y0 + $path_info['box_pos'] * $xinc;
       $line = $path_info['box_line'];
       $len = $path_info['box_len'];
-      $path .= "M{$x} {$y}{$line}{$len}";
+      $path->add('M', $x, $y, $line, $len);
     }
     return $path;
   }

@@ -390,7 +390,8 @@ abstract class GridGraph extends Graph {
       // validate
       if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
         $fixed_max < $fixed_min)
-        throw new \Exception("Invalid Y axis options: min > max ({$fixed_min} > {$fixed_max})");
+        throw new \Exception('Invalid Y axis options: min > max (' .
+          $fixed_min . ' > ' . $fixed_max . ')');
 
       if(is_numeric($fixed_min)) {
         $v_min[] = $fixed_min;
@@ -418,7 +419,8 @@ abstract class GridGraph extends Graph {
         $v_max[] = max($maxv_list);
       }
       if($v_max[$i] < $v_min[$i])
-        throw new \Exception("Invalid Y axis: min > max ({$v_min[$i]} > {$v_max[$i]})");
+        throw new \Exception('Invalid Y axis: min > max (' .
+          $v_min[$i] . ' > ' . $v_max[$i] . ')');
     }
 
     for($i = 0; $i < $x_axis_count; ++$i) {
@@ -439,7 +441,8 @@ abstract class GridGraph extends Graph {
           if(!is_null($d))
             $k_max[] = $d - 1;
           else
-            throw new \Exception("Could not convert [{$fixed_max}] to datetime");
+            throw new \Exception('Could not convert [' . $fixed_max .
+              '] to datetime');
         }
         if(empty($fixed_min)) {
           if(!is_null($g_min_x))
@@ -451,13 +454,15 @@ abstract class GridGraph extends Graph {
           if(!is_null($d))
             $k_min[] = $d;
           else
-            throw new \Exception("Could not convert [{$fixed_min}] to datetime");
+            throw new \Exception('Could not convert [' . $fixed_min .
+              '] to datetime');
         }
       } else {
         // validate
         if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
           $fixed_max < $fixed_min)
-          throw new \Exception("Invalid X axis options: min > max ({$fixed_min} > {$fixed_max})");
+          throw new \Exception('Invalid X axis options: min > max (' .
+            $fixed_min . ' > ' . $fixed_max . ')');
 
         if(is_numeric($fixed_max))
           $k_max[] = $fixed_max;
@@ -469,7 +474,8 @@ abstract class GridGraph extends Graph {
           $k_min[] = min(0, $this->getMinKey(), (float)$g_min_x);
       }
       if($k_max[$i] < $k_min[$i])
-        throw new \Exception("Invalid X axis: min > max ({$k_min[$i]} > {$k_max[$i]})");
+        throw new \Exception('Invalid X axis: min > max (' . $k_min[$i] .
+          ' > ' . $k_max[$i] . ')');
     }
     return compact('v_max', 'v_min', 'k_max', 'k_min');
   }
@@ -585,12 +591,12 @@ abstract class GridGraph extends Graph {
         $y_fit = false;
         $y_values = false;
       }
-      $y_text_callback = $this->getOption(["axis_text_callback_{$yx}", $i],
+      $y_text_callback = $this->getOption(['axis_text_callback_' . $yx, $i],
         'axis_text_callback');
-      $y_decimal_digits = $this->getOption(["decimal_digits_{$yx}", $i],
+      $y_decimal_digits = $this->getOption(['decimal_digits_' . $yx, $i],
         'decimal_digits');
-      $y_units_after = (string)$this->getOption(["units_{$yx}", $i]);
-      $y_units_before = (string)$this->getOption(["units_before_{$yx}", $i]);
+      $y_units_after = (string)$this->getOption(['units_' . $yx, $i]);
+      $y_units_before = (string)$this->getOption(['units_before_' . $yx, $i]);
 
       if(!is_numeric($max_v) || !is_numeric($min_v))
         throw new \Exception('Non-numeric min/max');
@@ -724,7 +730,7 @@ abstract class GridGraph extends Graph {
    */
   protected function getDisplayAxis($axis, $axis_no, $orientation, $type)
   {
-    $var = "main_{$type}_axis";
+    $var = 'main_' . $type . '_axis';
     $main = ($axis_no == $this->{$var});
     return new DisplayAxis($this, $axis, $axis_no, $orientation, $type, $main,
       $this->getOption('label_centre'));
@@ -787,7 +793,7 @@ abstract class GridGraph extends Graph {
    */
   protected function gridLines($path, $colour, $dash, $fill = null)
   {
-    if($path == '' || $colour == 'none')
+    if($path->isEmpty() || $colour == 'none')
       return '';
     $opts = ['d' => $path, 'stroke' => $colour];
     if(!empty($dash))
@@ -805,7 +811,7 @@ abstract class GridGraph extends Graph {
     $this->calcAxes();
     $this->calcGrid();
 
-    $back = $subpath = $path_h = $path_v = $crosshairs = '';
+    $back = $subpath = $crosshairs = '';
     $grid_group = ['class' => 'grid'];
     if($this->getOption('crosshairs')) {
       $ch = new CrossHairs($this, $this->pad_left, $this->pad_top,
@@ -881,19 +887,22 @@ abstract class GridGraph extends Graph {
       $back .= $this->element('g', $grp, null, $bars);
     }
     if($this->show_grid_subdivisions) {
-      $subpath_h = $subpath_v = '';
+      $subpath_h = new PathData();
+      $subpath_v = new PathData();
       if($this->show_grid_h) {
         $subdivs = $this->getSubDivsY($this->main_y_axis);
         foreach($subdivs as $y)
-          $subpath_v .= "M{$this->pad_left} {$y->position}h{$this->g_width}";
+          $subpath_v->add('M', $this->pad_left, $y->position, 'h',
+            $this->g_width);
       }
       if($this->show_grid_v){
         $subdivs = $this->getSubDivsX(0);
         foreach($subdivs as $x)
-          $subpath_h .= "M{$x->position} {$this->pad_top}v{$this->g_height}";
+          $subpath_h->add('M', $x->position, $this->pad_top, 'v',
+            $this->g_height);
       }
 
-      if($subpath_h != '' || $subpath_v != '') {
+      if(!($subpath_h->isEmpty() && $subpath_v->isEmpty())) {
         $colour_h = $this->getOption('grid_subdivision_colour_h',
           'grid_subdivision_colour', 'grid_colour_h', 'grid_colour');
         $colour_v = $this->getOption('grid_subdivision_colour_v',
@@ -904,8 +913,8 @@ abstract class GridGraph extends Graph {
           'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
 
         if($dash_h == $dash_v && $colour_h == $colour_v) {
-          $subpath = $this->gridLines($subpath_h . $subpath_v, $colour_h,
-            $dash_h);
+          $subpath_h->add($subpath_v);
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h);
         } else {
           $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h) .
             $this->gridLines($subpath_v, $colour_v, $dash_v);
@@ -913,15 +922,17 @@ abstract class GridGraph extends Graph {
       }
     }
 
+    $path_v = new PathData;
+    $path_h = new PathData;
     if($this->show_grid_h) {
       $points = $this->getGridPointsY($this->main_y_axis);
       foreach($points as $y)
-        $path_v .= "M{$this->pad_left} {$y->position}h{$this->g_width}";
+        $path_v->add('M', $this->pad_left, $y->position, 'h', $this->g_width);
     }
     if($this->show_grid_v) {
       $points = $this->getGridPointsX($this->main_x_axis);
       foreach($points as $x)
-        $path_h .= "M{$x->position} {$this->pad_top}v{$this->g_height}";
+        $path_h->add('M', $x->position, $this->pad_top, 'v', $this->g_height);
     }
 
     $colour_h = $this->getOption('grid_colour_h', 'grid_colour');
@@ -930,7 +941,8 @@ abstract class GridGraph extends Graph {
     $dash_v = $this->getOption('grid_dash_v', 'grid_dash');
 
     if($dash_h == $dash_v && $colour_h == $colour_v) {
-      $path = $this->gridLines($path_v . $path_h, $colour_h, $dash_h);
+      $path_v->add($path_h);
+      $path = $this->gridLines($path_v, $colour_h, $dash_h);
     } else {
       $path = $this->gridLines($path_h, $colour_h, $dash_h) .
         $this->gridLines($path_v, $colour_v, $dash_v);
@@ -959,7 +971,7 @@ abstract class GridGraph extends Graph {
   protected function clipGrid(&$attr)
   {
     $clip_id = $this->gridClipPath();
-    $attr['clip-path'] = "url(#{$clip_id})";
+    $attr['clip-path'] = 'url(#' . $clip_id . ')';
   }
 
   /**
@@ -1011,7 +1023,7 @@ abstract class GridGraph extends Graph {
     if(is_null($axis_no))
       $axis_no = $this->main_x_axis;
     if(!isset($this->x_axes[$axis_no]))
-      throw new \Exception("Axis x$axis_no does not exist");
+      throw new \Exception('Axis x' . $axis_no . ' does not exist');
     if(is_null($this->x_axes[$axis_no]))
       $axis_no = $this->main_x_axis;
     $axis = $this->x_axes[$axis_no];
@@ -1026,7 +1038,7 @@ abstract class GridGraph extends Graph {
     if(is_null($axis_no))
       $axis_no = $this->main_y_axis;
     if(!isset($this->y_axes[$axis_no]))
-      throw new \Exception("Axis y$axis_no does not exist");
+      throw new \Exception('Axis y' . $axis_no . ' does not exist');
     if(is_null($this->y_axes[$axis_no]))
       $axis_no = $this->main_y_axis;
     $axis = $this->y_axes[$axis_no];

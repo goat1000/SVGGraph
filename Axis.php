@@ -362,9 +362,8 @@ class Axis {
     if($key !== $value)
       return $key;
 
-    return $this->units_before .
-      Graph::numString($value, $this->decimal_digits) .
-      $this->units_after;
+    $n = new Number($value, $this->units_after, $this->units_before);
+    return $n->format($this->decimal_digits);
   }
 
   /**
@@ -377,9 +376,10 @@ class Axis {
     $dlength = $this->length + $spacing * 0.5;
     if($dlength / $spacing > 10000) {
       $pcount = $dlength / $spacing;
-      throw new \Exception("Too many grid points ({$this->min_value}->{$this->max_value} = {$pcount})");
+      throw new \Exception('Too many grid points (' . $this->min_value . '->' .
+        $this->max_value . ' = ' . $pcount . ' points @ ' . $spacing . 'px separation)');
     }
-    if(is_null($start))
+    if($start === null)
       return;
 
     $c = $pos = 0;

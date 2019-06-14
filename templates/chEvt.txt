@@ -1,0 +1,6 @@
+function chEvt() {
+  if(document.addEventListener) {
+    document.addEventListener('mousemove', crosshairs, false);
+    document.addEventListener('mouseout', crosshairs, false);
+  }
+}

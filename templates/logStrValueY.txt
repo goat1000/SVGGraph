@@ -1,0 +1,9 @@
+function logStrValueY(de,y,h,g,ub,ua) {
+  var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
+    p = g.getAttributeNS(null, 'precision'), b = g.getAttributeNS(null, 'base'),
+    lgmin, lgmax, lgmul;
+    lgmin = Math.log(z)/Math.log(b);
+    lgmax = Math.log(s)/Math.log(b);
+    lgmul = h / (lgmax - lgmin);
+  return ub + (Math.pow(b, lgmin*1 + y / lgmul)).toFixed(p) + ua;
+}

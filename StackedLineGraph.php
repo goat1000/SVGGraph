@@ -50,7 +50,8 @@ class StackedLineGraph extends MultiLineGraph {
     for($i = 0; $i < $chunk_count; ++$i) {
       $bnum = 0;
       $cmd = 'M';
-      $path = $fillpath = '';
+      $path = new PathData;
+      $fillpath = new PathData;
       $attr = ['fill' => 'none'];
       $fill = $this->getOption(['fill_under', $i]);
       $dash = $this->getOption(['line_dash', $i]);
@@ -64,19 +65,20 @@ class StackedLineGraph extends MultiLineGraph {
       foreach($this->multi_graph[$i] as $item) {
         $x = $this->gridPosition($item, $bnum);
         // key might not be an integer, so convert to string for $stack
-        $strkey = "{$item->key}";
+        // (localised is OK because it doesn't get used as a number)
+        $strkey = (string)$item->key;
         if(!isset($stack[$strkey]))
           $stack[$strkey] = 0;
         if(!is_null($x)) {
-          $bottom["$x"] = $stack[$strkey];
+          $bottom[] = [$x, $stack[$strkey]];
           $y = $this->gridY($stack[$strkey] + $item->value);
           $stack[$strkey] += $item->value;
 
-          $path .= "$cmd$x $y ";
-          if($fill && empty($fillpath))
-            $fillpath = "M$x {$y}L";
+          $path->add($cmd, $x, $y);
+          if($fill && $fillpath->isEmpty())
+            $fillpath->add('M', $x, $y, 'L');
           else
-            $fillpath .= "$x $y ";
+            $fillpath->add($x, $y);
 
           // no need to repeat same L command
           $cmd = $cmd == 'M' ? 'L' : '';
@@ -90,7 +92,7 @@ class StackedLineGraph extends MultiLineGraph {
         $attr['d'] = $path;
         $attr['stroke'] = $this->getColour(null, 0, $i, true);
         if($this->semantic_classes)
-          $attr['class'] = "series{$i}";
+          $attr['class'] = 'series' . $i;
         $graph_line = $this->element('path', $attr);
         $fill_style = null;
 
@@ -99,11 +101,12 @@ class StackedLineGraph extends MultiLineGraph {
           $cmd = 'L';
           $opacity = $this->getOption(['fill_opacity', $i]);
           $bpoints = array_reverse($bottom, TRUE);
-          foreach($bpoints as $x => $pos) {
-            $y = $this->gridY($pos);
-            $fillpath .= "$x $y ";
+          foreach($bpoints as $pos) {
+            list($x, $ypos) = $pos;
+            $y = $this->gridY($ypos);
+            $fillpath->add($x, $y);
           }
-          $fillpath .= 'z';
+          $fillpath->add('z');
           $fill_style = [
             'fill' => $this->getColour(null, 0, $i),
             'd' => $fillpath,
@@ -112,7 +115,7 @@ class StackedLineGraph extends MultiLineGraph {
           if($opacity < 1)
             $fill_style['opacity'] = $opacity;
           if($this->semantic_classes)
-            $fill_style['class'] = "series{$i}";
+            $fill_style['class'] = 'series' . $i;
           $graph_line = $this->element('path', $fill_style) . $graph_line;
         }
 
@@ -126,7 +129,7 @@ class StackedLineGraph extends MultiLineGraph {
         foreach($this->multi_graph[$i] as $item) {
           $x = $this->gridPosition($item, $bnum);
           // key might not be an integer, so convert to string for $stack
-          $strkey = "{$item->key}";
+          $strkey = (string)$item->key;
           if(!is_null($x)) {
             $y = $this->gridY($stack[$strkey]);
 

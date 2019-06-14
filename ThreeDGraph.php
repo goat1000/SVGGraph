@@ -87,12 +87,13 @@ abstract class ThreeDGraph extends GridGraph {
     $z = $this->depth * $this->depth_unit;
     list($xd,$yd) = $this->project(0, 0, $z);
 
-    $back = $subpath = $path_h = $path_v = '';
+    $back = $subpath = $path = '';
     $back_colour = $this->parseColour($this->grid_back_colour);
     if(!empty($back_colour) && $back_colour != 'none') {
+      $dpath = new PathData('M', $xleft, $ybottom, 'v', -$y_h, 'l', $xd, $yd);
+      $dpath->add('h', $x_w, 'v', $y_h, 'l', -$xd, -$yd, 'z');
       $bpath = [
-        'd' => "M$xleft {$ybottom}v-{$y_h}l{$xd} {$yd}h{$x_w}v{$y_h}l" .
-          -$xd . " " . -$yd . "z",
+        'd' => $dpath,
         'fill' => $back_colour
       ];
       if($this->grid_back_opacity != 1)
@@ -115,11 +116,12 @@ abstract class ThreeDGraph extends GridGraph {
         $y = $y->position;
         if(!is_null($colours[$c % $num_colours])) {
           $y1 = $last_pos - $y;
-          $pathdata = "M$xleft {$y}l{$xd} {$yd}h{$x_w}v{$y1}h" . -$x_w .
-            "l" . -$xd . " " . -$yd . "z";
+          $dpath = new PathData('M', $xleft, $y, 'l', $xd, $yd);
+          $dpath->add('h', $x_w, 'v', $y1, 'h', -$x_w);
+          $dpath->add('l', -$xd, -$yd, 'z');
           $bpath = [
             'fill' => $this->parseColour($colours[$c % $num_colours]),
-            'd' => $pathdata
+            'd' => $dpath,
           ];
           if($this->grid_back_stripe_opacity != 1)
             $bpath['fill-opacity'] = $this->grid_back_stripe_opacity;
@@ -132,18 +134,21 @@ abstract class ThreeDGraph extends GridGraph {
       }
     }
     if($this->show_grid_subdivisions) {
-      $subpath_h = $subpath_v = '';
+      $subpath_h = new PathData;
+      $subpath_v = new PathData;
       if($this->show_grid_h) {
         $subdivs = $this->getSubDivsY($this->main_y_axis);
         foreach($subdivs as $y) 
-          $subpath_v .= "M$xleft {$y->position}l$xd {$yd}l$x_w 0";
+          $subpath_v->add('M', $xleft, $y->position, 'l', $xd, $yd,
+            'l', $x_w, 0);
       }
       if($this->show_grid_v) {
         $subdivs = $this->getSubDivsX(0);
         foreach($subdivs as $x) 
-          $subpath_h .= "M{$x->position} {$ybottom}l$xd {$yd}l0 " . -$y_h;
+          $subpath_h->add('M', $x->position, $ybottom, 'l', $xd, $yd,
+            'l', 0, -$y_h);
       }
-      if($subpath_h != '' || $subpath_v != '') {
+      if(!($subpath_h->isEmpty() && $subpath_v->isEmpty())) {
         $colour_h = $this->getOption('grid_subdivision_colour_h',
           'grid_subdivision_colour', 'grid_colour_h', 'grid_colour');
         $colour_v = $this->getOption('grid_subdivision_colour_v',
@@ -154,8 +159,8 @@ abstract class ThreeDGraph extends GridGraph {
           'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
 
         if($dash_h == $dash_v && $colour_h == $colour_v) {
-          $subpath = $this->gridLines($subpath_h . $subpath_v, $colour_h,
-            $dash_h, 'none');
+          $subpath_h->add($subpath_v);
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, 'none');
         } else {
           $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, 'none') .
             $this->gridLines($subpath_v, $colour_v, $dash_v, 'none');
@@ -164,16 +169,19 @@ abstract class ThreeDGraph extends GridGraph {
     }
 
     // start with axis lines
-    $path = "M$xleft {$ybottom}l$x_w 0M$xleft {$ybottom}l0 " . -$y_h;
+    $path = new PathData('M', $xleft, $ybottom, 'l', $x_w, 0);
+    $path->add('M', $xleft, $ybottom, 'l', 0, -$y_h);
+    $path_v = new PathData;
+    $path_h = new PathData;
     if($this->show_grid_h) {
       $points = $this->getGridPointsY($this->main_y_axis);
       foreach($points as $y)
-        $path_v .= "M$xleft {$y->position}l$xd {$yd}l$x_w 0";
+        $path_v->add('M', $xleft, $y->position, 'l', $xd, $yd, 'l', $x_w, 0);
     }
     if($this->show_grid_v) {
       $points = $this->getGridPointsX(0);
       foreach($points as $x)
-        $path_h .= "M{$x->position} {$ybottom}l$xd {$yd}l0 " . -$y_h;
+        $path_h->add('M', $x->position, $ybottom, 'l', $xd, $yd, 'l', 0, -$y_h);
     }
 
     $colour_h = $this->getOption('grid_colour_h', 'grid_colour');
@@ -182,7 +190,8 @@ abstract class ThreeDGraph extends GridGraph {
     $dash_v = $this->getOption('grid_dash_v', 'grid_dash');
 
     if($dash_h == $dash_v && $colour_h == $colour_v) {
-      $path = $this->gridLines($path_v . $path_h, $colour_h, $dash_h, 'none');
+      $path_h->add($path_v);
+      $path = $this->gridLines($path_h, $colour_h, $dash_h, 'none');
     } else {
       $path = $this->gridLines($path_h, $colour_h, $dash_h, 'none') .
         $this->gridLines($path_v, $colour_v, $dash_v, 'none');
@@ -214,33 +223,34 @@ abstract class ThreeDGraph extends GridGraph {
   {
     $coords = new Coords($this);
 
+    $grid_value = 'g' . (is_numeric($value) ? new Number($value) : $value);
     if($axis == 'x') {
-      $y = $coords->transform("gt", 'y');
-      $x = $coords->transform("g{$value}", 'x', null);
-      if(is_null($x))
+      $y = $coords->transform('gt', 'y');
+      $x = $coords->transform($grid_value, 'x', null);
+      if($x === null)
         return '';
 
       if(is_string($h) || $h > 0) {
-        $h = $coords->transform("{$h}", 'y');
+        $h = $coords->transform($h, 'y');
       } else {
-        $h = $coords->transform("gh", 'y');
+        $h = $coords->transform('gh', 'y');
       }
       if(!$reverse_length)
-        $y = $coords->transform("gb", 'y') - $h;
+        $y = $coords->transform('gb', 'y') - $h;
 
     } else {
-      $x = $coords->transform("gl", 'x');
-      $y = $coords->transform("g{$value}", 'y', null);
-      if(is_null($y))
+      $x = $coords->transform('gl', 'x');
+      $y = $coords->transform($grid_value, 'y', null);
+      if($y === null)
         return '';
 
       if(is_string($w) || $w > 0) {
-        $w = $coords->transform("{$w}", 'x');
+        $w = $coords->transform($w, 'x');
       } else {
         $w = $coords->transform('gw', 'x');
       }
       if($reverse_length)
-        $x = $coords->transform("gr", 'x') - $w;
+        $x = $coords->transform('gr', 'x') - $w;
       $h = 0;
     }
 
@@ -253,9 +263,10 @@ abstract class ThreeDGraph extends GridGraph {
     $y = $y + $yd;
 
     // for reverse lengths the line doesn't meet the axis
-    if($reverse_length)
-      return "M{$x} {$y}l{$w} {$h}";
-    return "M{$x} {$y}l{$w} {$h}M{$x1} {$y1} l{$xd} {$yd}";
+    $path = new PathData('M', $x, $y, 'l', $w, $h);
+    if(!$reverse_length)
+      $path->add('M', $x1, $y1, 'l', $xd, $yd);
+    return $path;
   }
 
   /**

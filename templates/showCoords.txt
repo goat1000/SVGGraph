@@ -1,0 +1,33 @@
+function showCoords(de,x,y,bb,on) {
+  var gx = getData(de, 'gridx'), gy = getData(de, 'gridy'),
+    textList = getData(de,'chtext'), group, i, x1, y1,
+    fnx = gx.getAttributeNS(null, 'function'),
+    fny = gy.getAttributeNS(null, 'function'), textNode, rect, tbb, ti, ds;
+  for(i = 0; i < textList.childNodes.length; ++i) {
+    if(textList.childNodes[i].nodeName == 'svggraph:chtextitem') {
+      ti = textList.childNodes[i];
+      group = getE(ti.getAttributeNS(null, 'groupid'));
+      if(on) {
+        textNode = group.querySelector('text');
+        rect = group.querySelector('rect');
+        while(textNode.childNodes.length > 0)
+          textNode.removeChild(textNode.childNodes[0]);
+        textNode.appendChild(newtext({$string:text_format}));
+        setattr(textNode, 'y', 0 + 'px');
+        tbb = textNode.getBBox();
+        ds = tbb.height + tbb.y;
+        x1 = x + bb.x + {$number:pad_space};
+        y1 = y + bb.y - {$number:pad_space} - ds;
+        if(x1 + tbb.width + {$number:pad} > bb.x + bb.width)
+          x1 -= group.getBBox().width + {$number:space2};
+        if(y1 - tbb.height - {$number:pad} < bb.y)
+          y1 = y + bb.y + tbb.height + {$number:pad_space} - ds;
+        setattr(textNode, 'x', x1 + 'px');
+        setattr(textNode, 'y', y1 + 'px');
+        tbb = textNode.getBBox();
+        fitRect(rect,tbb,{$number:pad});
+      }
+      showhide(group, on);
+    }
+  }
+}

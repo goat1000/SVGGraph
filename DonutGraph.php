@@ -48,13 +48,14 @@ class DonutGraph extends PieGraph {
       $x2_end = $xc - $radius_x;
       $y2_start = $y2_end = $yc;
       // path with ellipses made of arcs
-      $attr['d'] = "M{$x1_start},{$y1_start}" .
-        "A{$rx1} {$ry1} 0 0 0 $x1_end,$y1_end" .
-        "A{$rx1} {$ry1} 0 0 0 $x1_start,$y1_start" .
-        "M$x2_start,$y2_start " .
-        "A{$radius_x} {$radius_y} 0 0 0 $x2_end,$y2_end " .
-        "A{$radius_x} {$radius_y} 0 0 0 $x2_start,$y2_start ";
-      $attr['fill-rule'] = "evenodd";
+      $path = new PathData('M', $x1_start, $y1_start);
+      $path->add('A', $rx1, $ry1, 0, 0, 0, $x1_end, $y1_end);
+      $path->add('A', $rx1, $ry1, 0, 0, 0, $x1_start, $y1_start);
+      $path->add('M', $x2_start, $y2_start);
+      $path->add('A', $radius_x, $radius_y, 0, 0, 0, $x2_end, $y2_end);
+      $path->add('A', $radius_x, $radius_y, 0, 0, 0, $x2_start, $y2_start);
+      $attr['d'] = $path;
+      $attr['fill-rule'] = 'evenodd';
     } else {
       $outer = ($angle_end - $angle_start > M_PI ? 1 : 0);
       $sweep = ($this->reverse ? 0 : 1);
@@ -64,10 +65,11 @@ class DonutGraph extends PieGraph {
       $y1_start = $yc + (($y_start -$yc) * $ratio);
       $y1_end = $yc + (($y_end - $yc) * $ratio);
       $isweep = $sweep ? 0 : 1;
-      $attr['d'] = "M{$x1_end},{$y1_end}" .
-        "A{$rx1} {$ry1} 0 $outer,$isweep $x1_start,$y1_start" .
-        "L$x_start,$y_start " .
-        "A{$radius_x} {$radius_y} 0 $outer,$sweep $x_end,$y_end z";
+      $path = new PathData('M', $x1_end, $y1_end);
+      $path->add('A', $rx1, $ry1, 0, $outer, $isweep, $x1_start, $y1_start);
+      $path->add('L', $x_start, $y_start);
+      $path->add('A', $radius_x, $radius_y, 0, $outer, $sweep, $x_end, $y_end, 'z');
+      $attr['d'] = $path;
     }
     return $this->element('path', $attr);
   }

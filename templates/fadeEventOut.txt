@@ -1,0 +1,7 @@
+function fadeEventOut() {
+  document.addEventListener && document.addEventListener('mouseout',
+    function(e) {
+      var t = finditem(e,fades);
+      t && (t.dir = fostep);
+    },false);
+}

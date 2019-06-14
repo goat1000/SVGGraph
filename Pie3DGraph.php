@@ -181,13 +181,13 @@ class Pie3DGraph extends PieGraph {
       $radius_y = $ry;
     }
 
-    if(is_null($clip_path)) {
+    if($clip_path === null) {
       $slice = [
         'angle_start' => $start,
         'angle_end' => $end,
         'radius_x' => $radius_x,
         'radius_y' => $radius_y,
-        'attr' => ['fill' => "url(#{$gradient_id})"],
+        'attr' => ['fill' => 'url(#' . $gradient_id . ')'],
       ];
       $edge = new PieSliceEdge($this, 2, $slice, 0.0);
       return $edge->draw($this, $x_centre, $y_centre, $depth);
@@ -199,8 +199,8 @@ class Pie3DGraph extends PieGraph {
       'y' => $y_centre - $radius_y,
       'width' => $radius_x * 2.0,
       'height' => $radius_y * 2.0 + $this->depth + 2.0,
-      'fill' => "url(#{$gradient_id})",
-      'clip-path' => "url(#{$clip_path})",
+      'fill' => 'url(#' . $gradient_id . ')',
+      'clip-path' => 'url(#' . $clip_path . ')',
     ];
     return $this->element('rect', $rect);
   }

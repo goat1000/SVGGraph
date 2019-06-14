@@ -1,0 +1,6 @@
+function newel(e,a){
+  var ns='http://www.w3.org/2000/svg', ne=document.createElementNS(ns,e),i;
+  for(i in a)
+    setattr(ne, i, a[i]);
+  return ne;
+}

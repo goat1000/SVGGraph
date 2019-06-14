@@ -213,26 +213,33 @@ class PieGraph extends Graph {
       $this->slice_info[$original_position] = new SliceInfo($angle_start,
         $angle_end, $radius_x, $radius_y);
 
-      $parts = [];
-      if($this->show_label_key) {
-        $label_key = $this->getKey($this->values->associativeKeys() ?
-          $original_position : $key);
-        if($this->datetime_keys) {
-          $dt = new \DateTime("@{$label_key}");
-          $label_key = $dt->format($this->data_label_datetime_format);
-        }
-        $parts = explode("\n", $label_key);
-      }
-      if($this->show_label_amount)
-        $parts[] = $this->units_before_label . Graph::numString($value) .
-          $this->units_label;
-      if($this->show_label_percent)
-        $parts[] = Graph::numString($value / $this->total * 100.0,
-          $this->label_percent_decimals) . '%';
-      $label_content = implode("\n", $parts);
-
       // add the data label if the slice angle is big enough
       if($this->slice_info[$original_position]->degrees() >= $min_slice_angle) {
+        $parts = [];
+        if($this->show_label_key) {
+          $label_key = $this->getKey($this->values->associativeKeys() ?
+            $original_position : $key);
+          if($this->datetime_keys) {
+            $number_key = new Number($label_key);
+            $dt = new \DateTime('@' . $number_key);
+            $label_key = $dt->format($this->data_label_datetime_format);
+          }
+          $parts = explode("\n", $label_key);
+        }
+        if($this->show_label_amount) {
+          if($value === null) {
+            $parts[] = '';
+          } else {
+            $num = new Number($value * 1.0, $this->units_label, $this->units_before_label);
+            $parts[] = $num->format();
+          }
+        }
+        if($this->show_label_percent) {
+          $num = new Number($value / $this->total * 100.0, '%');
+          $parts[] = $num->format($this->label_percent_decimals);
+        }
+        $label_content = implode("\n", $parts);
+
         $this->addDataLabel(0, $original_position, $attr, $item,
           $this->x_centre, $this->y_centre, 1, 1, $label_content);
       }
@@ -246,7 +253,7 @@ class PieGraph extends Graph {
             (string)$angle_start != (string)$angle_end);
 
         if($this->semantic_classes)
-          $attr['class'] = "series0";
+          $attr['class'] = 'series0';
 
         $this_slice = [
           'original_position' => $original_position,
@@ -319,8 +326,10 @@ class PieGraph extends Graph {
     } else {
       $outer = ($angle_end - $angle_start > M_PI ? 1 : 0);
       $sweep = ($this->reverse ? 0 : 1);
-      $attr['d'] = "M{$this->x_centre},{$this->y_centre} L$x_start,$y_start " .
-        "A{$radius_x} {$radius_y} 0 $outer,$sweep $x_end,$y_end z";
+      $d = new PathData('M', $this->x_centre, $this->y_centre, 'L', $x_start,
+        $y_start, 'A', $radius_x, $radius_y, 0, $outer, $sweep, $x_end,
+        $y_end, 'z');
+      $attr['d'] = $d;
       return $this->element('path', $attr);
     }
   }
@@ -417,7 +426,7 @@ class PieGraph extends Graph {
       $ac = $this->s_angle + $a;
       $xc = $pos_radius * $rx * cos($ac);
       $yc = ($this->reverse ? -1 : 1) * $pos_radius * $ry * sin($ac);
-      $pos = "$xc $yc";
+      $pos = new Number($xc) . ' ' . new Number($yc);
 
       if($pos_radius > 1) {
         $space = $this->getOption(['data_label_space', $dataset]);

@@ -77,7 +77,7 @@ class MultiRadarGraph extends RadarGraph {
     $group = [];
     $this->clipGrid($group);
     if($this->semantic_classes)
-      $group['class'] = "series";
+      $group['class'] = 'series';
     $body .= $this->element('g', $group, null, $plots);
     $body .= $this->overShapes();
     $body .= $this->axes();

@@ -72,7 +72,7 @@ class BoxAndWhiskerGraph extends PointGraph {
           $this->setContextMenu($g, 0, $item, $show_label);
 
         if($this->semantic_classes)
-          $g['class'] = "series0";
+          $g['class'] = 'series0';
         $group = $this->element('g', array_merge($g, $box_style), null, $shape);
         $series .= $this->getLink($item, $item->key, $group);
 
@@ -160,14 +160,22 @@ class BoxAndWhiskerGraph extends PointGraph {
 
     foreach($this->values[0] as $item) {
       $val = $item->value;
-      if(is_null($val))
+      if($val === null)
         continue;
       $wb = $item->wbottom;
       $wt = $item->wtop;
       $b = $item->bottom;
       $t = $item->top;
-      if($wb > $b || $wt < $t || $val < $b || $val > $t)
-        throw new \Exception("Data problem: $wb $b $val $t $wt");
+      if($wb > $b || $wt < $t || $val < $b || $val > $t) {
+
+        $wb = new Number($wb);
+        $b = new Number($b);
+        $wt = new Number($wt);
+        $t = new Number($t);
+        $val = new Number($val);
+        throw new \Exception('Data problem: ' . $wb . '--[' . $b . ' ' . $val .
+          ' ' . $t . ']--' . $wt);
+      }
     }
   }
 

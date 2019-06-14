@@ -69,7 +69,7 @@ class Legend {
       'shadow_opacity', 'show_empty', 'stroke_colour', 'stroke_width',
       'text_side', 'title', 'title_font_weight', 'type'];
     foreach($opts as $opt) {
-      $this->{$opt} = $graph->getOption("legend_{$opt}");
+      $this->{$opt} = $graph->getOption('legend_' . $opt);
     }
 
     // slightly more complicated options
@@ -225,21 +225,29 @@ class Legend {
       $text_x_offset += $offset;
     }
 
-    $text_group = ['transform' => "translate($text_x_offset,0)"];
+    $xform = new Transform;
+    $xform->translate($text_x_offset, 0);
+    $text_group = ['transform' => $xform];
     if($this->text_side == 'left')
       $text_group['text-anchor'] = 'end';
-    $entries_group = ['transform' => "translate($entries_x_offset,0)"];
+    $xform = new Transform;
+    $xform->translate($entries_x_offset, 0);
+    $entries_group = ['transform' => $xform];
 
     $parts = '';
     foreach($entry_columns as $col) {
       $parts .= $this->graph->element('g', $entries_group, null, $col);
       $entries_x_offset += $column_width;
-      $entries_group['transform'] = "translate($entries_x_offset,0)";
+      $xform = new Transform;
+      $xform->translate($entries_x_offset, 0);
+      $entries_group['transform'] = $xform;
     }
     foreach($text_columns as $col) {
       $parts .= $this->graph->element('g', $text_group, null, $col);
       $text_x_offset += $column_width;
-      $text_group['transform'] = "translate($text_x_offset,0)";
+      $xform = new Transform;
+      $xform->translate($text_x_offset, 0);
+      $text_group['transform'] = $xform;
     }
 
     // create box and title
@@ -274,11 +282,13 @@ class Legend {
     list($left, $top) = $this->graph->parsePosition($this->position,
       $width, $height);
 
+    $xform = new Transform;
+    $xform->translate($left, $top);
     $group = [
       'font-family' => $this->font,
       'font-size' => $font_size,
       'fill' => $this->colour,
-      'transform' => "translate($left,$top)",
+      'transform' => $xform,
     ];
     if($this->font_weight != 'normal')
       $group['font-weight'] = $this->font_weight;

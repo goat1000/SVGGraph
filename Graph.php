@@ -30,6 +30,7 @@ abstract class Graph {
   protected $height = 0;
   protected $settings = [];
   protected $values = [];
+  protected $namespace = false;
   protected $link_base = '';
   protected $link_target = '_blank';
   protected $links = [];
@@ -43,11 +44,9 @@ abstract class Graph {
   protected $namespaces = [];
   protected static $javascript = null;
   private static $last_id = 0;
-  private static $precision = 5;
-  private static $decimal = '.';
-  private static $thousands = ',';
   public static $key_format = null;
   protected $legend = null;
+  protected $data_label_style_cache = [];
 
   /**
    * @arg $w = width
@@ -66,7 +65,7 @@ abstract class Graph {
     if(file_exists($ini_file))
       $ini_settings = parse_ini_file($ini_file, true);
     if($ini_settings === false)
-      throw new \Exception("INI file [{$ini_file}] could not be loaded");
+      throw new \Exception('INI file [' . $ini_file . '] could not be loaded');
 
     $class = get_class($this);
     $hierarchy = [$class];
@@ -90,6 +89,7 @@ abstract class Graph {
     ];
     $this->settings = array_merge($this->settings, $settings,
       $fixed_setting_defaults, $fixed_settings);
+    $this->namespace = $this->getOption('namespace');
   }
 
   /**
@@ -143,7 +143,7 @@ abstract class Graph {
      * When everything is converted to getOption/setOption, this function
      * should be redundant
      */
-    // trigger_error("Attempt to set \$this->{$name}", E_USER_WARNING);
+    // trigger_error('Attempt to set $this->' . $name, E_USER_WARNING);
     $this->settings[$name] = $value;
     $this->{$name} = $value;
   }
@@ -258,7 +258,7 @@ abstract class Graph {
 
     // rounded rects might need a clip path
     if($this->getOption('back_round') && $this->getOption('back_round_clip')) {
-      $group = ['clip-path' => "url(#{$canvas_id})"];
+      $group = ['clip-path' => 'url(#' . $canvas_id . ')'];
       return $this->element('g', $group, null, $contents);
     }
     return $contents;
@@ -333,7 +333,7 @@ abstract class Graph {
     }
 
     // ParsePosition is always inside canvas or graph, defaulted to top left
-    $pos = "top left " . str_replace('outer', 'inner', $pos);
+    $pos = 'top left ' . str_replace('outer', 'inner', $pos);
     return Graph::relativePosition($pos, $t, $l, $b, $r, $w, $h, $pad);
   }
 
@@ -490,14 +490,17 @@ abstract class Graph {
     if($this->{$pad_side} < $this->graph_title_space)
       $this->{$pad_side} = $this->graph_title_space;
 
+    $xform = new Transform;
     if($pos == 'left') {
       $text['x'] = $this->pad_left + $baseline;
       $text['y'] = $this->height / 2;
-      $text['transform'] = "rotate(270,$text[x],$text[y])";
+      $xform->rotate(270, $text['x'], $text['y']);
+      $text['transform'] = $xform;
     } elseif($pos == 'right') {
       $text['x'] = $this->width - $this->pad_right - $baseline;
       $text['y'] = $this->height / 2;
-      $text['transform'] = "rotate(90,$text[x],$text[y])";
+      $xform->rotate(90, $text['x'], $text['y']);
+      $text['transform'] = $xform;
     } elseif($pos == 'bottom') {
       $text['x'] = $this->width / 2;
       $text['y'] = $this->height - $this->pad_bottom - $height + $baseline;
@@ -551,7 +554,7 @@ abstract class Graph {
       ];
       // tiled image becomes a pattern to replace background colour
       $this->defs[] = $this->element('pattern', $pattern, null, $im);
-      $this->back_colour = "url(#{$pattern['id']})";
+      $this->back_colour = 'url(#' . $pattern['id'] . ')';
     } else {
       $im = $this->element('image', $image, $style);
       $contents .= $im;
@@ -629,10 +632,9 @@ abstract class Graph {
   protected function contrastText($x, $y, $text, $fcolour = 'black',
     $bcolour = 'white', $properties = null, $styles = null)
   {
-    $props = [
-      'transform' => 'translate(' . $x . ',' . $y . ')',
-      'fill' => $fcolour
-    ];
+    $xform = new Transform;
+    $xform->translate($x, $y);
+    $props = ['transform' => $xform, 'fill' => $fcolour];
     if(is_array($properties))
       $props = array_merge($properties, $props);
 
@@ -648,40 +650,21 @@ abstract class Graph {
   public function element($name, $attribs = null, $styles = null,
     $content = null, $no_whitespace = false)
   {
-    // these properties require units to work well
-    $require_units = [
-      'stroke-width' => 1, 'stroke-dashoffset' => 1,
-      'font-size' => 1, 'baseline-shift' => 1, 'kerning' => 1,
-      'letter-spacing' => 1, 'word-spacing' => 1
-    ];
-
     if($this->namespace && strpos($name, ':') === false)
       $name = 'svg:' . $name;
     $element = '<' . $name;
-    if(is_array($attribs))
+    if(is_array($attribs)) {
       foreach($attribs as $attr => $val) {
-
-        // if units required, add px
-        if(is_numeric($val)) {
-          if(isset($require_units[$attr]))
-            $val .= 'px';
-        } else {
-          $val = htmlspecialchars($val, ENT_COMPAT, $this->encoding);
-        }
-        $element .= ' ' . $attr . '="' . $val . '"';
+        $value = new Attribute($attr, $val, $this->encoding);
+        $element .= ' ' . $attr . '="' . $value . '"';
       }
+    }
 
     if(is_array($styles)) {
       $element .= ' style="';
       foreach($styles as $attr => $val) {
-        // check units again
-        if(is_numeric($val)) {
-          if(isset($require_units[$attr]))
-            $val .= 'px';
-        } else {
-          $val = htmlspecialchars($val, ENT_COMPAT, $this->encoding);
-        }
-        $element .= $attr . ':' . $val . ';';
+        $value = new Attribute($attr, $val, $this->encoding);
+        $element .= $attr . ':' . $value . ';';
       }
       $element .= '"';
     }
@@ -762,7 +745,7 @@ abstract class Graph {
 
       // make key reflect dataset as well (for gradients)
       if($dataset !== null)
-        $key = "{$dataset}:{$key}";
+        $key = $dataset . ':' . $key;
     }
     return $this->parseColour($colour, $key, $no_gradient, $allow_pattern);
   }
@@ -780,13 +763,13 @@ abstract class Graph {
         $colour = $this->solidColour($colour);
       } elseif(isset($colour['pattern'])) {
         $pattern_id = $this->addPattern($colour);
-        $colour = "url(#{$pattern_id})";
+        $colour = 'url(#' . $pattern_id . ')';
       } else {
         $err = array_diff_key($colour, array_keys(array_keys($colour)));
         if($err)
           throw new \Exception('Malformed gradient/pattern');
         $gradient_id = $this->addGradient($colour, $key, $radial_gradient);
-        $colour = "url(#{$gradient_id})";
+        $colour = 'url(#' . $gradient_id . ')';
       }
     }
     return $colour;
@@ -1035,8 +1018,8 @@ abstract class Graph {
    */
   protected function formatTooltip(&$item, $dataset, $key, $value)
   {
-    return $this->units_before_tooltip . Graph::numString($value) .
-      $this->units_tooltip;
+    $n = new Number($value, $this->units_tooltip, $this->units_before_tooltip);
+    return $n->format();
   }
 
   /**
@@ -1161,6 +1144,10 @@ abstract class Graph {
    */
   public function dataLabelStyle($dataset, $index, &$item)
   {
+    // this function gets called a lot, so cache the return values
+    if(isset($this->data_label_style_cache[$dataset]))
+      return $this->data_label_style_cache[$dataset];
+
     $map = $this->data_labels->getStyleMap();
     $style = [];
     foreach($map as $key => $option) {
@@ -1169,9 +1156,11 @@ abstract class Graph {
 
     // padding x/y options override single value
     $style['pad_x'] = $this->getOption(['data_label_padding_x', $dataset],
-        ['data_label_padding', $dataset]);
+      ['data_label_padding', $dataset]);
     $style['pad_y'] = $this->getOption(['data_label_padding_y', $dataset],
-        ['data_label_padding', $dataset]);
+      ['data_label_padding', $dataset]);
+
+    $this->data_label_style_cache[$dataset] = $style;
     return $style;
   }
 
@@ -1218,19 +1207,16 @@ abstract class Graph {
       $content .= '<?xml version="1.0"';
       // encoding comes before standalone
       if(strlen($this->encoding) > 0)
-        $content .= " encoding=\"{$this->encoding}\"";
-      // '>' is with \n so as not to confuse syntax highlighting
-      $content .= " standalone=\"no\"?" . ">\n";
+        $content .= ' encoding="' . $this->encoding . '"';
+      $content .= ' standalone="no"?>' . "\n";
       if($this->doctype)
         $content .= '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' .
         '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' . "\n";
     }
 
     // set the precision - PHP default is 14 digits!
-    Graph::$precision = $this->settings['precision'];
-    $old_precision = ini_set('precision', Graph::$precision);
-    // set decimal and thousands for NumString
-    Graph::setNumStringOptions($this->settings['decimal'],
+    $old_precision = ini_set('precision', $this->settings['precision']);
+    Number::setup($this->settings['precision'], $this->settings['decimal'],
       $this->settings['thousands']);
 
     // display title and description if available
@@ -1248,24 +1234,26 @@ abstract class Graph {
 
       $err = $e->getMessage();
       if($this->getOption('exception_details'))
-        $err .= " [" . basename($e->getFile()) . ' #' . $e->getLine() . ']';
+        $err .= ' [' . basename($e->getFile()) . ' #' . $e->getLine() . ']';
       $body = $this->errorText($err);
     }
 
     $svg = [
-      'width' => $this->width, 'height' => $this->height,
+      'width' => new Number($this->width),
+      'height' => new Number($this->height),
       'version' => '1.1',
       'xmlns:xlink' => 'http://www.w3.org/1999/xlink'
     ];
     if($this->auto_fit) {
-      $svg['viewBox'] = "0 0 {$this->width} {$this->height}";
+      // convert pixel size to viewbox size
+      $svg['viewBox'] = '0 0 ' . $svg['width'] . ' ' . $svg['height'];
       $svg['width'] = $svg['height'] = '100%';
     }
     if($this->svg_class)
       $svg['class'] = $this->svg_class;
 
     if(!$defer_javascript) {
-      $js = $this->fetchJavascript();
+      $js = $this->fetchJavascript(true, true, !$this->namespace);
       if($js != '') {
         $heading .= $js;
         $onload = Graph::$javascript->getOnload();
@@ -1288,9 +1276,9 @@ abstract class Graph {
       $heading .= $this->element('defs', null, null, $defs);
     }
     if($this->namespace)
-      $svg['xmlns:svg'] = "http://www.w3.org/2000/svg";
+      $svg['xmlns:svg'] = 'http://www.w3.org/2000/svg';
     else
-      $svg['xmlns'] = "http://www.w3.org/2000/svg";
+      $svg['xmlns'] = 'http://www.w3.org/2000/svg';
 
     // add any extra namespaces
     foreach($this->namespaces as $ns => $url)
@@ -1351,13 +1339,13 @@ abstract class Graph {
 
       if($variables != '' || $functions != '') {
         if($onload_immediate)
-          $functions .= "\n" . "setTimeout(function(){{$onload}},20);";
+          $functions .= "\n" . 'setTimeout(function(){' . $onload . '},20);';
         $script_attr = ['type' => 'application/ecmascript'];
-          $script = "$variables\n$functions\n";
+        $script = $variables  . "\n" . $functions . "\n";
         if(is_callable($this->minify_js))
           $script = call_user_func($this->minify_js, $script);
         if($cdata_wrap)
-          $script = "// <![CDATA[\n$script\n// ]]>";
+          $script = '// <![CDATA[' . "\n" . $script . "\n" . '// ]]>';
         $namespace = $this->namespace;
         if($no_namespace)
           $this->namespace = false;
@@ -1367,53 +1355,6 @@ abstract class Graph {
       }
     }
     return $js;
-  }
-
-  /**
-   * Converts number to string
-   */
-  public static function numString($n, $decimals = null, $precision = null)
-  {
-    $d = ($decimals === null ? 0 : $decimals);
-
-    if(!is_int($n)) {
-      if($precision === null)
-        $precision = Graph::$precision;
-
-      // if there are too many zeroes before other digits, round to 0
-      $e = floor(log(abs($n), 10));
-      if(-$e > $precision)
-        $n = 0;
-
-      // subtract number of digits before decimal point from precision
-      // for precision-based decimals
-      if($decimals === null)
-        $d = $precision - ($e > 0 ? $e : 0);
-    }
-    $s = number_format($n, $d, Graph::$decimal, Graph::$thousands);
-
-    if($decimals === null && $d && strpos($s, Graph::$decimal) !== false) {
-      list($a, $b) = explode(Graph::$decimal, $s);
-      $b1 = rtrim($b, '0');
-      if($b1 != '')
-        return $a . Graph::$decimal . $b1;
-      return $a;
-    }
-    return $s;
-  }
-
-  /**
-   * Sets the number format characters
-   *
-   * @throws LogicException if $decimal and $thousands parameters are equal.
-   */
-  public static function setNumStringOptions($decimal, $thousands)
-  {
-    if($decimal === $thousands) {
-      throw new \LogicException('Decimal and thousand separator must not be equal. Please use different settings for "thousands" and "decimal".');
-    }
-    Graph::$decimal = $decimal;
-    Graph::$thousands = $thousands;
   }
 
   /**

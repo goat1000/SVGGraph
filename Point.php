@@ -36,7 +36,7 @@ class Point {
 
   public function __toString()
   {
-    return (string)$this->x . ' ' . (string)$this->y;
+    return new Number($this->x) . ' ' . new Number($this->y);
   }
 }
 

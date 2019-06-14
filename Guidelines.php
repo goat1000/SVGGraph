@@ -71,7 +71,7 @@ class Guidelines {
       'font_weight', 'length', 'length_units', 'opacity', 'stroke_width',
       'text_align', 'text_angle', 'text_padding', 'text_position'];
     foreach($opts as $opt)
-      $this->{$opt} = $graph->getOption("guideline_{$opt}");
+      $this->{$opt} = $graph->getOption('guideline_' . $opt);
 
     // options with fallbacks
     $this->text_colour = $graph->getOption('guideline_text_colour',
@@ -284,16 +284,17 @@ class Guidelines {
         $length_units = -$length_units;
       }
 
+      $lnum = new Number($length_units);
       if($line['axis'] == 'x')
-        $h = "u{$length_units}";
+        $h = 'u' . $lnum;
       else
-        $w = "u{$length_units}";
+        $w = 'u' . $lnum;
     }
 
     // if the graph class has a custom path method, use it
     // - its signature is the same as GuidelinePath but without $depth
     $custom_method = ($line['depth'] == Guidelines::ABOVE ?
-      'GuidelinePathAbove' : 'GuidelinePathBelow');
+      'guidelinePathAbove' : 'guidelinePathBelow');
 
     if(method_exists($this->graph, $custom_method)) {
       $path_data = $this->graph->{$custom_method}($line['axis'], $line['value'],
@@ -352,7 +353,9 @@ class Guidelines {
       if($text_angle != 0) {
         $rx = $x + $text_h/2;
         $ry = $y + $text_h/2;
-        $t['transform'] = "rotate($text_angle,$rx,$ry)";
+        $xform = new Transform;
+        $xform->rotate($text_angle, $rx, $ry);
+        $t['transform'] = $xform;
       }
 
       if(isset($line['text']))
@@ -368,35 +371,36 @@ class Guidelines {
     $reverse_length)
   {
     // use the Coords class to find measurements
+    $strvalue = (string)(is_numeric($value) ? new Number($value) : $value);
     if($axis == 'x') {
-      $y = $this->coords->transform("gt", 'y');
-      $x = $this->coords->transform("g{$value}", 'x', null);
+      $y = $this->coords->transform('gt', 'y');
+      $x = $this->coords->transform('g' . $strvalue, 'x', null);
       if(is_null($x))
-        return '';
+        return new PathData;
 
-      if(is_string($h) || $h > 0) {
-        $h = $this->coords->transform("{$h}", 'y');
-      } else {
-        $h = $this->coords->transform("gh", 'y');
+      if(is_string($h)) {
+        $h = $this->coords->transform($h, 'y');
+      } elseif($h <= 0) {
+        $h = $this->coords->transform('gh', 'y');
       }
       if(!$reverse_length)
-        $y = $this->coords->transform("gb", 'y') - $h;
-      return "M$x {$y}v$h";
+        $y = $this->coords->transform('gb', 'y') - $h;
+      return new PathData('M', $x, $y, 'v', $h);
     } else {
-      $x = $this->coords->transform("gl", 'x');
-      $y = $this->coords->transform("g{$value}", 'y', null);
+      $x = $this->coords->transform('gl', 'x');
+      $y = $this->coords->transform('g' . $strvalue, 'y', null);
       if(is_null($y))
-        return '';
+        return new PathData;
 
-      if(is_string($w) || $w > 0) {
-        $w = $this->coords->transform("{$w}", 'x');
-      } else {
+      if(is_string($w)) {
+        $w = $this->coords->transform($w, 'x');
+      } elseif($w <= 0) {
         $w = $this->coords->transform('gw', 'x');
       }
       if($reverse_length)
-        $x = $this->coords->transform("gr", 'x') - $w;
+        $x = $this->coords->transform('gr', 'x') - $w;
       $h = 0;
-      return "M$x {$y}h$w";
+      return new PathData('M', $x, $y, 'h', $w);
     }
   }
 

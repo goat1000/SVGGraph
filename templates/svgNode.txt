@@ -1,0 +1,6 @@
+function svgNode(e) {
+  var d = e.target.correspondingUseElement || e.target, nn = '{$string:namespace}svg';
+  while(d.parentNode && d.nodeName != nn)
+    d = d.parentNode;
+  return d.nodeName == nn ? d : null;
+}

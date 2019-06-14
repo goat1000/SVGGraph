@@ -87,7 +87,7 @@ class Histogram extends BarGraph {
       $start = $this->interval($min);
       $end = $this->interval($max, true) + $increment / 2;
 
-      Graph::setNumStringOptions($this->getOption('decimal'),
+      Number::setup($this->getOption('precision'), $this->getOption('decimal'),
         $this->getOption('thousands'));
       for($i = $start; $i < $end; $i += $increment) {
         $key = (int)$i;

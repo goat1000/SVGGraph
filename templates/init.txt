@@ -1,0 +1,7 @@
+function init() {
+  if(!document.addEventListener || !initfns)
+    return;
+  for(var f in initfns)
+    window[initfns[f]]();
+  initfns = [];
+}

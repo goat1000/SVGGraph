@@ -61,7 +61,7 @@ class BubbleGraph extends PointGraph {
           // draw negative bubbles with a checked pattern
           $pattern = [$colour, 'pattern' => 'check', 'size' => 8];
           $pid = $this->addPattern($pattern);
-          $circle_style['fill'] = "url(#{$pid})";
+          $circle_style['fill'] = 'url(#' . $pid . ')';
         }
         $this->setStroke($circle_style, $item);
         $this->addDataLabel(0, $bnum, $circle, $item,
@@ -72,7 +72,7 @@ class BubbleGraph extends PointGraph {
         if($this->show_context_menu)
           $this->setContextMenu($circle, 0, $item, true);
         if($this->semantic_classes)
-          $circle['class'] = "series0";
+          $circle['class'] = 'series0';
         $bubble = $this->element('circle', array_merge($circle, $circle_style));
         $series .= $this->getLink($item, $item->key, $bubble);
 

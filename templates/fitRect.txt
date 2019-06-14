@@ -1,0 +1,8 @@
+function fitRect(rect,brect,pad) {
+  var bw = Math.ceil(brect.width + pad + pad),
+    bh = Math.ceil(brect.height + pad + pad);
+  setattr(rect, 'x', (brect.x - pad) + 'px');
+  setattr(rect, 'y', (brect.y - pad) + 'px');
+  setattr(rect, 'width', bw + 'px');
+  setattr(rect, 'height', bh + 'px');
+}

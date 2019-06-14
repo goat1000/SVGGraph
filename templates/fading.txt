@@ -1,0 +1,8 @@
+function fading(id) {
+  var c;
+  for(c in fades) {
+    if(fades[c].id == id)
+      return true;
+  }
+  return false;
+}

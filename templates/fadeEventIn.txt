@@ -1,0 +1,8 @@
+function fadeEventIn() {
+  var f;
+  document.addEventListener && document.addEventListener('mouseover',
+    function(e) {
+      var t = finditem(e,fades);
+      t && (t.dir = fistep);
+    },false);
+}

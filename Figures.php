@@ -40,7 +40,7 @@ class Figures {
       return;
 
     if(!is_array($settings['figure']) || !isset($settings['figure'][0]))
-      throw new \Exception('Malformed figure option');
+      throw new \Exception('Malformed figure option.');
 
     if(!is_array($settings['figure'][0])) {
       $this->addFigure($settings['figure']);
@@ -58,7 +58,7 @@ class Figures {
   {
     $name = array_shift($figure_array);
     if(isset($this->figure_map[$name]))
-      throw new \Exception("Figure [{$name}] defined more than once");
+      throw new \Exception('Figure [' . $name . '] defined more than once.');
     $content = '';
     if(!is_array($figure_array[0])) {
       $shape = $this->graph->shapes->getShape($figure_array);

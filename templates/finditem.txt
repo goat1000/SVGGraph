@@ -1,0 +1,8 @@
+function finditem(e,list) {
+  var l = e.target.correspondingUseElement || e.target, t;
+  while(!t && l.parentNode) {
+    t = l.id && list[l.id]
+    l = l.parentNode;
+  }
+  return t;
+}

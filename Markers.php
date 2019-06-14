@@ -69,10 +69,10 @@ class Markers {
     case 'triangle' :
       $o = $a * tan(M_PI / 6);
       $h = $a / cos(M_PI / 6);
-      $marker['d'] = "M$a,$o L0,-$h L-$a,$o z";
+      $marker['d'] = new PathData('M', $a, $o, 'L', 0, -$h, 'L', -$a, $o, 'z');
       break;
     case 'diamond' :
-      $marker['d'] = "M0 -{$a}L$a 0 0 $a -$a 0z";
+      $marker['d'] = new PathData('M', 0, -$a, 'L', $a, 0, 0, $a, -$a, 0, 'z');
       break;
     case 'square' :
       $element = 'rect';
@@ -80,19 +80,23 @@ class Markers {
       $marker['width'] = $marker['height'] = $a * 2;
       break;
     case 'x' :
-      $marker['transform'] = 'rotate(45)';
+      $xform = new Transform;
+      $xform->rotate(45);
+      $marker['transform'] = $xform;
       // no break - 'x' is a cross rotated by 45 degrees
     case 'cross' :
       $t = $a / 4;
-      $marker['d'] = "M-$a,-$t L-$a,$t -$t,$t -$t,$a " .
-        "$t,$a $t,$t $a,$t " .
-        "$a,-$t $t,-$t $t,-$a " .
-        "-$t,-$a -$t,-$t z";
+      $marker['d'] = new PathData('M', -$a, -$t);
+      $marker['d']->add('L', -$a, $t, -$t, $t, -$t, $a);
+      $marker['d']->add($t, $a, $t, $t, $a, $t);
+      $marker['d']->add($a, -$t, $t, -$t, $t, -$a);
+      $marker['d']->add(-$t, -$a, -$t, -$t, 'z');
       break;
     case 'octagon' :
       $t = $a * sin(M_PI / 8);
-      $marker['d'] = "M$t -{$a}L$a -$t $a $t $t $a -$t $a " .
-        "-$a $t -$a -$t -$t -{$a}z";
+      $marker['d'] = new PathData('M', $t, -$a);
+      $marker['d']->add('L', $a, -$t, $a, $t, $t, $a, -$t, $a);
+      $marker['d']->add(-$a, $t, -$a, -$t, -$t, -$a, 'z');
       break;
     case 'star' :
       $t = $a * 0.382;
@@ -104,8 +108,9 @@ class Markers {
       $y3 = $t * cos(M_PI * 0.4);
       $x4 = $a * sin(M_PI * 0.2);
       $y4 = $a * cos(M_PI * 0.2);
-      $marker['d'] = "M0 -{$a}L$x1 $y1 $x2 $y2 $x3 $y3 $x4 $y4 0 $t " .
-        "-$x4 $y4 -$x3 $y3 -$x2 $y2 -$x1 $y1 z";
+      $marker['d'] = new PathData('M', 0, -$a);
+      $marker['d']->add('L', $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4, 0, $t);
+      $marker['d']->add(-$x4, $y4, -$x3, $y3, -$x2, $y2, -$x1, $y1, 'z');
       break;
     case 'threestar' :
       $t = $a / 4;
@@ -113,18 +118,22 @@ class Markers {
       $t2 = $t * sin(M_PI / 6);
       $a1 = $a * cos(M_PI / 6);
       $a2 = $a * sin(M_PI / 6);
-      $marker['d'] = "M0 -{$a}L$t1 -$t2 $a1 $a2 0 $t -$a1 $a2 -$t1 -{$t2}z";
+      $marker['d'] = new PathData('M', 0, -$a);
+      $marker['d']->add('L', $t1, -$t2, $a1, $a2, 0, $t);
+      $marker['d']->add(-$a1, $a2, -$t1, -$t2, 'z');
       break;
     case 'fourstar' :
       $t = $a / 4;
-      $marker['d'] = "M0 -{$a}L$t -$t $a 0 $t $t " .
-        "0 $a -$t $t -$a 0 -$t -{$t}z";
+      $marker['d'] = new PathData('M', 0, -$a, 'L', $t, -$t, $a, 0, $t, $t);
+      $marker['d']->add(0, $a, -$t, $t, -$a, 0, -$t, -$t, 'z');
       break;
     case 'eightstar' :
       $t = $a * sin(M_PI / 8);
-      $marker['d'] = "M0 -{$t}L$t -$a $t -$t $a -$t $t 0 " .
-        "$a $t $t $t $t $a 0 $t -$t $a -$t $t -$a $t -$t 0 " .
-        "-$a -$t -$t -$t -$t -{$a}z";
+      $marker['d'] = new PathData('M', 0, -$t);
+      $marker['d']->add('L', $t, -$a, $t, -$t, $a, -$t, $t, 0);
+      $marker['d']->add($a, $t, $t, $t, $t, $a, 0, $t);
+      $marker['d']->add(-$t, $a, -$t, $t, -$a, $t, -$t, 0);
+      $marker['d']->add(-$a, -$t, -$t, -$t, -$t, -$a, 'z');
       break;
     case 'asterisk' :
       $t = $a / 3;
@@ -142,21 +151,25 @@ class Markers {
       $y6 = $a * cos(M_PI * 0.3);
       $x7 = $a * sin(M_PI * 0.1);
       $y7 = $a * cos(M_PI * 0.1);
-      $marker['d'] = "M$x1 {$y1}L$x2 $y2 $x3 $y3 $x4 $y4 $x5 $y5 " .
-        "$x6 $y6 $x7 $y7 0 $t -$x7 $y7 -$x6 $y6 -$x5 $y5 -$x4 $y4 " .
-        "-$x3 $y3 -$x2 $y2 -$x1 ${y1}z";
+      $marker['d'] = new PathData('M', $x1, $y1);
+      $marker['d']->add('L', $x2, $y2, $x3, $y3, $x4, $y4, $x5, $y5);
+      $marker['d']->add($x6, $y6, $x7, $y7, 0, $t, -$x7, $y7);
+      $marker['d']->add(-$x6, $y6, -$x5, $y5, -$x4, $y4, -$x3, $y3);
+      $marker['d']->add(-$x2, $y2, -$x1, $y1, 'z');
       break;
     case 'pentagon' :
       $x1 = $a * sin(M_PI * 0.4);
       $y1 = $a * cos(M_PI * 0.4);
       $x2 = $a * sin(M_PI * 0.2);
       $y2 = $a * cos(M_PI * 0.2);
-      $marker['d'] = "M0 -{$a}L$x1 -$y1 $x2 $y2 -$x2 $y2 -$x1 -{$y1}z";
+      $marker['d'] = new PathData('M', 0, -$a);
+      $marker['d']->add('L', $x1, -$y1, $x2, $y2, -$x2, $y2, -$x1, -$y1, 'z');
       break;
     case 'hexagon' :
       $x = $a * sin(M_PI / 3);
       $y = $a * cos(M_PI / 3);
-      $marker['d'] = "M0 -{$a}L$x -$y $x $y 0 $a -$x $y -$x -{$y}z";
+      $marker['d'] = new PathData('M', 0, -$a);
+      $marker['d']->add('L', $x, -$y, $x, $y, 0, $a, -$x, $y, -$x, -$y, 'z');
       break;
     case 'image' :
       $element = 'image';
@@ -172,7 +185,7 @@ class Markers {
       $element = 'g';
       $figure_id = $this->graph->figures->getFigure($figure);
       if(empty($figure_id))
-        throw new \Exception("Figure [$figure] not defined");
+        throw new \Exception('Figure [' . $figure . '] not defined');
       return $figure_id;
       break;
     case 'circle' :
@@ -183,9 +196,10 @@ class Markers {
 
     // angle happens here because the shape might already have a transform
     if($angle != 0) {
-      $xform = "rotate({$angle})";
+      $xform = new Transform;
+      $xform->rotate($angle);
       if(isset($marker['transform']))
-        $marker['transform'] .= $xform;
+        $marker['transform']->add($xform);
       else
         $marker['transform'] = $xform;
     }

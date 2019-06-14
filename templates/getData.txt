@@ -1,0 +1,9 @@
+function getData(doc,ename) {
+  var ns = 'http://www.goat1000.com/svggraph', element;
+  element = doc.getElementsByTagName('svggraph:' + ename);
+  if(!element.length)
+    element = doc.getElementsByTagNameNS(ns, ename);
+  if(!element.length)
+    return null;
+  return element[0];
+}

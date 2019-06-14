@@ -73,19 +73,19 @@ class CrossHairs {
     else
       $hch = ['class' => 'chY', 'y2' => $ch['y1'] + $this->height];
 
-    $show = "show_{$orientation}";
+    $show = 'show_' . $orientation;
     if($this->$show) {
       $hch['stroke'] = $this->graph->solidColour(
         $this->graph->getOption(
-          "crosshairs_colour_{$orientation}", 'crosshairs_colour'));
+          'crosshairs_colour_' . $orientation, 'crosshairs_colour'));
       $hch['stroke-width'] = $this->graph->getOption(
-        "crosshairs_stroke_width_{$orientation}", 'crosshairs_stroke_width');
+        'crosshairs_stroke_width_' . $orientation, 'crosshairs_stroke_width');
       $opacity = $this->graph->getOption(
-        "crosshairs_opacity_{$orientation}", 'crosshairs_opacity');
+        'crosshairs_opacity_' . $orientation, 'crosshairs_opacity');
       if($opacity > 0 && $opacity < 1)
         $hch['opacity'] = $opacity;
       $dash = $this->graph->getOption(
-        "crosshairs_dash_{$orientation}", 'crosshairs_dash');
+        'crosshairs_dash_' . $orientation, 'crosshairs_dash');
       if(!empty($dash))
         $hch['stroke-dasharray'] = $dash;
     }
@@ -117,7 +117,7 @@ class CrossHairs {
     ];
     $t_opt = [];
     foreach($text_options as $opt)
-      $t_opt[$opt] = $this->graph->getOption("crosshairs_text_{$opt}");
+      $t_opt[$opt] = $this->graph->getOption('crosshairs_text_' . $opt);
 
     // text group for grid details
     $text_group = ['id' => $this->graph->newId(), 'visibility' => 'hidden'];
@@ -158,36 +158,50 @@ class CrossHairs {
     $prec_y = $this->graph->getOption('crosshairs_text_precision_v',
       max(0, ceil(log10($scale_y))));
 
-    $units = $base_y = $base_x = '';
+    $gridx_attrs = [
+      'function' => 'strValueX',
+      'zero' => $zero_x,
+      'scale' => $scale_x,
+      'precision' => $prec_x,
+    ];
+    $gridy_attrs = [
+      'function' => 'strValueY',
+      'zero' => $zero_y,
+      'scale' => $scale_y,
+      'precision' => $prec_y,
+    ];
+    $chtextitem_attrs = [
+      'type' => 'xy',
+      'groupid' => $text_group['id'],
+    ];
     $u = $this->x_axis->afterUnits();
-    if(!empty($u)) $units .= " unitsx=\"{$u}\"";
+    if(!empty($u))
+      $chtextitem_attrs['unitsx'] = $u;
     $u = $this->y_axis->afterUnits();
-    if(!empty($u)) $units .= " unitsy=\"{$u}\"";
+    if(!empty($u))
+      $chtextitem_attrs['unitsy'] = $u;
     $u = $this->x_axis->beforeUnits();
-    if(!empty($u)) $units .= " unitsbx=\"{$u}\"";
+    if(!empty($u))
+      $chtextitem_attrs['unitsbx'] = $u;
     $u = $this->y_axis->beforeUnits();
-    if(!empty($u)) $units .= " unitsby=\"{$u}\"";
-
-    // names of which string function to use for each axis
-    $function_x = 'strValueX';
-    $function_y = 'strValueY';
-    $extra_x = $extra_y = '';
+    if(!empty($u))
+      $chtextitem_attrs['unitsby'] = $u;
 
     $flip_axes = $this->graph->getOption('flip_axes');
     if($this->graph->getOption('log_axis_y')) {
       $base = $this->graph->getOption('log_axis_y_base');
       if($flip_axes) {
-        $base_x = " base=\"{$base}\"";
-        $zero_x = $this->x_axis->value(0);
-        $scale_x = $this->x_axis->value($this->width);
+        $gridx_attrs['base'] = $base;
+        $gridx_attrs['zero'] = $this->x_axis->value(0);
+        $gridx_attrs['scale'] = $this->x_axis->value($this->width);
         $this->graph->javascript->addFunction('logStrValueX');
-        $function_x = 'logStrValueX';
+        $gridx_attrs['function'] = 'logStrValueX';
       } else {
-        $base_y = " base=\"{$base}\"";
-        $zero_y = $this->y_axis->value(0);
-        $scale_y = $this->y_axis->value($this->height);
+        $gridy_attrs['base'] = $base;
+        $gridy_attrs['zero'] = $this->y_axis->value(0);
+        $gridy_attrs['scale'] = $this->y_axis->value($this->height);
         $this->graph->javascript->addFunction('logStrValueY');
-        $function_y = 'logStrValueY';
+        $gridy_attrs['function'] = 'logStrValueY';
       }
     }
 
@@ -195,27 +209,23 @@ class CrossHairs {
       (method_exists($this->x_axis, 'GetFormat') ||
       method_exists($this->y_axis, 'GetFormat'))) {
       if($flip_axes) {
+        $this->graph->javascript->addFunction('dateStrValueY');
         $zy = (int)$this->y_axis->value(0);
         $ey = (int)$this->y_axis->value($this->width);
-        $scale_y = ($ey - $zy) / $this->height;
         $dt = new \DateTime('@' . $zy);
-        $zero_y = $dt->format('c');
-        $this->graph->javascript->addFunction('dateStrValueY');
-        $function_y = 'dateStrValueY';
-        $extra_y = ' format="' .
-          htmlspecialchars($this->y_axis->getFormat(), ENT_COMPAT,
-            $this->encoding) . '"';
+        $gridy_attrs['scale'] = ($ey - $zy) / $this->height;
+        $gridy_attrs['zero'] = $dt->format('c');
+        $gridy_attrs['function'] = 'dateStrValueY';
+        $gridy_attrs['format'] = $this->y_axis->getFormat();
       } else {
+        $this->graph->javascript->addFunction('dateStrValueX');
         $zx = (int)$this->x_axis->value(0);
         $ex = (int)$this->x_axis->value($this->width);
-        $scale_x = ($ex - $zx) / $this->width;
         $dt = new \DateTime('@' . $zx);
-        $zero_x = $dt->format('c');
-        $this->graph->javascript->addFunction('dateStrValueX');
-        $function_x = 'dateStrValueX';
-        $extra_x = ' format="' .
-          htmlspecialchars($this->x_axis->getFormat(), ENT_COMPAT,
-            $this->encoding) . '"';
+        $gridx_attrs['scale'] = ($ex - $zx) / $this->width;
+        $gridx_attrs['zero'] = $dt->format('c');
+        $gridx_attrs['function'] = 'dateStrValueX';
+        $gridx_attrs['format'] = $this->x_axis->getFormat();
       }
     }
 
@@ -224,13 +234,11 @@ class CrossHairs {
     if($this->assoc) {
 
       $k_max = $this->graph->getMaxKey();
-      $keys_xml .= "  <svggraph:keys>\n";
       for($i = 0; $i <= $k_max; ++$i) {
         $k = $this->graph->getKey($i);
-        $key = htmlspecialchars($k, ENT_COMPAT, $this->encoding);
-        $keys_xml .= "    <svggraph:key value=\"{$key}\"/>\n";
+        $keys_xml .= $this->graph->element('svggraph:key', ['value' => $k]);
       }
-      $keys_xml .= "  </svggraph:keys>\n";
+      $keys_xml = $this->graph->element('svggraph:keys', null, null, $keys_xml);
 
       // choose a rounding function
       $round_function = 'kround';
@@ -241,25 +249,23 @@ class CrossHairs {
       // set the string function
       if($flip_axes) {
         $this->graph->javascript->addFunction('keyStrValueY');
-        $function_y = 'keyStrValueY';
-        $extra_y = " round=\"{$round_function}\"";
+        $gridy_attrs['function'] = 'keyStrValueY';
+        $gridy_attrs['round'] = $round_function;
       } else {
         $this->graph->javascript->addFunction('keyStrValueX');
-        $function_x = 'keyStrValueX';
-        $extra_x = " round=\"{$round_function}\"";
+        $gridx_attrs['function'] = 'keyStrValueX';
+        $gridx_attrs['round'] = $round_function;
       }
     }
-    // add details of scale to defs section for use by JS functions
-    $defs = <<<XML
-<svggraph:data xmlns:svggraph="http://www.goat1000.com/svggraph">
-  <svggraph:gridx function="{$function_x}"{$extra_x} zero="{$zero_x}" scale="{$scale_x}" precision="{$prec_x}"{$base_x}/>
-  <svggraph:gridy function="{$function_y}"{$extra_y} zero="{$zero_y}" scale="{$scale_y}" precision="{$prec_y}"{$base_y}/>
-  <svggraph:chtext>
-    <svggraph:chtextitem type="xy" groupid="{$text_group['id']}"$units/>
-  </svggraph:chtext>
-{$keys_xml}</svggraph:data>
 
-XML;
+    $gridx = $this->graph->element('svggraph:gridx', $gridx_attrs);
+    $gridy = $this->graph->element('svggraph:gridy', $gridy_attrs);
+    $chtext = $this->graph->element('svggraph:chtext', null, null,
+      $this->graph->element('svggraph:chtextitem', $chtextitem_attrs));
+
+    $xml = $gridx . $gridy . $chtext . $keys_xml;
+    $defs = $this->graph->element('svggraph:data',
+      ['xmlns:svggraph' => 'http://www.goat1000.com/svggraph'], null, $xml);
     $this->graph->addDefs($defs);
 
     // add the main function at the end - it can fill in any defaults

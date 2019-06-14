@@ -68,7 +68,7 @@ class AxisFixed extends Axis {
     $count = ($this->max_value - $this->min_value) / $this->step;
     $ulen = $this->max_value - $this->min_value;
     if($ulen == 0)
-      throw new \Exception("Zero length axis (min >= max)");
+      throw new \Exception('Zero length axis (min >= max)');
     $this->unit_size = $this->length / $ulen;
     $grid = $this->length / $count;
     $this->zero = (-$this->min_value / $this->step) * $grid;

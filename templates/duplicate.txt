@@ -1,0 +1,26 @@
+function duplicate(f,t) {
+  var e = getE(f), g, a, p = e && e.parentNode, m;
+  if(e) {
+    while(p.parentNode && p.nodeName != '{$string:namespace}svg' &&
+      (p.nodeName != '{$string:namespace}g' || !p.getAttributeNS(null,'clip-path'))) {
+      p.nodeName == '{$string:namespace}a' && (a = p);
+      p = p.parentNode;
+    }
+    g = e.cloneNode(true);
+    setattr(g,'opacity',0);
+    e.id = t;
+
+    if(a) {
+      a = a.cloneNode(false);
+      a.appendChild(g);
+      g = a;
+    }
+    a = e.getCTM();
+    setattr(g,'transform', 'matrix(' + a.a + ' ' + a.b + ' ' + a.c + ' ' + a.d + ' ' + a.e + ' ' + a.f + ')');
+    p.appendChild(g);
+  }
+}
+function initDups() {
+  for(var d in dups)
+    duplicate(d,dups[d]);
+}

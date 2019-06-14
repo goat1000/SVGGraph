@@ -57,8 +57,11 @@ class SemiDonutGraph extends DonutGraph {
     $label_w, $label_h)
   {
     if($dataset === 'innertext') {
-      $y_offset = ($this->flipped ? 1 : -1) * $label_h / 2;
-      return ["centre middle 0 {$y_offset}", [$x, $y] ];
+      if($this->flipped)
+        $y_offset = new Number($label_h / 2);
+      else
+        $y_offset = new Number($label_h / -2);
+      return ['centre middle 0 ' . $y_offset, [$x, $y] ];
     }
 
     return parent::dataLabelPosition($dataset, $index, $item, $x, $y, $w, $h,

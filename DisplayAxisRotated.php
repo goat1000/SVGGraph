@@ -64,7 +64,7 @@ class DisplayAxisRotated extends DisplayAxis {
 
     $attr = [
       'stroke' => $this->styles['colour'],
-      'd' => "M{$x0} {$y0}l$x1 $y1",
+      'd' => new PathData('M', $x0, $y0, 'l', $x1, $y1),
     ];
 
     if($this->styles['stroke_width'] != 1)
@@ -78,7 +78,7 @@ class DisplayAxisRotated extends DisplayAxis {
   protected function getDivisionPath($x, $y, $points, $path_info)
   {
     $a = $this->arad + ($this->arad <= M_PI_2 ? - M_PI_2 : M_PI_2);
-    $path = '';
+    $path = new PathData;
     $c = cos($this->arad);
     $s = sin($this->arad);
     $px = $path_info['pos'] * sin($a);
@@ -95,14 +95,14 @@ class DisplayAxisRotated extends DisplayAxis {
     foreach($points as $pt) {
       $x1 = ($x - $pt->position * $s) + $px;
       $y1 = ($y - $pt->position * $c) + $py;
-      $path .= "M$x1 {$y1}l$x2 $y2";
+      $path->add('M', $x1, $y1, 'l', $x2, $y2);
     }
     if($path != '' && $path_info['box']) {
       $x1 = abs($path_info['box_len']) * $s;
       $y1 = abs($path_info['box_len']) * $c;
       $x -= $x2;
       $y -= $y2;
-      $path .= "M$x {$y}l$x1 $y1";
+      $path->add('M', $x, $y, 'l', $x1, $y1);
     }
     return $path;
   }
@@ -174,7 +174,9 @@ class DisplayAxisRotated extends DisplayAxis {
     if($angle) {
       $rcx = $x + $x_add;
       $rcy = $y + $y_add;
-      $attr['transform'] = "rotate({$angle},{$rcx},{$rcy})";
+      $xform = new Transform;
+      $xform->rotate($angle, $rcx, $rcy);
+      $attr['transform'] = $xform;
     }
     if($measure) {
       list($x, $y, $width, $height) = $svg_text->measurePosition($point->text,

@@ -1,0 +1,14 @@
+function fade() {
+  var f,f1,e,o;
+  for(f in fades) {
+    f1 = fades[f];
+    if(!(clickElements[f] && clickMap[clickElements[f]]) && f1.dir) {
+      e = getE(f1.id);
+      if(e) {
+        o = (textAttr(e,'opacity') || fstart) * 1 + f1.dir;
+        setattr(e,'opacity', o < .01 ? 0 : (o > .99 ? 1 : o));
+      }
+    }
+  }
+  setTimeout(fade,50);
+}

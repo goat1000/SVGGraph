@@ -23,7 +23,7 @@ namespace Goat1000\SVGGraph;
 
 class SVGGraph {
 
-  const VERSION = 'SVGGraph 3.0';
+  const VERSION = 'SVGGraph 3.0.1';
   private $width = 100;
   private $height = 100;
   private $settings = [];
@@ -52,9 +52,9 @@ class SVGGraph {
   public function __set($name, $val)
   {
     if($name == 'values' || $name == 'links' || $name == 'colours') {
-      throw new \BadMethodCallException(
-        "Modifying \$graph->{$name} directly is not supported - " .
-        "please use the \$graph->{$name}() function.");
+      throw new \BadMethodCallException('Modifying $graph->' . $name .
+        ' directly is not supported - please use the $graph->' . $name .
+        '() function.');
     }
   }
 
@@ -138,12 +138,12 @@ class SVGGraph {
    */
   private function setup($class)
   {
-    $full_class = "\\Goat1000\\SVGGraph\\$class";
+    $full_class = '\\Goat1000\\SVGGraph\\' . $class;
     if(!class_exists($full_class)) {
       throw new \InvalidArgumentException('Unknown graph type: ' . $class);
     }
 
-    if(!is_subclass_of($full_class, "\\Goat1000\\SVGGraph\\Graph")) {
+    if(!is_subclass_of($full_class, '\\Goat1000\\SVGGraph\\Graph')) {
       throw new \InvalidArgumentException('Not a graph class: ' . $class);
     }
 

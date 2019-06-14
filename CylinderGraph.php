@@ -61,7 +61,7 @@ class CylinderGraph extends Bar3DGraph {
     $this->cyl_offset_y = $y1;
     $a = $ellipse['a'];
     $b = $ellipse['b'];
-    $this->arc_path = "a$a $b $r 1 0 $x2 $y2";
+    $this->arc_path = new PathData('a', $a, $b, $r, 1, 0, $x2, $y2);
   }
 
   /**
@@ -75,7 +75,9 @@ class CylinderGraph extends Bar3DGraph {
     list($sx, $sy) = $this->project(0, 0, $this->calculated_bar_width);
     $this->tx += ($this->calculated_bar_width + $sx) / 2;
     $this->ty += $sy / 2;
-    $group['transform'] = "translate({$this->tx},{$this->ty})";
+    $xform = new Transform;
+    $xform->translate($this->tx, $this->ty);
+    $group['transform'] = $xform;
     return $group;
   }
 
@@ -86,10 +88,12 @@ class CylinderGraph extends Bar3DGraph {
   {
     $ellipse = $this->findEllipse();
     $r = -$this->project_angle / 2;
+    $xform = new Transform;
+    $xform->rotate($r);
     $top = [
       'cx' => 0, 'cy' => 0,
       'rx' => $ellipse['a'], 'ry' => $ellipse['b'],
-      'transform' => "rotate({$r})",
+      'transform' => $xform,
     ];
 
     $ellipse = $this->element('ellipse', $top);
@@ -136,7 +140,9 @@ class CylinderGraph extends Bar3DGraph {
 
     $cyl_top = '';
     if($top) {
-      $top = ['transform' => "translate({$bar['x']},{$bar['y']})"];
+      $xform = new Transform;
+      $xform->translate($bar['x'], $bar['y']);
+      $top = ['transform' => $xform];
       $top['fill'] = $this->getColour($item, $index, $dataset, true);
       $cyl_top = $this->symbols->useSymbol($this->top_id, $top);
     }
@@ -144,11 +150,14 @@ class CylinderGraph extends Bar3DGraph {
     $x = $bar['x'] + $this->cyl_offset_x;
     $y = $bar['y'] + $this->cyl_offset_y;
     $h = $bar['height'];
-    $side = ['d' => "M{$x} {$y}v{$h}{$this->arc_path}v-{$h}z"];
+    $path = new PathData('M', $x, $y, 'v', $h);
+    $path->add($this->arc_path);
+    $path->add('v', -$h, 'z');
+    $side = ['d' => $path];
     $cyl_side = $this->element('path', $side);
 
     if($this->shade_gradient_id) {
-      $side['fill'] = "url(#{$this->shade_gradient_id})";
+      $side['fill'] = 'url(#' . $this->shade_gradient_id . ')';
       $cyl_side .= $this->element('path', $side);
     }
 

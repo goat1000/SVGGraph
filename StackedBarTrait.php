@@ -84,20 +84,28 @@ trait StackedBarTrait {
   public function barTotals(DataItem $item, $bnum, $yplus, $yminus, $dataset)
   {
     $bar_x = $this->gridPosition($item, $bnum);
-    if($this->show_bar_totals && !is_null($bar_x)) {
+    if($this->show_bar_totals && $bar_x !== null) {
       if($yplus) {
         $bar = $this->barDimensions($item, $bnum, 0, null, $dataset);
         $this->barY($yplus, $bar);
-        $total = is_callable($this->bar_total_callback) ?
-          call_user_func($this->bar_total_callback, $item->key, $yplus) : $yplus;
+        if(is_callable($this->bar_total_callback)) {
+          $total = call_user_func($this->bar_total_callback, $item->key, $yplus);
+        } else {
+          $total = new Number($yplus);
+          $total = $total->format();
+        }
         $this->addContentLabel('totalpos-' . $dataset, $bnum,
           $bar['x'], $bar['y'], $bar['width'], $bar['height'], $total);
       }
       if($yminus) {
         $bar = $this->barDimensions($item, $bnum, 0, null, $dataset);
         $this->barY($yminus, $bar);
-        $total = is_callable($this->bar_total_callback) ?
-          call_user_func($this->bar_total_callback, $item->key, $yminus) : $yminus;
+        if(is_callable($this->bar_total_callback)) {
+          $total = call_user_func($this->bar_total_callback, $item->key, $yminus);
+        } else {
+          $total = new Number($yminus);
+          $total = $total->format();
+        }
         $this->addContentLabel('totalneg-' . $dataset, $bnum,
           $bar['x'], $bar['y'], $bar['width'], $bar['height'], $total);
       }
@@ -119,8 +127,10 @@ trait StackedBarTrait {
         if(isset($this->last_position_pos[$index])) {
           list($lpos, $l_h) = $this->last_position_pos[$index];
           list($hpos, $vpos) = Graph::translatePosition($lpos);
-          if($vpos == 'ot')
-            return ["above 0 -{$l_h}", $target];
+          if($vpos == 'ot') {
+            $num_offset = new Number(-$l_h);
+            return ['above 0 ' . $num_offset, $target];
+          }
         }
         return ['above', $target];
       }
@@ -128,8 +138,10 @@ trait StackedBarTrait {
         if(isset($this->last_position_neg[$index])) {
           list($lpos, $l_h) = $this->last_position_neg[$index];
           list($hpos, $vpos) = Graph::translatePosition($lpos);
-          if($vpos == 'ob')
-            return ["below 0 {$l_h}", $target];
+          if($vpos == 'ob') {
+            $num_offset = new Number($l_h);
+            return ['below 0 ' . $num_offset, $target];
+          }
         }
         return ['below', $target];
       }
@@ -160,7 +172,7 @@ trait StackedBarTrait {
         'tail_width', 'tail_length',
       ];
       foreach($simple as $opt) {
-        $val = $this->getOption("bar_total_{$opt}");
+        $val = $this->getOption('bar_total_' . $opt);
         if(!empty($val))
           $style[$opt] = $val;
       }

@@ -334,34 +334,34 @@ class AxisDateTime extends Axis {
       switch($unit) {
       case 'year':
         $y = $time->format('Y');
-        $new_y = $y - ($y % $n) + $n - 1;
-        $datetime->modify("$new_y-12-31 23:59:59");
+        $new_y = new Number($y - ($y % $n) + $n - 1);
+        $datetime->modify($new_y . '-12-31 23:59:59');
         break;
 
       case 'month':
         $datetime->modify('00:00:00 first day of');
         $diff = $datetime->diff($start);
         $months = ($diff->y * 12) + $diff->m;
-        $new_months = $months - ($months % $n) + $n - 1;
+        $new_months = new Number($months - ($months % $n) + $n - 1);
         $datetime = clone $start;
-        $datetime->modify("+{$new_months} month 23:59:59 last day of");
+        $datetime->modify('+' . $new_months . ' month 23:59:59 last day of');
         break;
 
       case 'day':
         $datetime->modify('00:00:00');
         $diff = $datetime->diff($start);
-        $days = $diff->days - ($diff->days % $n) + $n - 1;
+        $days = new Number($diff->days - ($diff->days % $n) + $n - 1);
         $datetime = clone $start;
-        $datetime->modify("+{$days} day 23:59:59");
+        $datetime->modify('+' . $days . ' day 23:59:59');
         break;
 
       case 'hour':
         if($n > 1) {
           $diff = $datetime->diff($start);
           $hours = ($diff->days * 24) + $diff->h;
-          $hours = $hours - ($hours % $n) + $n - 1;
+          $hours = new Number($hours - ($hours % $n) + $n - 1);
           $datetime = clone $start;
-          $datetime->modify("+{$hours} hour 59 minute 59 second");
+          $datetime->modify('+' . $hours . ' hour 59 minute 59 second');
         } else {
           $h = $datetime->format('H');
           $newtime = sprintf('%02d:59:59', $h);
@@ -373,9 +373,9 @@ class AxisDateTime extends Axis {
         if($n > 1) {
           $diff = $datetime->diff($start);
           $minutes = ((($diff->days * 24) + $diff->h) * 60) + $diff->i;
-          $minutes = $minutes - ($minutes % $n) + $n - 1;
+          $minutes = new Number($minutes - ($minutes % $n) + $n - 1);
           $datetime = clone $start;
-          $datetime->modify("+{$minutes} minute 59 second");
+          $datetime->modify('+' . $minutes . ' minute 59 second');
         } else {
           $m = $datetime->format('i');
           $newtime = $datetime->format(sprintf('H:%02d:59', $m));
@@ -388,9 +388,9 @@ class AxisDateTime extends Axis {
           $diff = $datetime->diff($start);
           $seconds = ($diff->days * 86400) + ($diff->h * 3600) +
             ($diff->i * 60) + $diff->s;
-          $seconds = $seconds - ($seconds % $n) + $n - 1;
+          $seconds = new Number($seconds - ($seconds % $n) + $n - 1);
           $datetime = clone $start;
-          $datetime->modify("+{$seconds} second");
+          $datetime->modify('+' . $seconds . ' second');
         }
         // if $n == 1, no modifications are required
         break;
@@ -414,7 +414,8 @@ class AxisDateTime extends Axis {
 
         // initialise with 0, not the current time/date
         $datetime = new \DateTime('@0');
-        $datetime->modify("+{$unit_count} {$units}");
+        $uc = new Number($unit_count);
+        $datetime->modify('+' . $uc . ' ' . $units);
         $value = $datetime->format('U');
       }
     } else {
@@ -494,8 +495,8 @@ class AxisDateTime extends Axis {
       $points[] = new GridPoint($position, $text, $value);
 
       $datetime = new \DateTime('@' . $this->start);
-      $offset = $c * $unit_count;
-      $datetime->modify("+{$offset} {$units}");
+      $offset = new Number($c * $unit_count);
+      $datetime->modify('+' . $offset . ' ' . $units);
       $value = $datetime->format('U');
       $pos = $this->position($value);
     }
@@ -556,8 +557,8 @@ class AxisDateTime extends Axis {
         $subdivs[] = new GridPoint($position, $text, $value);
 
       $datetime = new \DateTime('@' . $this->start);
-      $offset = $c * $unit_count;
-      $datetime->modify("+{$offset} {$units}");
+      $offset = new Number($c * $unit_count);
+      $datetime->modify('+' . $offset . ' ' . $units);
       $value = $datetime->format('U');
       $pos = $this->position($value);
     }
@@ -596,7 +597,7 @@ class AxisDateTime extends Axis {
 
     $units = rtrim($units, 's');
     if(!isset(AxisDateTime::$unit_sizes[$units]))
-      throw new \Exception("Unrecognized datetime units [{$units}]");
+      throw new \Exception('Unrecognized datetime units [' . $units . ']');
     if(!is_numeric($unit_count) || $unit_count < 1)
       $unit_count = 1;
 

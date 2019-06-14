@@ -1,0 +1,7 @@
+function dateStrValueX(de,x,w,g,ub,ua) {
+  var z = new Date(g.getAttributeNS(null, 'zero')),
+    s = g.getAttributeNS(null, 'scale'), fmt = g.getAttributeNS(null, 'format'),
+    dt = new Date(z.valueOf() + (1000 * x * s)), str = '';
+  str = dateFormat(dt,fmt);
+  return str;
+}

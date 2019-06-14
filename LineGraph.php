@@ -126,18 +126,22 @@ class LineGraph extends PointGraph {
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
-      $path = $fillpath = '';
+      $path = new PathData;
+      $fillpath = new PathData;
       $cmd = 'M';
       foreach($points as $point) {
         list($x, $y, $item, $dataset, $index) = $point;
 
-        if(empty($fillpath)) {
-          $fillpath = $figure ? "M$x {$y}" : $this->fillFrom($x, $y_bottom);
-          $fillpath .= 'L';
+        if($fillpath->isEmpty()) {
+          if($figure)
+            $fillpath->add('M', $x, $y);
+          else
+            $fillpath->add($this->fillFrom($x, $y_bottom));
+          $fillpath->add('L');
         }
 
-        $path .= "$cmd$x $y ";
-        $fillpath .= "$x $y ";
+        $path->add($cmd, $x, $y);
+        $fillpath->add($x, $y);
 
         // no need to repeat same L command
         $cmd = $cmd == 'M' ? 'L' : '';
@@ -146,17 +150,17 @@ class LineGraph extends PointGraph {
 
       // close the path?
       if($close)
-        $path .= 'z';
+        $path->add('z');
       $this->curr_line_style = $attr;
       $attr['d'] = $path;
       if($this->semantic_classes)
-        $attr['class'] = "series{$dataset}";
+        $attr['class'] = 'series' . $dataset;
       $graph_line = $this->element('path', $attr);
 
       if($fill) {
         $opacity = $this->getOption(['fill_opacity', $dataset]);
         if(!$figure)
-          $fillpath .= $this->fillTo($last_x, $y_bottom);
+          $fillpath->add($this->fillTo($last_x, $y_bottom));
         $fill_style = [
           'fill' => $this->getColour(null, 0, $dataset),
           'd' => $fillpath,
@@ -165,7 +169,7 @@ class LineGraph extends PointGraph {
         if($opacity < 1)
           $fill_style['opacity'] = $opacity;
         if($this->semantic_classes)
-          $fill_style['class'] = "series{$dataset}";
+          $fill_style['class'] = 'series' . $dataset;
         $graph_line = $this->element('path', $fill_style) . $graph_line;
 
         unset($fill_style['d'], $fill_style['class']);
@@ -193,7 +197,7 @@ class LineGraph extends PointGraph {
    */
   protected function fillFrom($x, $y_axis)
   {
-    return "M{$x} {$y_axis}";
+    return new PathData('M', $x, $y_axis);
   }
 
   /**
@@ -201,7 +205,7 @@ class LineGraph extends PointGraph {
    */
   protected function fillTo($x, $y_axis)
   {
-    return "L{$x} {$y_axis}z";
+    return new PathData('L', $x, $y_axis, 'z');
   }
 
   /**
@@ -225,12 +229,12 @@ class LineGraph extends PointGraph {
     $h1 = $h/2;
     $y += $h1;
     $line = $entry->style['line_style'];
-    $line['d'] = "M$x {$y}l$w 0";
+    $line['d'] = new PathData('M', $x, $y, 'l', $w, 0);
     $graph_line = $this->element('path', $line);
 
     if(!is_null($entry->style['fill_style'])) {
       $fill = $entry->style['fill_style'];
-      $fill['d'] = "M$x {$y}l$w 0 0 $h1 -$w 0z";
+      $fill['d'] = new PathData('M', $x, $y, 'l', $w, 0, 0, $h1, -$w, 0, 'z');
       $graph_line = $this->element('path', $fill) . $graph_line;
     }
     return $graph_line . $marker;

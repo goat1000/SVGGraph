@@ -41,24 +41,24 @@ class Text {
   public function __construct(&$graph, $font = null, $adjust = 0)
   {
     // iconv can be troublesome
-    if(is_null(Text::$use_iconv)) {
+    if(Text::$use_iconv === null) {
       Text::$use_iconv = false;
       if($graph->getOption('use_iconv', true) && extension_loaded('iconv')) {
         // test the iconv function
-        $out = iconv('UTF-8', 'ASCII//TRANSLIT', "Test:€");
+        $out = iconv('UTF-8', 'ASCII//TRANSLIT', 'Test:€');
         Text::$use_iconv = (strlen($out) > 0);
       }
     }
 
     // mbstring should be OK, but allow disabling it
-    if(is_null(Text::$use_mbstring)) {
+    if(Text::$use_mbstring === null) {
       Text::$use_mbstring = $graph->getOption('use_mbstring', true) &&
         extension_loaded('mbstring');
     }
 
     $this->graph =& $graph;
     $this->font = $font;
-    if(!is_null($font))
+    if($font !== null)
       $this->metrics_file = $this->metricsFilename($font);
     $this->encoding = strtoupper($graph->encoding);
     $this->no_tspan = $graph->no_tspan;
@@ -72,13 +72,19 @@ class Text {
    */
   public function measure($text, $font_size, $angle = 0, $line_spacing = 0)
   {
-    if(!is_string($text))
-      $text = is_numeric($text) ? Graph::numString($text) : (string)$text;
+    if(!is_string($text)) {
+      if(is_numeric($text)) {
+        $num = new Number($text);
+        $text = $num->format();
+      } else {
+        $text = (string)$text;
+      }
+    }
 
     // convert to UTF-8
     $text = $this->convert($text);
     $cached = $this->measureCached($text, $font_size, $angle, $line_spacing);
-    if(!is_null($cached))
+    if($cached !== null)
       return $cached;
 
     $lines = $line_spacing > 0 ? $this->splitLines($text) : [$text];
@@ -386,7 +392,7 @@ class Text {
    */
   public function strlen($text, $enc = null)
   {
-    if(is_null($enc))
+    if($enc === null)
       $enc = $this->encoding;
     if(Text::$use_iconv)
       return iconv_strlen($text, $enc);
@@ -400,7 +406,7 @@ class Text {
    */
   public function strpos($text, $needle, $offset = 0, $enc = null)
   {
-    if(is_null($enc))
+    if($enc === null)
       $enc = $this->encoding;
     if(Text::$use_iconv)
       return iconv_strpos($text, $needle, $offset, $enc);
@@ -610,7 +616,7 @@ class Text {
   public function substr($text, $begin, $length = null)
   {
     if(Text::$use_iconv) {
-      if(is_null($length))
+      if($length === null)
         $length = iconv_strlen($text, $this->encoding);
       return iconv_substr($text, $begin, $length, $this->encoding);
     }
@@ -618,7 +624,7 @@ class Text {
     if(Text::$use_mbstring)
       return mb_substr($text, $begin, $length, $this->encoding);
 
-    return is_null($length) ? substr($text, $begin) :
+    return $length === null ? substr($text, $begin) :
       substr($text, $begin, $length);
   }
 
@@ -704,7 +710,7 @@ class Text {
    */
   private static function metricsFilename($font)
   {
-    return preg_replace("/[^a-z0-9]+/ui", '_', strtolower($font));
+    return preg_replace('/[^a-z0-9]+/ui', '_', strtolower($font));
   }
 
   /**
@@ -721,7 +727,7 @@ class Text {
       return (Text::$metrics[$filename] !== false);
     }
 
-    $metrics_path = __DIR__ . "/fonts/{$filename}.json";
+    $metrics_path = __DIR__ . '/fonts/' . $filename . '.json';
     if(file_exists($metrics_path)) {
       $metrics = file_get_contents($metrics_path);
       $metrics = @json_decode($metrics, true);
@@ -732,7 +738,7 @@ class Text {
           if(isset(Text::$metrics[$map_to])) {
             $metrics = Text::$metrics[$map_to];
           } else {
-            $metrics_path = __DIR__ . "/fonts/{$map_to}.json";
+            $metrics_path = __DIR__ . '/fonts/' . $map_to . '.json';
             if(file_exists($metrics_path)) {
               $metrics = file_get_contents($metrics_path);
               $metrics = @json_decode($metrics, true);

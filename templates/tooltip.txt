@@ -1,0 +1,47 @@
+function tooltip(e,callback,on,param) {
+  var tt = getE('tooltip'), rect = getE('ttrect'), shadow = getE('ttshdw'),
+    offset = {$number:offset}, pos = svgCursorCoords(e),
+    x = pos[0] + offset, y = pos[1] + offset, inner, brect, bw, bh,
+    sw, sh, de = svgNode(e);
+  if(on && !tt) {
+    tt = newel('g',{id:'tooltip',visibility:'visible'});
+    rect = newel('rect',{id:'ttrect',stroke:'{$string:colour}',
+      'stroke-width':'{$number:stroke_width}px',
+      fill:'{$string:back_colour}'{$string:round_part},
+      width:'10px',height:'10px'
+    });
+{$string:shadow_part}
+    tt.appendChild(rect);
+  }
+  if(tt) {
+    if(on) {
+      if(tt.parentNode && tt.parentNode != de)
+        tt.parentNode.removeChild(tt);
+      de.appendChild(tt);
+    }
+    showhide(tt,on);
+  }
+  inner = callback(e,tt,on,param);
+  if(inner && on) {
+    brect = inner.getBBox();
+    bw = Math.ceil(brect.width + {$number:dpad});
+    bh = Math.ceil(brect.height + {$number:dpad});
+    setattr(rect, 'width', bw + 'px');
+    setattr(rect, 'height', bh + 'px');
+    setattr(inner, 'transform', 'translate(' + (bw / 2) + ',0)');
+    if(shadow) {
+      setattr(shadow, 'width', (bw + {$number:stroke_width}) + 'px');
+      setattr(shadow, 'height', (bh + {$number:stroke_width}) + 'px');
+    }
+    if(bw + x > de.width.baseVal.value - {$number:edge_space}) {
+      x -= bw + offset * 2;
+      x = Math.max(x, 0);
+    }
+    if(bh + y > de.height.baseVal.value - {$number:edge_space}) {
+      y -= bh + offset * 2;
+      y = Math.max(y, 0);
+    }
+  }
+  on && setattr(tt,'transform','translate('+x+' '+y+')');
+  tooltipOn = on ? 1 : 0;
+}

@@ -108,7 +108,7 @@ abstract class PointGraph extends GridGraph {
     if(is_array($marker->extra))
       $use = array_merge($marker->extra, $use);
     if($this->semantic_classes)
-      $use['class'] = "series{$set}";
+      $use['class'] = 'series' . $set;
     if($this->show_tooltips)
       $this->setTooltip($use, $marker->item, $set, $marker->key, $marker->value);
     if($this->show_context_menu)
@@ -158,7 +158,7 @@ abstract class PointGraph extends GridGraph {
   private function createMarker($type, $size, $fill, $stroke_width,
     $stroke_colour, $opacity, $angle)
   {
-    $m_key = "$type:$size:$fill:$stroke_width:$stroke_colour:$opacity:$angle";
+    $m_key = serialize(func_get_args());
     if(isset($this->marker_types[$m_key]))
       return $this->marker_types[$m_key];
 
@@ -309,7 +309,7 @@ abstract class PointGraph extends GridGraph {
       list($best_fit, $projection) = $this->bestFit($bftype, $dataset, $start,
         $end, $project_start, $project_end);
 
-      if($best_fit !== '') {
+      if(!$best_fit->isEmpty()) {
         $colour = $this->getOption(['best_fit_colour', $dataset]);
         $stroke_width = $this->getOption(['best_fit_width', $dataset]);
         $dash = $this->getOption(['best_fit_dash', $dataset]);
@@ -328,7 +328,7 @@ abstract class PointGraph extends GridGraph {
 
         $line = $this->element('path', $path);
 
-        if($projection !== '') {
+        if(!$projection->isEmpty()) {
           $path['d'] = $projection;
           $p_colour = $this->getOption(['best_fit_project_colour', $dataset]);
           $p_stroke_width = $this->getOption(['best_fit_project_width', $dataset]);
@@ -369,7 +369,7 @@ abstract class PointGraph extends GridGraph {
   protected function bestFit($type, $dataset, $start, $end, $project_start,
     $project_end)
   {
-    $line = ['', ''];
+    $line = [new PathData, new PathData];
 
     // only straight lines supported for now
     if($type != 'straight')
@@ -431,7 +431,7 @@ abstract class PointGraph extends GridGraph {
           $x2 = $pcoords['x2'] + $this->pad_left;
           $y1 = $this->height - $this->pad_bottom - $pcoords['y1'];
           $y2 = $this->height - $this->pad_bottom - $pcoords['y2'];
-          $line[1] .= "M$x1 {$y1}L$x2 $y2";
+          $line[1]->add('M', $x1, $y1, 'L', $x2, $y2);
         }
       }
       if($project_start) {
@@ -442,7 +442,7 @@ abstract class PointGraph extends GridGraph {
           $x2 = $pcoords['x2'] + $this->pad_left;
           $y1 = $this->height - $this->pad_bottom - $pcoords['y1'];
           $y2 = $this->height - $this->pad_bottom - $pcoords['y2'];
-          $line[1] .= "M$x1 {$y1}L$x2 $y2";
+          $line[1]->add('M', $x1, $y1, 'L', $x2, $y2);
         }
       }
     }
@@ -450,7 +450,7 @@ abstract class PointGraph extends GridGraph {
     $x2 = $coords['x2'] + $this->pad_left;
     $y1 = $this->height - $this->pad_bottom - $coords['y1'];
     $y2 = $this->height - $this->pad_bottom - $coords['y2'];
-    $line[0] = "M$x1 {$y1}L$x2 $y2";
+    $line[0]->add('M', $x1, $y1, 'L', $x2, $y2);
     return $line;
   }
 
@@ -492,17 +492,20 @@ abstract class PointGraph extends GridGraph {
   protected function formatTooltip(&$item, $dataset, $key, $value)
   {
     if($this->datetime_keys) {
-      $dt = new \DateTime("@{$key}");
+      $number_key = new Number($key);
+      $dt = new \DateTime('@' . $number_key);
       $text = $dt->format($this->tooltip_datetime_format);
     } elseif(is_numeric($key)) {
-      $text = $this->units_before_tooltip_key . Graph::numString($key) .
-        $this->units_tooltip_key;
+      $num = new Number($key, $this->units_tooltip_key,
+        $this->units_before_tooltip_key);
+      $text = $num->format();
     } else {
       $text = $key;
     }
 
-    $text .= ', ' . $this->units_before_tooltip . Graph::numString($value) .
-      $this->units_tooltip;
+    $num = new Number($value, $this->units_tooltip,
+      $this->units_before_tooltip);
+    $text .= ', ' . $num->format();
     return $text;
   }
 
@@ -512,7 +515,7 @@ abstract class PointGraph extends GridGraph {
   public function isVisible($item, $dataset = 0)
   {
     // non-null values should be visible
-    return !is_null($item->value);
+    return ($item->value !== null);
   }
 }
 

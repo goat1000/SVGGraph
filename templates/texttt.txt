@@ -1,0 +1,27 @@
+function texttt(e,tt,on,t){
+  var ttt = getE('tooltiptext'), lines, i, ts, xpos;
+  if(on) {
+    lines = t.split('\\n');
+    xpos = '{$number:padding}px';
+    if(!ttt) {
+      ttt = newel('g', {
+        id: 'tooltiptext',
+        fill: '{$string:colour}',
+        'font-size': '{$number:font_size}px',
+        'font-family': '{$string:font}',
+        'font-weight': '{$string:font_weight}',
+        'text-anchor': 'middle'
+      });
+      tt.appendChild(ttt);
+    }
+    while(ttt.childNodes.length > 0)
+      ttt.removeChild(ttt.childNodes[0]);
+    for(i = 0; i < lines.length; ++i) {
+      ts = newel('text', { y: ({$number:tty} * (i + 1)) + 'px' });
+      ts.appendChild(newtext(lines[i]));
+      ttt.appendChild(ts);
+    }
+  }
+  ttt && showhide(ttt,on);
+  return ttt;
+}

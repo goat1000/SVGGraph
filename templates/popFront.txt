@@ -1,0 +1,17 @@
+function popFront() {
+  var c, e;
+  for(c in popfronts) {
+    e = getE(c);
+    e.addEventListener && e.addEventListener('mousemove', function(e) {
+      var t = finditem(e,popfronts), te, p;
+      if(t) {
+        te = getE(t);
+        if(te) {
+          p = te.parentNode;
+          p.removeChild(te);
+          p.appendChild(te);
+        }
+      }
+    },false);
+  }
+}

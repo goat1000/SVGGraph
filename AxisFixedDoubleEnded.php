@@ -61,7 +61,7 @@ class AxisFixedDoubleEnded extends AxisDoubleEnded {
     $count = ($this->max_value - $this->min_value) / $this->step;
     $ulen = $this->max_value - $this->min_value;
     if($ulen == 0)
-      throw new \Exception("Zero length axis");
+      throw new \Exception('Zero length axis');
     $this->unit_size = $this->length / $ulen;
     $grid = $this->length / $count;
     $this->zero = (-$this->min_value / $this->step) * $grid;

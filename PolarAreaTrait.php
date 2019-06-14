@@ -122,7 +122,8 @@ trait PolarAreaTrait {
     $xt = ($rx + $space) * $multiplier * $cos_ac;
     $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * $multiplier * $sin_ac;
     $target = [$x + $xt, $y + $yt];
-    return ["$xc $yc", $target];
+    $position = new Number($xc) . ' ' . new Number($yc);
+    return [$position, $target];
   }
 }
 

@@ -358,9 +358,11 @@ class DataLabels {
     if($content !== null)
       return $content;
 
-    return $gobject['content'] !== null ? $gobject['content'] :
-        $this->units_before . Graph::numString($gobject['item']->value) .
-        $this->units;
+    if($gobject['content'] !== null)
+      return $gobject['content'];
+
+    $n = new Number($gobject['item']->value, $this->units, $this->units_before);
+    return $n->format();
   }
 
   /**
@@ -527,7 +529,9 @@ class DataLabels {
       // rotate text around centre of box
       $rx = $x + $label_w / 2;
       $ry = $y + $label_h / 2;
-      $text['transform'] = "rotate({$style['angle']},$rx,$ry)";
+      $xform = new Transform;
+      $xform->rotate($style['angle'], $rx, $ry);
+      $text['transform'] = $xform;
     }
 
     if($anchor != 'start')
@@ -558,7 +562,9 @@ class DataLabels {
         if($style['shadow_opacity'] > 0) {
           $shadow = $surround;
           $offset = 2 + floor($style['stroke_width'] / 2);
-          $shadow['transform'] = "translate({$offset},{$offset})";
+          $xform = new Transform;
+          $xform->translate($offset, $offset);
+          $shadow['transform'] = $xform;
           $shadow['fill'] = $shadow['stroke'] = '#000';
           $shadow['opacity'] = $style['shadow_opacity'];
           $label_markup .= $this->graph->element($element, $shadow);
@@ -625,7 +631,7 @@ class DataLabels {
     if(isset($label_array['padding']))
       $style['pad_x'] = $style['pad_y'] = $label_array['padding'];
     foreach($this->style_map as $s => $k) {
-      // remove the "data_label_" part
+      // remove the 'data_label_' part
       $o = substr($k, 11);
       if(isset($label_array[$o]))
         $style[$s] = $label_array[$o];
@@ -740,7 +746,7 @@ class DataLabels {
       $x2 = $x1 + ($llen * cos($a));
       $y2 = $y1 + ($llen * sin($a));
     }
-    $surround['d'] = "M{$x1} {$y1}L{$x2} {$y2}";
+    $surround['d'] = new PathData('M', $x1, $y1, 'L', $x2, $y2);
     return 'path';
   }
 
@@ -772,18 +778,20 @@ class DataLabels {
 
     $vert = $h - $round * 2;
     $horz = $w - $round * 2;
-    $start = 'M' . ($x + $w - $round) . ' ' . $y;
-    $t = 'z';
-    $r = 'v' . $vert;
-    $b = 'h' . -$horz;
-    $l = 'v' . -$vert;
+    $start = new PathData('M', ($x + $w - $round), $y);
+    $t = new PathData('z');
+    $r = new PathData('v', $vert);
+    $b = new PathData('h', -$horz);
+    $l = new PathData('v', -$vert);
+    $tr = new PathData;
+    $br = new PathData;
+    $bl = new PathData;
+    $tl = new PathData;
     if($round) {
-      $tr = 'a' . $round . ' ' . $round . ' 90 0 1 ' . $round . ' ' . $round;
-      $br = 'a' . $round . ' ' . $round . ' 90 0 1 ' . -$round . ' ' . $round;
-      $bl = 'a' . $round . ' ' . $round . ' 90 0 1 ' . -$round . ' ' . -$round;
-      $tl = 'a' . $round . ' ' . $round . ' 90 0 1 ' . $round . ' ' . -$round;
-    } else {
-      $tr = $br = $bl = $tl = '';
+      $tr->add('a', $round, $round, 90, 0, 1, $round, $round);
+      $br->add('a', $round, $round, 90, 0, 1, -$round, $round);
+      $bl->add('a', $round, $round, 90, 0, 1, -$round, -$round);
+      $tl->add('a', $round, $round, 90, 0, 1, $round, -$round);
     }
 
     $direction = floor(($style['tail_direction'] + 22.5) * 8 / 360) % 8;
@@ -795,41 +803,49 @@ class DataLabels {
     switch($direction) {
     case 0 :
       $bside = $h / 2 - $s2 - $round;
-      $r = "v{$bside}l{$drop} {$s2}l-{$drop} {$s2}v{$bside}";
+      $r = new PathData('v', $bside, 'l', $drop, $s2, 'l', -$drop, $s2, 'v', $bside);
       break;
     case 1 :
-      $r = 'v' . $vcropped;
-      $br = 'l' . $ddrop . ' ' . $p1 . 'l' . -$p1 . ' ' . -$ddrop;
-      $b = 'h' . -$hcropped;
+      $r = new PathData('v', $vcropped);
+      $br = new PathData('l', $ddrop, $p1, 'l', -$p1, -$ddrop);
+      $b = new PathData('h', -$hcropped);
       break;
     case 2 :
       $bside = $w / 2 - $s2 - $round;
-      $b = "h-{$bside}l-{$s2} {$drop}l-{$s2} -{$drop}h-{$bside}";
+      $b = new PathData('h', -$bside, 'l', -$s2, $drop, 'l', -$s2,  -$drop, 'h', -$bside);
       break;
     case 3 :
-      $l = 'v' . -$vcropped;
-      $bl = 'l' . -$p1 . ' ' . $ddrop . 'l' . $ddrop . ' ' . -$p1;
-      $b = 'h' . -$hcropped;
+      $l = new PathData('v', -$vcropped);
+      $bl = new PathData('l', -$p1, $ddrop, 'l', $ddrop, -$p1);
+      $b = new PathData('h', -$hcropped);
       break;
     case 4 :
       $bside = $h / 2 - $s2 - $round;
-      $l = "v-{$bside}l-{$drop} -{$s2}l{$drop} -{$s2}v-{$bside}";
+      $l = new PathData('v', -$bside, 'l', -$drop, -$s2, 'l', $drop, -$s2, 'v', -$bside);
       break;
     case 5 :
-      $l = 'v' . -$vcropped;
-      $tl = 'l' . -$ddrop . ' ' . -$p1 . 'l' . $p1 . ' ' . $ddrop;
+      $l = new PathData('v', -$vcropped);
+      $tl = new PathData('l', -$ddrop, -$p1, 'l', $p1, $ddrop);
       break;
     case 6 :
       $bside = $w / 2 - $s2 - $round;
-      $t = "h{$bside}l{$s2} -{$drop}l{$s2} {$drop}z";
+      $t = new PathData('h', $bside, 'l', $s2, -$drop, 'l', $s2, $drop, 'z');
       break;
     case 7 :
-      $start = 'M' . ($x + $hcropped + $round) . ' ' . $y;
-      $r = 'v' . $vcropped;
-      $tr = 'l' . $p1 . ' ' . -$ddrop . 'l' . -$ddrop . ' ' . $p1;
+      $start = new PathData('M', ($x + $hcropped + $round), $y);
+      $r = new PathData('v', $vcropped);
+      $tr = new PathData('l', $p1, -$ddrop, 'l', -$ddrop, $p1);
       break;
     }
-    $surround['d'] = $start . $tr . $r . $br . $b . $bl . $l . $tl . $t;
+    $start->add($tr);
+    $start->add($r);
+    $start->add($br);
+    $start->add($b);
+    $start->add($bl);
+    $start->add($l);
+    $start->add($tl);
+    $start->add($t);
+    $surround['d'] = $start;
     $surround['fill'] = $this->graph->parseColour($style['fill']);
     return 'path';
   }
@@ -978,7 +994,7 @@ class DataLabels {
     $eangle = M_PI * $a / 180;
 
     // first fallback is a tapering line
-    $fallback = "L{$x} {$y}";
+    $fallback = new PathData('L', $x, $y);
     $lw = $lwidth * 0.5;
     $ew = $ewidth * 0.5;
     $ll = $lw / tan($eangle);
@@ -988,7 +1004,7 @@ class DataLabels {
     $langle -= M_PI * 0.5;
     $type = $style['tail_end'];
 
-    // "point" style by default
+    // 'point' style by default
     $points = [ [-$lw, -$ll], [0, 0], [$lw, -$ll] ];
 
     switch($type)
@@ -1056,13 +1072,13 @@ class DataLabels {
       $rdist = $cradius + $rlen;
       $p1 = $this->xForm(-$lw, -$rdist, $langle, $x, $y);
       $p2 = $this->xForm($lw, -$rdist, $langle, $x, $y);
-      return "L{$p1}A{$cradius} {$cradius} 0 1 0 {$p2}";
+      return new PathData('L', $p1, 'A', $cradius, $cradius, 0, 1, 0, $p2);
     }
 
-    $path = '';
+    $path = new PathData;
     foreach($points as $pair) {
       $pt = $this->xForm($pair[0], $pair[1], $langle, $x, $y);
-      $path .= 'L' . $pt;
+      $path->add('L', $pt);
     }
     return $path;
   }
@@ -1197,9 +1213,12 @@ class DataLabels {
     }
 
     $surround['fill'] = $this->graph->parseColour($style['fill']);
-    $surround['d'] = "M{$p1}L{$p2}" .
-      $this->getTailEnding($target[0], $target[1], $angle, $t_width, $len, $style) . "z";
-    return "path";
+    $path = new PathData('M', $p1, 'L', $p2);
+    $path->add($this->getTailEnding($target[0], $target[1], $angle, $t_width,
+      $len, $style));
+    $path->add('z');
+    $surround['d'] = $path;
+    return 'path';
   }
 
   /**
@@ -1230,18 +1249,26 @@ class DataLabels {
 
     // box corners
     if($round) {
-      $arc = "a{$round} {$round} 0 0 0 ";
-      $c_tl = "L{$x1c} {$y1}{$arc}-{$round} {$round}";
-      $c_tr = "L{$x2} {$y1c}{$arc}-{$round} -{$round}";
-      $c_bl = "L{$x1} {$y2c}{$arc}{$round} {$round}";
-      $c_br = "L{$x2c} {$y2}{$arc}{$round} -{$round}";
+      $arc = new PathData('a', $round, $round, 0, 0, 0);
+      $c_tl = new PathData('L', $x1c, $y1);
+      $c_tl->add($arc);
+      $c_tl->add(-$round, $round);
+      $c_tr = new PathData('L', $x2, $y1c);
+      $c_tr->add($arc);
+      $c_tr->add(-$round, -$round);
+      $c_bl = new PathData('L', $x1, $y2c);
+      $c_bl->add($arc);
+      $c_bl->add($round, $round);
+      $c_br = new PathData('L', $x2c, $y2);
+      $c_br->add($arc);
+      $c_br->add($round, -$round);
       // this gets repeated a lot
-      $arc = "A{$round} {$round} 0 0 0";
+      $arc = new PathData('A', $round, $round, 0, 0, 0);
     } else {
-      $c_tl = "L{$x1} {$y1}";
-      $c_tr = "L{$x2} {$y1}";
-      $c_bl = "L{$x1} {$y2}";
-      $c_br = "L{$x2} {$y2}";
+      $c_tl = new PathData('L', $x1, $y1);
+      $c_tr = new PathData('L', $x2, $y1);
+      $c_bl = new PathData('L', $x1, $y2);
+      $c_br = new PathData('L', $x2, $y2);
     }
     $points = [];
     $rangle = M_PI * 0.5 - $angle;
@@ -1263,30 +1290,38 @@ class DataLabels {
           $p2->y = $y1 - ($p2->x - $x2) * tan($angle);
           $p2->x = $x2;
         }
-        $start = "M{$p1}";
-        $end = "L{$p2}";
+        $start = new PathData('M', $p1);
+        $end = new PathData('L', $p2);
         // if the line meets the side past the corner radius, there is no corner
         if($p1->y > $y1c)
-          $c_tl = '';
+          $c_tl->clear();
         if($p2->y > $y1c)
-          $c_tr = '';
+          $c_tr->clear();
         if($round) {
-          if($c_tl != '' && $p1->x < $x1c) {
+          if(!$c_tl->isEmpty() && $p1->x < $x1c) {
             $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x1c, $y1c, $round, 'tl');
-            $start = "M{$cross}";
-            $c_tl = "{$arc} {$x1} {$y1c}";
+            $start = new PathData('M');
+            $start->add($cross);
+            $c_tl = new PathData($arc);
+            $c_tl->add($x1, $y1c);
             if($p2->x < $x1c) {
               $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x1c, $y1c, $round, 'tl');
-              $end = "L{$x1c} {$y1}{$arc} {$cross}";
+              $end = new PathData('L', $x1c, $y1);
+              $end->add($arc);
+              $end->add($cross);
             }
           }
-          if($c_tr != '' && $x2c < $p2->x) {
+          if(!$c_tr->isEmpty() && $x2c < $p2->x) {
             $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x2c, $y1c, $round, 'tr');
-            $end = "{$arc} {$cross}";
-            $c_tr = "L{$x2} {$y1c}";
+            $end = new PathData($arc);
+            $end->add($cross);
+            $c_tr = new PathData('L', $x2, $y1c);
             if($x2c < $p1->x) {
               $cross = $this->lineCrossArc($p1->x, $p2->y, $angle, $x2c, $y1c, $round, 'tr');
-              $start = "M{$cross}{$arc} {$x2c} {$y1}";
+              $start = new PathData('M');
+              $start->add($cross);
+              $start->add($arc);
+              $start->add($x2c, $y1);
             }
           }
         }
@@ -1304,29 +1339,37 @@ class DataLabels {
           $p2->y = $y2 + ($x1 - $p2->x) * tan($angle);
           $p2->x = $x1;
         }
-        $start = "M{$p1}";
-        $end = "L{$p2}";
+        $start = new PathData('M', $p1);
+        $end = new PathData('L', $p2);
         if($p1->y < $y2c)
-          $c_br = '';
+          $c_br->clear();
         if($p2->y < $y2c)
-          $c_bl = '';
+          $c_bl->clear();
         if($round) {
-          if($c_bl != '' && $p2->x < $x1c) {
+          if(!$c_bl->isEmpty() && $p2->x < $x1c) {
             $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x1c, $y2c, $round, 'bl');
-            $end = "{$arc} {$cross}";
-            $c_bl = "L{$x1} {$y2c}";
+            $end = new PathData($arc);
+            $end->add($cross);
+            $c_bl = new PathData('L', $x1, $y2c);
             if($p1->x < $x1c) {
               $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x1c, $y2c, $round, 'bl');
-              $start = "M{$cross}{$arc} {$x1c} {$y2}";
+              $start = new PathData('M');
+              $start->add($cross);
+              $start->add($arc);
+              $start->add($x1c, $y2);
             }
           }
-          if($c_br != '' && $x2c < $p1->x) {
+          if(!$c_br->isEmpty() && $x2c < $p1->x) {
             $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x2c, $y2c, $round, 'br');
-            $start = "M{$cross}";
-            $c_br = "{$arc} {$x2} {$y2c}";
+            $start = new PathData('M');
+            $start->add($cross);
+            $c_br = new PathData($arc);
+            $c_br->add($x2, $y2c);
             if($x2c < $p2->x) {
               $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x2c, $y2c, $round, 'br');
-              $end = "L{$x2c} {$y2}{$arc} {$cross}";
+              $end = new PathData('L', $x2c, $y2);
+              $end->add($arc);
+              $end->add($cross);
             }
           }
         }
@@ -1351,29 +1394,37 @@ class DataLabels {
           $p2->x = $x2 - ($p2->y - $y2) * tan($rangle);
           $p2->y = $y2;
         }
-        $start = "M{$p1}";
-        $end = "L{$p2}";
+        $start = new PathData('M', $p1);
+        $end = new PathData('L', $p2);
         if($p1->x < $x2c)
-          $c_tr = '';
+          $c_tr->clear();
         if($p2->x < $x2c)
-          $c_br = '';
+          $c_br->clear();
         if($round) {
-          if($c_br != '' && $y2c < $p2->y) {
+          if(!$c_br->isEmpty() && $y2c < $p2->y) {
             $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x2c, $y2c, $round, 'br');
-            $end = "{$arc} {$cross}";
-            $c_br = "L{$x2c} {$y2}";
+            $end = new PathData($arc);
+            $end->add($cross);
+            $c_br = new PathData('L', $x2c, $y2);
             if($y2c < $p1->y) {
               $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x2c, $y2c, $round, 'br');
-              $start = "M{$cross}{$arc} {$x2} {$y2c}";
+              $start = new PathData('M');
+              $start->add($cross);
+              $start->add($arc);
+              $start->add($x2, $y2c);
             }
           }
-          if($c_tr != '' && $p1->y < $y1c) {
+          if(!$c_tr->isEmpty() && $p1->y < $y1c) {
             $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x2c, $y1c, $round, 'tr');
-            $start = "M{$cross}";
-            $c_tr = "{$arc} {$x2c} {$y1}";
+            $start = new PathData('M');
+            $start->add($cross);
+            $c_tr = new PathData($arc);
+            $c_tr->add($x2c, $y1);
             if($p2->y < $y1c) {
               $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x2c, $y1c, $round, 'tr');
-              $end = "L{$x2} {$y1c}{$arc} {$cross}";
+              $end = new PathData('L', $x2, $y1c);
+              $end->add($arc);
+              $end->add($cross);
             }
           }
         }
@@ -1391,29 +1442,37 @@ class DataLabels {
           $p2->x = $x1 - ($p2->y - $y1) * tan($rangle);
           $p2->y = $y1;
         }
-        $start = "M{$p1}";
-        $end = "L{$p2}";
+        $start = new PathData('M', $p1);
+        $end = new PathData('L', $p2);
         if($p1->x > $x1c)
-          $c_bl = '';
+          $c_bl->clear();
         if($p2->x > $x1c)
-          $c_tl = '';
+          $c_tl->clear();
         if($round) {
-          if($c_bl != '' && $y2c < $p1->y) {
+          if(!$c_bl->isEmpty() && $y2c < $p1->y) {
             $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x1c, $y2c, $round, 'bl');
-            $start = "M{$cross}";
-            $c_bl = "{$arc} {$x1c} {$y2}";
+            $start = new PathData('M');
+            $start->add($cross);
+            $c_bl = new PathData($arc);
+            $c_bl->add($x1c, $y2);
             if($y2c < $p2->y) {
               $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x1c, $y2c, $round, 'bl');
-              $end = "L{$x1} {$y2c}{$arc} {$cross}";
+              $end = new PathData('L', $x1, $y2c);
+              $end->add($arc);
+              $end->add($cross);
             }
           }
-          if($c_tl != '' && $p2->y < $y1c) {
+          if(!$c_tl->isEmpty() && $p2->y < $y1c) {
             $cross = $this->lineCrossArc($p2->x, $p2->y, $angle, $x1c, $y1c, $round, 'tl');
-            $end = "{$arc} {$cross}";
-            $c_tl = "L{$x1c} {$y1}";
+            $end = new PathData($arc);
+            $end->add($cross);
+            $c_tl = new PathData('L', $x1c, $y1);
             if($p1->y < $y1c) {
               $cross = $this->lineCrossArc($p1->x, $p1->y, $angle, $x1c, $y1c, $round, 'tl');
-              $start = "M{$cross}{$arc} {$x1} {$y1c}";
+              $start = new PathData('M');
+              $start->add($cross);
+              $start->add($arc);
+              $start->add($x1, $y1c);
             }
           }
         }
@@ -1421,13 +1480,16 @@ class DataLabels {
         $distance = $x1 - $target[0];
       }
     }
-    $box_path = implode($points);
+    $box_path = new PathData;
+    foreach($points as $pt)
+      $box_path->add($pt);
+    $box_path->add($this->getTailEnding($target[0], $target[1], $angle,
+      $t_width, $distance, $style));
+    $box_path->add('z');
 
     $surround['fill'] = $this->graph->parseColour($style['fill']);
-    $surround['d'] = $box_path .
-      $this->getTailEnding($target[0], $target[1], $angle, $t_width, $distance,
-        $style) . "z";
-    return "path";
+    $surround['d'] = $box_path;
+    return 'path';
   }
 
   /**
@@ -1449,9 +1511,13 @@ class DataLabels {
     $p2y = $cy + $bbradius * sin($angle + $l_angle);
 
     $surround['fill'] = $this->graph->parseColour($style['fill']);
-    $surround['d'] = "M{$p1x} {$p1y}A{$bbradius} {$bbradius} 0 1 0 {$p2x} {$p2y}" .
-      $this->getTailEnding($target[0], $target[1], $angle, $t_width, $len, $style) . "z";
-    return "path";
+
+    $path = new PathData('M', $p1x, $p1y, 'A', $bbradius, $bbradius, 0, 1, 0,
+      $p2x, $p2y);
+    $path->add($this->getTailEnding($target[0], $target[1], $angle, $t_width, $len, $style));
+    $path->add('z');
+    $surround['d'] = $path;
+    return 'path';
   }
 
   /**

@@ -83,13 +83,13 @@ class Coords {
    */
   public function transform($value, $axis, $default_pos = 0)
   {
-    if(is_numeric($value))
+    if(is_numeric($value) || !is_string($value))
       return $value;
     $first = strtolower(substr($value, 0, 1));
     $grid = false;
 
     if($first == 'u' || $first == 'g') {
-      if(!method_exists($this->graph, 'GridX'))
+      if(!method_exists($this->graph, 'gridX'))
         throw new \Exception('Invalid dimensions (non-grid graph)');
 
       $this->valueAxis($value, $axis, $axis_no);

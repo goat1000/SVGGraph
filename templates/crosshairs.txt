@@ -1,0 +1,21 @@
+function crosshairs(e) {
+  var de = svgNode(e), pos = svgCursorCoords(e), xc, yc, grid, bb, on, x, y;
+  if(!de)
+    return;
+  xc = de.querySelector('.chX');
+  yc = de.querySelector('.chY');
+  grid = de.querySelector('.grid');
+  if(!grid)
+    return;
+  bb = grid.getBBox();
+  x = pos[0];
+  y = pos[1];
+  on = (x >= bb.x && x <= bb.x + bb.width && y >= bb.y && y <= bb.y + bb.height);
+  if(on) {
+    setattr(xc,'y1',setattr(xc,'y2', y));
+    setattr(yc,'x1',setattr(yc,'x2', x));
+  }
+  {$string:show_text}
+  {$string:show_x}
+  {$string:show_y}
+}

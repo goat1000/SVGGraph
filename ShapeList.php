@@ -107,12 +107,12 @@ class ShapeList {
       if(isset($shape_array['clip_to_grid']) && $shape_array['clip_to_grid'] &&
         method_exists($this->graph, 'gridClipPath')) {
         $clip_id = $this->graph->gridClipPath();
-        $shape_array['clip-path'] = "url(#{$clip_id})";
+        $shape_array['clip-path'] = 'url(#' . $clip_id . ')';
       }
       unset($shape_array['depth'], $shape_array['clip_to_grid']);
       return new $class_map[$shape]($shape_array, $depth);
     }
-    throw new \Exception("Unknown shape [{$shape}]");
+    throw new \Exception('Unknown shape [' . $shape . ']');
   }
 }
 

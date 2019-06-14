@@ -49,8 +49,10 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
         if(isset($this->last_position_pos[$index])) {
           list($lpos, $l_w) = $this->last_position_pos[$index];
           list($hpos, $vpos) = Graph::translatePosition($lpos);
-          if($hpos == 'or')
-            return ["middle outside right {$l_w} 0", $target];
+          if($hpos == 'or') {
+            $num_offset = new Number($l_w);
+            return ['middle outside right ' . $num_offset . ' 0', $target];
+          }
         }
         return ['outside right', $target];
       }
@@ -58,8 +60,10 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
         if(isset($this->last_position_neg[$index])) {
           list($lpos, $l_w) = $this->last_position_neg[$index];
           list($hpos, $vpos) = Graph::translatePosition($lpos);
-          if($hpos == 'ol')
-            return ["middle outside left -{$l_w} 0", $target];
+          if($hpos == 'ol') {
+            $num_offset = new Number(-$l_w);
+            return ['middle outside left ' . $num_offset . ' 0', $target];
+          }
         }
         return ['outside left', $target];
       }

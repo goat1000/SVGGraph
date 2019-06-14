@@ -1,0 +1,19 @@
+function rootContextMenu(e) {
+  e.preventDefault();
+  var de = svgNode(e), gm, rm, i, item, link;
+  closeContextMenu();
+  gm = getData(de, 'menu');
+  if(gm) {
+    rm = [];
+    for(i = 0; i < gm.childNodes.length; ++i) {
+      if(gm.childNodes[i].nodeName == 'svggraph:menuitem') {
+        item = [gm.childNodes[i].getAttributeNS(null,'name')];
+        link = gm.childNodes[i].getAttributeNS(null,'link');
+        if(link)
+          item.push(link);
+        rm.push(item);
+      }
+    }
+    setContextMenu(de,rm,e);
+  }
+}
