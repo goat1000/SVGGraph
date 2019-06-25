@@ -178,8 +178,9 @@ class SVGGraph {
    */
   public static function fetchJavascript()
   {
-    if(!is_null(SVGGraph::$last_instance))
-      return SVGGraph::$last_instance->fetchJavascript(true, true, true);
+    if(SVGGraph::$last_instance === null)
+      return '';
+    return SVGGraph::$last_instance->fetchJavascript(true, true);
   }
 }
 

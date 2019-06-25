@@ -73,7 +73,7 @@ class ContextMenu {
    */
   public function addFunction()
   {
-    $this->js->addFuncs('init', 'getE', 'finditem', 'newel', 'newtext',
+    $this->js->addFuncs('getE', 'finditem', 'newel', 'newtext',
       'svgNode', 'setattr', 'getData', 'svgCursorCoords');
     $this->js->addInitFunction('contextMenuInit');
 

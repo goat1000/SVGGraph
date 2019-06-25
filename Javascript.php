@@ -28,7 +28,6 @@ class Javascript {
   protected $variables = [];
   protected $comments = [];
   protected $init_functions = [];
-  protected $onload = false;
   protected $fader_enabled = false;
   protected $clickshow_enabled = false;
 
@@ -164,12 +163,12 @@ class Javascript {
       return $this->insertTemplate('texttt', $vars);
 
     case 'ttEvent' :
-      $this->addFuncs('finditem', 'init');
+      $this->addFuncs('finditem');
       $this->addInitFunction('ttEvent');
       return $this->insertTemplate('ttEvent');
 
     case 'popFront' :
-      $this->addFuncs('getE', 'init', 'finditem');
+      $this->addFuncs('getE', 'finditem');
       $this->addInitFunction('popFront');
       return $this->insertTemplate('popFront');
 
@@ -177,7 +176,7 @@ class Javascript {
       if($this->fader_enabled)
         return $this->fadeAndClick();
 
-      $this->addFuncs('getE', 'init', 'finditem', 'setattr');
+      $this->addFuncs('getE', 'finditem', 'setattr');
       $this->addInitFunction('clickShowEvent');
       return $this->insertTemplate('clickShowEvent');
 
@@ -185,22 +184,22 @@ class Javascript {
       if($this->clickshow_enabled)
         return $this->fadeAndClick();
 
-      $this->addFuncs('getE', 'init', 'setattr', 'textAttr');
+      $this->addFuncs('getE', 'setattr', 'textAttr');
       $this->addInitFunction('fade');
       return $this->insertTemplate('fade');
 
     case 'fadeEventIn' :
-      $this->addFuncs('init', 'finditem');
+      $this->addFuncs('finditem');
       $this->addInitFunction('fadeEventIn');
       return $this->insertTemplate('fadeEventIn');
 
     case 'fadeEventOut' :
-      $this->addFuncs('init', 'finditem');
+      $this->addFuncs('finditem');
       $this->addInitFunction('fadeEventOut');
       return $this->insertTemplate('fadeEventOut');
 
     case 'duplicate' :
-      $this->addFuncs('getE', 'newel', 'init', 'setattr');
+      $this->addFuncs('getE', 'newel', 'setattr');
       $this->addInitFunction('initDups');
       return $this->insertTemplate('duplicate', ['namespace' => $this->namespace]);
 
@@ -208,12 +207,11 @@ class Javascript {
       return $this->insertTemplate('svgNode', ['namespace' => $this->namespace]);
 
     case 'autoHide' :
-      $this->addFuncs('init', 'getE', 'setattr', 'finditem');
+      $this->addFuncs('getE', 'setattr', 'finditem');
       $this->addInitFunction('autoHide');
       return $this->insertTemplate('autoHide');
 
     case 'chEvt' :
-      $this->addFunction('init');
       $this->addInitFunction('chEvt');
       return $this->insertTemplate('chEvt');
 
@@ -222,9 +220,9 @@ class Javascript {
         'fitRect', 'textAttr', 'strValueX', 'strValueY');
 
       // format text for assoc X, assoc Y or x,y
-      $text_format_x = 'window[fnx](de,x,bb.width,gx,' .
+      $text_format_x = 'fnx(de,x,bb.width,gx,' .
         'textAttr(ti,"unitsbx"),textAttr(ti,"unitsx"))';
-      $text_format_y = 'window[fny](de,bb.height-y,bb.height,gy,' .
+      $text_format_y = 'fny(de,bb.height-y,bb.height,gy,' .
         'textAttr(ti,"unitsby"),textAttr(ti,"unitsy"))';
 
       if(!$this->graph->getOption('crosshairs_show_h'))
@@ -261,14 +259,9 @@ class Javascript {
       return $this->insertTemplate('crosshairs', $vars);
 
     case 'dragEvent' :
-      $this->addFuncs('init', 'newel', 'getE', 'setattr', 'finditem',
-        'svgCursorCoords');
+      $this->addFuncs('newel', 'getE', 'setattr', 'finditem', 'svgCursorCoords');
       $this->addInitFunction('dragEvent');
       return $this->insertTemplate('dragEvent');
-
-    case 'init' :
-      $this->onload = true;
-      return $this->insertTemplate('init');
 
     default :
       // Trying to add a function that doesn't exist?
@@ -378,7 +371,7 @@ class Javascript {
    */
   public function addInitFunction($name)
   {
-    $this->init_functions['"' . $name . '"'] = 1;
+    $this->init_functions[$name] = 1;
   }
 
   /**
@@ -394,7 +387,7 @@ class Javascript {
    */
   private function fadeAndClick()
   {
-    $this->addFuncs('getE', 'init', 'finditem', 'fading', 'textAttr', 'setattr');
+    $this->addFuncs('getE', 'finditem', 'fading', 'textAttr', 'setattr');
     $this->addInitFunction('clickShowEvent');
     $this->addInitFunction('fade');
     $this->insertTemplate('clickShowEvent_fade', null, 'clickShowEvent');
@@ -520,10 +513,6 @@ class Javascript {
   public function getVariables()
   {
     $variables = '';
-    if(count($this->init_functions)) {
-      $this->variables['initfns'] = array_keys($this->init_functions);
-    }
-
     if(count($this->variables)) {
       $vlist = [];
       foreach($this->variables as $name => $value) {
@@ -563,8 +552,16 @@ class Javascript {
   public function getFunctions()
   {
     $functions = '';
-    if(count($this->functions))
+    if(count($this->functions)) {
+      if(count($this->init_functions)) {
+        $vars = [
+          'init_funcs' => implode('();', array_keys($this->init_functions)) . '();'
+        ];
+        $this->insertTemplate('init', $vars);
+      }
       $functions = implode('', $this->functions);
+    }
+
     return $functions;
   }
 
@@ -573,7 +570,37 @@ class Javascript {
    */
   public function getOnload()
   {
-    return $this->onload ? 'init()' : '';
+    if(count($this->init_functions))
+      return 'init()';
+    return '';
+  }
+
+  /**
+   * Returns all the code to be inserted into <script>
+   */
+  public function getCode($cdata, $minifier)
+  {
+    $variables = $this->getVariables();
+    $functions = $this->getFunctions();
+    $onload = $this->getOnload();
+
+    if($variables == '' && $functions == '')
+      return '';
+
+    if($onload != '')
+      $functions .= "\n" . 'setTimeout(function(){' . $onload . '},10);';
+
+    $script = $variables  . "\n" . $functions . "\n";
+    if(is_callable($minifier))
+      $script = call_user_func($minifier, $script);
+
+    // make closure
+    $script = '(function(){' . $script . "\n})();";
+
+    if($cdata)
+      $script = "// <![CDATA[\n" . $script . "\n// ]]>";
+
+    return $script;
   }
 }
 

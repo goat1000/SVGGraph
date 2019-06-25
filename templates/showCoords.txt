@@ -1,8 +1,8 @@
 function showCoords(de,x,y,bb,on) {
   var gx = getData(de, 'gridx'), gy = getData(de, 'gridy'),
     textList = getData(de,'chtext'), group, i, x1, y1,
-    fnx = gx.getAttributeNS(null, 'function'),
-    fny = gy.getAttributeNS(null, 'function'), textNode, rect, tbb, ti, ds;
+    fnx = eval(gx.getAttributeNS(null, 'function')),
+    fny = eval(gy.getAttributeNS(null, 'function')), textNode, rect, tbb, ti, ds;
   for(i = 0; i < textList.childNodes.length; ++i) {
     if(textList.childNodes[i].nodeName == 'svggraph:chtextitem') {
       ti = textList.childNodes[i];

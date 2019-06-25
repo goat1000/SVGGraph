@@ -1219,8 +1219,8 @@ abstract class Graph {
     Number::setup($this->settings['precision'], $this->settings['decimal'],
       $this->settings['thousands']);
 
+    $heading = $foot = '';
     // display title and description if available
-    $heading = '';
     if($this->title)
       $heading .= $this->element('title', null, null, $this->title);
     if($this->description)
@@ -1252,15 +1252,8 @@ abstract class Graph {
     if($this->svg_class)
       $svg['class'] = $this->svg_class;
 
-    if(!$defer_javascript) {
-      $js = $this->fetchJavascript(true, true, !$this->namespace);
-      if($js != '') {
-        $heading .= $js;
-        $onload = Graph::$javascript->getOnload();
-        if($onload != '')
-          $svg['onload'] = $onload;
-      }
-    }
+    if(!$defer_javascript)
+      $foot .= $this->fetchJavascript(true, !$this->namespace);
 
     // insert any gradients that are used
     if($this->gradients !== null)
@@ -1296,7 +1289,7 @@ abstract class Graph {
         'blue', 'white', $style);
     }
 
-    $content .= $this->element('svg', $svg, null, $heading . $body);
+    $content .= $this->element('svg', $svg, null, $heading . $body . $foot);
     // replace PHP's precision
     ini_set('precision', $old_precision);
 
@@ -1328,32 +1321,22 @@ abstract class Graph {
    * When using the defer_javascript option, this returns the
    * Javascript block
    */
-  public function fetchJavascript($onload_immediate = true, $cdata_wrap = true,
-    $no_namespace = true)
+  public function fetchJavascript($cdata = true, $no_namespace = true)
   {
-    $js = '';
-    if(isset(Graph::$javascript)) {
-      $variables = Graph::$javascript->getVariables();
-      $functions = Graph::$javascript->getFunctions();
-      $onload = Graph::$javascript->getOnload();
+    if(!isset(Graph::$javascript))
+      return '';
 
-      if($variables != '' || $functions != '') {
-        if($onload_immediate)
-          $functions .= "\n" . 'setTimeout(function(){' . $onload . '},20);';
-        $script_attr = ['type' => 'application/ecmascript'];
-        $script = $variables  . "\n" . $functions . "\n";
-        if(is_callable($this->minify_js))
-          $script = call_user_func($this->minify_js, $script);
-        if($cdata_wrap)
-          $script = '// <![CDATA[' . "\n" . $script . "\n" . '// ]]>';
-        $namespace = $this->namespace;
-        if($no_namespace)
-          $this->namespace = false;
-        $js = $this->element('script', $script_attr, null, $script);
-        if($no_namespace)
-          $this->namespace = $namespace;
-      }
-    }
+    $script = Graph::$javascript->getCode($cdata, $this->getOption('minify_js'));
+    if($script == '')
+      return '';
+
+    $script_attr = ['type' => 'application/ecmascript'];
+    $namespace = $this->namespace;
+    if($no_namespace)
+      $this->namespace = false;
+    $js = $this->element('script', $script_attr, null, $script);
+    if($no_namespace)
+      $this->namespace = $namespace;
     return $js;
   }
 

@@ -1,8 +1,8 @@
 function keyStrValueX(de,x,w,g,ub,ua) {
   var z = g.getAttributeNS(null, 'zero'), s = g.getAttributeNS(null, 'scale'),
     p = g.getAttributeNS(null, 'precision'), keys = getData(de, 'keys'),
-    rfnc = g.getAttributeNS(null, 'round'), str = '', n = 0, i = 0,
-    v = window[rfnc]((x - z) / s);
+    rfnc = eval(g.getAttributeNS(null, 'round')), str = '', n = 0, i = 0,
+    v = rfnc((x - z) / s);
   if(keys) {
     while(i <= v && n < keys.childNodes.length) {
       if(keys.childNodes[n].nodeName == 'svggraph:key') {
