@@ -811,6 +811,12 @@ abstract class GridGraph extends Graph {
     $this->calcAxes();
     $this->calcGrid();
 
+    // these are used quite a bit, so convert to Number now
+    $left_num = new Number($this->pad_left);
+    $top_num = new Number($this->pad_top);
+    $width_num = new Number($this->g_width);
+    $height_num = new Number($this->g_height);
+
     $back = $subpath = $crosshairs = '';
     $grid_group = ['class' => 'grid'];
     if($this->getOption('crosshairs')) {
@@ -832,8 +838,8 @@ abstract class GridGraph extends Graph {
     if(!empty($back_colour) && $back_colour != 'none') {
 
       $rect = [
-        'x' => $this->pad_left, 'y' => $this->pad_top,
-        'width' => $this->g_width, 'height' => $this->g_height,
+        'x' => $left_num, 'y' => $top_num,
+        'width' => $width_num, 'height' => $height_num,
         'fill' => $back_colour
       ];
       if($this->grid_back_opacity != 1)
@@ -850,7 +856,7 @@ abstract class GridGraph extends Graph {
       $c = 0;
       $num_colours = count($colours);
       if($this->getOption('flip_axes')) {
-        $rect = ['y' => $this->pad_top, 'height' => $this->g_height];
+        $rect = ['y' => $top_num, 'height' => $height_num];
         if($this->grid_back_stripe_opacity != 1)
           $rect['fill-opacity'] = $this->grid_back_stripe_opacity;
         $points = $this->getGridPointsX($this->main_x_axis);
@@ -867,7 +873,7 @@ abstract class GridGraph extends Graph {
           ++$c;
         }
       } else {
-        $rect = ['x' => $this->pad_left, 'width' => $this->g_width];
+        $rect = ['x' => $left_num, 'width' => $width_num];
         if($this->grid_back_stripe_opacity != 1)
           $rect['fill-opacity'] = $this->grid_back_stripe_opacity;
         $points = $this->getGridPointsY($this->main_y_axis);
@@ -892,14 +898,12 @@ abstract class GridGraph extends Graph {
       if($this->show_grid_h) {
         $subdivs = $this->getSubDivsY($this->main_y_axis);
         foreach($subdivs as $y)
-          $subpath_v->add('M', $this->pad_left, $y->position, 'h',
-            $this->g_width);
+          $subpath_v->add('M', $left_num, $y->position, 'h', $width_num);
       }
       if($this->show_grid_v){
         $subdivs = $this->getSubDivsX(0);
         foreach($subdivs as $x)
-          $subpath_h->add('M', $x->position, $this->pad_top, 'v',
-            $this->g_height);
+          $subpath_h->add('M', $x->position, $top_num, 'v', $height_num);
       }
 
       if(!($subpath_h->isEmpty() && $subpath_v->isEmpty())) {
@@ -927,12 +931,12 @@ abstract class GridGraph extends Graph {
     if($this->show_grid_h) {
       $points = $this->getGridPointsY($this->main_y_axis);
       foreach($points as $y)
-        $path_v->add('M', $this->pad_left, $y->position, 'h', $this->g_width);
+        $path_v->add('M', $left_num, $y->position, 'h', $width_num);
     }
     if($this->show_grid_v) {
       $points = $this->getGridPointsX($this->main_x_axis);
       foreach($points as $x)
-        $path_h->add('M', $x->position, $this->pad_top, 'v', $this->g_height);
+        $path_h->add('M', $x->position, $top_num, 'v', $height_num);
     }
 
     $colour_h = $this->getOption('grid_colour_h', 'grid_colour');

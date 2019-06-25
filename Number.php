@@ -28,6 +28,7 @@ class Number {
   public $value = 0;
   public $units = '';
   public $units_before = '';
+  private $as_string = '';
   private static $default_precision = 5;
   private static $decimal_separator = '.';
   private static $thousands_separator = ',';
@@ -38,6 +39,7 @@ class Number {
       $this->value = $value->value;
       $this->units = $value->units;
       $this->units_before = $value->units_before;
+      $this->as_string = $value->as_string;
       return;
     }
 
@@ -46,6 +48,7 @@ class Number {
     $this->value = $value;
     $this->units = $units;
     $this->units_before = $units_before;
+    $this->as_string = '';
   }
 
   /**
@@ -53,15 +56,23 @@ class Number {
    */
   public function __toString()
   {
+    if($this->as_string !== '')
+      return $this->as_string;
+
     $value = $this->value;
-    if(is_int($value) || $value >= 1000 || $value <= -1000) {
+    if($value == 0) {
+      $value = '0';
+    } elseif($value == 1) {
+      $value = '1';
+    } elseif(is_int($value) || $value >= 1000 || $value <= -1000) {
       $value = sprintf('%d', $value);
     } else {
       $value = sprintf('%.2F', $value);
       $value = rtrim($value, '0');
       $value = rtrim($value, '.');
     }
-    return $value . $this->units;
+    $this->as_string = $value . $this->units;
+    return $this->as_string;
   }
 
   /**

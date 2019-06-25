@@ -78,20 +78,27 @@ abstract class ThreeDGraph extends GridGraph {
     if(!$this->show_grid || (!$this->show_grid_h && !$this->show_grid_v))
       return '';
 
-    $x_w = $this->g_width;
-    $y_h = $this->g_height;
-    $xleft = $this->pad_left;
-    $ybottom = $this->height - $this->pad_bottom;
-
     // move to depth
     $z = $this->depth * $this->depth_unit;
     list($xd,$yd) = $this->project(0, 0, $z);
+    $x_w = new Number($this->g_width);
+
+    // convert to Number now - more efficient
+    $minus_x_w = new Number(-$this->g_width);
+    $y_h = new Number($this->g_height);
+    $minus_y_h = new Number(-$this->g_height);
+    $xleft = new Number($this->pad_left);
+    $ybottom = new Number($this->height - $this->pad_bottom);
+    $minus_xd = new Number(-$xd);
+    $minus_yd = new Number(-$yd);
+    $xd = new Number($xd);
+    $yd = new Number($yd);
 
     $back = $subpath = $path = '';
     $back_colour = $this->parseColour($this->grid_back_colour);
     if(!empty($back_colour) && $back_colour != 'none') {
-      $dpath = new PathData('M', $xleft, $ybottom, 'v', -$y_h, 'l', $xd, $yd);
-      $dpath->add('h', $x_w, 'v', $y_h, 'l', -$xd, -$yd, 'z');
+      $dpath = new PathData('M', $xleft, $ybottom, 'v', $minus_y_h, 'l', $xd, $yd);
+      $dpath->add('h', $x_w, 'v', $y_h, 'l', $minus_xd, $minus_yd, 'z');
       $bpath = [
         'd' => $dpath,
         'fill' => $back_colour
@@ -117,8 +124,8 @@ abstract class ThreeDGraph extends GridGraph {
         if(!is_null($colours[$c % $num_colours])) {
           $y1 = $last_pos - $y;
           $dpath = new PathData('M', $xleft, $y, 'l', $xd, $yd);
-          $dpath->add('h', $x_w, 'v', $y1, 'h', -$x_w);
-          $dpath->add('l', -$xd, -$yd, 'z');
+          $dpath->add('h', $x_w, 'v', $y1, 'h', $minus_x_w);
+          $dpath->add('l', $minus_xd, $minus_yd, 'z');
           $bpath = [
             'fill' => $this->parseColour($colours[$c % $num_colours]),
             'd' => $dpath,
@@ -146,7 +153,7 @@ abstract class ThreeDGraph extends GridGraph {
         $subdivs = $this->getSubDivsX(0);
         foreach($subdivs as $x) 
           $subpath_h->add('M', $x->position, $ybottom, 'l', $xd, $yd,
-            'l', 0, -$y_h);
+            'l', 0, $minus_y_h);
       }
       if(!($subpath_h->isEmpty() && $subpath_v->isEmpty())) {
         $colour_h = $this->getOption('grid_subdivision_colour_h',
@@ -170,7 +177,7 @@ abstract class ThreeDGraph extends GridGraph {
 
     // start with axis lines
     $path = new PathData('M', $xleft, $ybottom, 'l', $x_w, 0);
-    $path->add('M', $xleft, $ybottom, 'l', 0, -$y_h);
+    $path->add('M', $xleft, $ybottom, 'l', 0, $minus_y_h);
     $path_v = new PathData;
     $path_h = new PathData;
     if($this->show_grid_h) {
@@ -181,7 +188,7 @@ abstract class ThreeDGraph extends GridGraph {
     if($this->show_grid_v) {
       $points = $this->getGridPointsX(0);
       foreach($points as $x)
-        $path_h->add('M', $x->position, $ybottom, 'l', $xd, $yd, 'l', 0, -$y_h);
+        $path_h->add('M', $x->position, $ybottom, 'l', $xd, $yd, 'l', 0, $minus_y_h);
     }
 
     $colour_h = $this->getOption('grid_colour_h', 'grid_colour');

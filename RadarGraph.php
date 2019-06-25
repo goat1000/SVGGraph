@@ -98,7 +98,7 @@ class RadarGraph extends LineGraph {
   /**
    * Fill from centre point
    */
-  protected function fillFrom($x, $y)
+  protected function fillFrom(Number $x, Number $y)
   {
     return new PathData('M', $this->xc, $this->yc);
   }
@@ -106,7 +106,7 @@ class RadarGraph extends LineGraph {
   /**
    * Fill to centre point
    */
-  protected function fillTo($x, $y)
+  protected function fillTo(Number $x, Number $y)
   {
     return new PathData('L', $this->xc, $this->yc, 'z');
   }
@@ -272,12 +272,14 @@ class RadarGraph extends LineGraph {
         $path->add('z');
       }
     } else {
+      $yc_num = new Number($this->yc);
       foreach($y_points as $y) {
         $y = $y->position;
-        $p1 = $this->xc - $y;
-        $p2 = $this->xc + $y;
-        $path->add('M', $p1, $this->yc, 'A', $y, $y, 0, 1, 1, $p2, $this->yc);
-        $path->add('M', $p2, $this->yc, 'A', $y, $y, 0, 1, 1, $p1, $this->yc);
+        $p1 = new Number($this->xc - $y);
+        $p2 = new Number($this->xc + $y);
+        $y = new Number($y);
+        $path->add('M', $p1, $yc_num, 'A', $y, $y, 0, 1, 1, $p2, $yc_num);
+        $path->add('M', $p2, $yc_num, 'A', $y, $y, 0, 1, 1, $p1, $yc_num);
       }
     }
     return $path;
@@ -289,12 +291,14 @@ class RadarGraph extends LineGraph {
   protected function xGrid(&$x_points)
   {
     $path = new PathData;
+    $xc_num = new Number($this->xc);
+    $yc_num = new Number($this->yc);
     foreach($x_points as $x) {
       $x = $x->position - $this->pad_left;
       $angle = $this->arad + $x / $this->radius;
       $p1 = $this->radius * sin($angle);
       $p2 = $this->radius * cos($angle);
-      $path->add('M', $this->xc, $this->yc, 'l', $p1, $p2);
+      $path->add('M', $xc_num, $yc_num, 'l', $p1, $p2);
     }
     return $path;
   }
@@ -309,10 +313,6 @@ class RadarGraph extends LineGraph {
     if(!$this->show_grid || (!$this->show_grid_h && !$this->show_grid_v))
       return '';
 
-    $xc = $this->xc;
-    $yc = $this->yc;
-    $r = $this->radius;
-
     $back = $subpath = '';
     $back_colour = $this->parseColour($this->grid_back_colour, null, false,
       false, true);
@@ -322,7 +322,7 @@ class RadarGraph extends LineGraph {
     $x_subdivs = $this->getSubDivsX(0);
     if(!empty($back_colour) && $back_colour != 'none') {
       // use the YGrid function to get the path
-      $points = [new GridPoint($r, '', 0)];
+      $points = [new GridPoint($this->radius, '', 0)];
       $bpath = [
         'd' => $this->yGrid($points),
         'fill' => $back_colour

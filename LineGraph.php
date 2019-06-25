@@ -129,8 +129,11 @@ class LineGraph extends PointGraph {
       $path = new PathData;
       $fillpath = new PathData;
       $cmd = 'M';
+      $y_bottom = new Number($y_bottom);
       foreach($points as $point) {
         list($x, $y, $item, $dataset, $index) = $point;
+        $x = new Number($x);
+        $y = new Number($y);
 
         if($fillpath->isEmpty()) {
           if($figure)
@@ -195,7 +198,7 @@ class LineGraph extends PointGraph {
   /**
    * Returns the path segment to start filling under line
    */
-  protected function fillFrom($x, $y_axis)
+  protected function fillFrom(Number $x, Number $y_axis)
   {
     return new PathData('M', $x, $y_axis);
   }
@@ -203,7 +206,7 @@ class LineGraph extends PointGraph {
   /**
    * Returns the path segment to end filling under line
    */
-  protected function fillTo($x, $y_axis)
+  protected function fillTo(Number $x, Number $y_axis)
   {
     return new PathData('L', $x, $y_axis, 'z');
   }

@@ -65,13 +65,13 @@ class StackedLineGraph extends MultiLineGraph {
       foreach($this->multi_graph[$i] as $item) {
         $x = $this->gridPosition($item, $bnum);
         // key might not be an integer, so convert to string for $stack
-        // (localised is OK because it doesn't get used as a number)
-        $strkey = (string)$item->key;
+        $strkey = serialize($item->key);
         if(!isset($stack[$strkey]))
           $stack[$strkey] = 0;
-        if(!is_null($x)) {
+        if($x !== null) {
+          $x = new Number($x);
           $bottom[] = [$x, $stack[$strkey]];
-          $y = $this->gridY($stack[$strkey] + $item->value);
+          $y = new Number($this->gridY($stack[$strkey] + $item->value));
           $stack[$strkey] += $item->value;
 
           $path->add($cmd, $x, $y);
@@ -129,7 +129,7 @@ class StackedLineGraph extends MultiLineGraph {
         foreach($this->multi_graph[$i] as $item) {
           $x = $this->gridPosition($item, $bnum);
           // key might not be an integer, so convert to string for $stack
-          $strkey = (string)$item->key;
+          $strkey = serialize($item->key);
           if(!is_null($x)) {
             $y = $this->gridY($stack[$strkey]);
 
