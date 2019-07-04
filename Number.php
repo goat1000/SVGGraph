@@ -28,6 +28,7 @@ class Number {
   public $value = 0;
   public $units = '';
   public $units_before = '';
+  public $precision = 0;
   private $as_string = '';
   private static $default_precision = 5;
   private static $decimal_separator = '.';
@@ -67,7 +68,10 @@ class Number {
     } elseif(is_int($value) || $value >= 1000 || $value <= -1000) {
       $value = sprintf('%d', $value);
     } else {
-      $value = sprintf('%.2F', $value);
+      if($this->precision)
+        $value = sprintf('%.' . $this->precision . 'F', $value);
+      else
+        $value = sprintf('%.2F', $value);
       $value = rtrim($value, '0');
       $value = rtrim($value, '.');
     }

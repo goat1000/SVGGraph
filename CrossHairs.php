@@ -158,6 +158,11 @@ class CrossHairs {
     $prec_y = $this->graph->getOption('crosshairs_text_precision_v',
       max(0, ceil(log10($scale_y))));
 
+    $scale_x = new Number($scale_x);
+    $scale_x->precision = 7;
+    $scale_y = new Number($scale_y);
+    $scale_y->precision = 7;
+
     $gridx_attrs = [
       'function' => 'strValueX',
       'zero' => $zero_x,
