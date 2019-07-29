@@ -23,17 +23,22 @@ namespace Goat1000\SVGGraph;
 
 class SVGGraph {
 
-  const VERSION = 'SVGGraph 3.0.1';
+  use SVGGraphTrait;
+
+  const VERSION = 'SVGGraph 3.1';
   private $width = 100;
   private $height = 100;
   private $settings = [];
   private $values = [];
   private $links = null;
   private $colours = null;
+  private $subgraph = false;
+  private $subgraphs = [];
   protected static $last_instance = null;
 
-  public function __construct($w, $h, $settings = null)
+  public function __construct($w, $h, $settings = null, $subgraph = false)
   {
+    $this->subgraph = $subgraph;
     $this->width = $w;
     $this->height = $h;
 
@@ -56,102 +61,6 @@ class SVGGraph {
         ' directly is not supported - please use the $graph->' . $name .
         '() function.');
     }
-  }
-
-  /**
-   * Assign values, either from an array or from numeric arguments
-   */
-  public function values($values)
-  {
-    $this->values = is_array($values) ? $values : func_get_args();
-  }
-
-  /**
-   * Assign links to data items
-   */
-  public function links($links)
-  {
-    $this->links = is_array($links) ? $links : func_get_args();
-  }
-
-  /**
-   * Assign a single colour set for use across datasets
-   */
-  public function colours($colours)
-  {
-    $this->colours = new Colours($colours);
-  }
-
-  /**
-   * Sets colours for a single dataset
-   */
-  public function colourSet($dataset, $colours)
-  {
-    $this->colours->set($dataset, $colours);
-  }
-
-  /**
-   * Sets up RGB colour range
-   */
-  public function colourRangeRGB($dataset, $r1, $g1, $b1, $r2, $g2, $b2)
-  {
-    $this->colours->rangeRGB($dataset, $r1, $g1, $b1, $r2, $g2, $b2);
-  }
-
-  /**
-   * RGB colour range from hex codes
-   */
-  public function colourRangeHexRGB($dataset, $c1, $c2)
-  {
-    $this->colours->rangeHexRGB($dataset, $c1, $c2);
-  }
-
-  /**
-   * Sets up HSL colour range
-   */
-  public function colourRangeHSL($dataset, $h1, $s1, $l1, $h2, $s2, $l2,
-    $reverse = false)
-  {
-    $this->colours->rangeHSL($dataset, $h1, $s1, $l1, $h2, $s2, $l2, $reverse);
-  }
-
-  /**
-   * HSL colour range from hex codes
-   */
-  public function colourRangeHexHSL($dataset, $c1, $c2, $reverse = false)
-  {
-    $this->colours->rangeHexHSL($dataset, $c1, $c2, $reverse);
-  }
-
-  /**
-   * Sets up HSL colour range from RGB values
-   */
-  public function colourRangeRGBtoHSL($dataset, $r1, $g1, $b1, $r2, $g2, $b2,
-    $reverse = false)
-  {
-    $this->colours->rangeRGBtoHSL($dataset, $r1, $g1, $b1, $r2, $g2, $b2,
-      $reverse);
-  }
-
-  /**
-   * Instantiate the correct class
-   */
-  private function setup($class)
-  {
-    $full_class = '\\Goat1000\\SVGGraph\\' . $class;
-    if(!class_exists($full_class)) {
-      throw new \InvalidArgumentException('Unknown graph type: ' . $class);
-    }
-
-    if(!is_subclass_of($full_class, '\\Goat1000\\SVGGraph\\Graph')) {
-      throw new \InvalidArgumentException('Not a graph class: ' . $class);
-    }
-
-    $g = new $full_class($this->width, $this->height, $this->settings);
-    $g->values($this->values);
-    $g->links($this->links);
-    $g->colours($this->colours);
-    return $g;
   }
 
   /**

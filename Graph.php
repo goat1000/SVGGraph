@@ -26,6 +26,7 @@ namespace Goat1000\SVGGraph;
  */
 abstract class Graph {
 
+  public $subgraph = false;
   protected $width = 0;
   protected $height = 0;
   protected $settings = [];
@@ -39,6 +40,7 @@ abstract class Graph {
   protected $gradients = null;
   protected $pattern_list = null;
   protected $defs = [];
+  protected $subgraphs = [];
   protected $back_matter = '';
 
   protected $namespaces = [];
@@ -210,6 +212,14 @@ abstract class Graph {
   public function links()
   {
     $this->links = func_get_args();
+  }
+
+  /**
+   * Assigns the list of subgraphs
+   */
+  public function subgraphs($subgraphs)
+  {
+    $this->subgraphs = $subgraphs;
   }
 
   /**
@@ -1239,18 +1249,43 @@ abstract class Graph {
     }
 
     $svg = [
+      'version' => '1.1',
       'width' => new Number($this->width),
       'height' => new Number($this->height),
-      'version' => '1.1',
-      'xmlns:xlink' => 'http://www.w3.org/1999/xlink'
     ];
-    if($this->auto_fit) {
-      // convert pixel size to viewbox size
-      $svg['viewBox'] = '0 0 ' . $svg['width'] . ' ' . $svg['height'];
-      $svg['width'] = $svg['height'] = '100%';
+
+    if($this->subgraph) {
+      // subgraphs need x and y, and can overflow
+      $x = $this->getOption('graph_x');
+      $y = $this->getOption('graph_y');
+      if($x)
+        $svg['x'] = $x;
+      if($y)
+        $svg['y'] = $y;
+      $svg['overflow'] = 'visible';
+    } else {
+      if($this->namespace)
+        $svg['xmlns:svg'] = 'http://www.w3.org/2000/svg';
+      else
+        $svg['xmlns'] = 'http://www.w3.org/2000/svg';
+      $svg['xmlns:xlink'] = 'http://www.w3.org/1999/xlink';
+
+      // add any extra namespaces
+      foreach($this->namespaces as $ns => $url)
+        $svg['xmlns:' . $ns] = $url;
+
+      if($this->auto_fit) {
+        // convert pixel size to viewbox size
+        $svg['viewBox'] = '0 0 ' . $svg['width'] . ' ' . $svg['height'];
+        $svg['width'] = $svg['height'] = '100%';
+      }
     }
     if($this->svg_class)
       $svg['class'] = $this->svg_class;
+
+    // fetch any subgraphs
+    foreach($this->subgraphs as $subgraph)
+      $foot .= $subgraph->fetch();
 
     if(!$defer_javascript)
       $foot .= $this->fetchJavascript(true, !$this->namespace);
@@ -1268,14 +1303,6 @@ abstract class Graph {
       $defs .= $this->symbols->definitions();
       $heading .= $this->element('defs', null, null, $defs);
     }
-    if($this->namespace)
-      $svg['xmlns:svg'] = 'http://www.w3.org/2000/svg';
-    else
-      $svg['xmlns'] = 'http://www.w3.org/2000/svg';
-
-    // add any extra namespaces
-    foreach($this->namespaces as $ns => $url)
-      $svg['xmlns:' . $ns] = $url;
 
     // display version string
     if($this->show_version) {
