@@ -1,0 +1,8 @@
+function magEvt() {
+  var c, e, nn = '{$string:namespace}svg';
+  e = document.querySelectorAll(nn);
+  for(c = 0; c < e.length; ++c) {
+    e[c].addEventListener('mousemove', magnifier, false);
+    e[c].addEventListener('mouseleave', closeMagnifier, false);
+  }
+}

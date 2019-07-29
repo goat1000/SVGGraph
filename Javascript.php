@@ -263,6 +263,11 @@ class Javascript {
       $this->addInitFunction('dragEvent');
       return $this->insertTemplate('dragEvent');
 
+    case 'magEvt' :
+      $this->addInitFunction('magEvt');
+      $vars = ['namespace' => $this->namespace];
+      return $this->insertTemplate('magEvt', $vars);
+
     default :
       // Trying to add a function that doesn't exist?
       throw new \Exception('Unknown function "' . $name . '"');
@@ -496,6 +501,34 @@ class Javascript {
       $element['id'] = $this->graph->newID();
     $this->addFunction('autoHide');
     $this->insertVariable('autohide', $element['id'], 0);
+  }
+
+  /**
+   * Adds magnifier
+   */
+  public function magnifier()
+  {
+    $max_mag = 10.0;
+    $min_mag = 1.1;
+    $max_pan = 10.0;
+    $min_pan = 1.1;
+    $mag = (float)$this->graph->getOption('magnify');
+    $pan = (float)$this->graph->getOption('magnify_pan');
+    if($mag <= $min_mag)
+      $mag = $min_mag;
+    elseif($mag > $max_mag)
+      $mag = $max_mag;
+    if($pan <= $min_pan)
+      $pan = $min_pan;
+    elseif($pan > $max_pan)
+      $pan = $max_pan;
+
+    $vars = [
+      'magnification' => $mag,
+      'sensitivity' => $pan,
+    ];
+    $this->addFuncs('magEvt','svgNode','svgCursorCoords','setattr');
+    $this->insertTemplate('magnifier', $vars);
   }
 
   /**

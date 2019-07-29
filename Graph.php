@@ -266,6 +266,13 @@ abstract class Graph {
     $contents .= $this->drawBackMatter();
     $contents .= $this->drawLegend();
 
+    // magnifying means everthing must be in a group for transformation
+    if($this->getOption('magnify')) {
+      $this->javascript->magnifier();
+      $group = ['class' => 'svggraph-magnifier'];
+      $contents = $this->element('g', $group, null, $contents);
+    }
+
     // rounded rects might need a clip path
     if($this->getOption('back_round') && $this->getOption('back_round_clip')) {
       $group = ['clip-path' => 'url(#' . $canvas_id . ')'];
@@ -586,7 +593,7 @@ abstract class Graph {
     $canvas = [
       'width' => '100%', 'height' => '100%',
       'fill' => $colour,
-      'stroke-width' => 0
+      'stroke-width' => 0,
     ];
     if($opacity < 1)
       if($opacity <= 0)
@@ -616,6 +623,7 @@ abstract class Graph {
         $c_el .= $this->element('rect', $canvas);
       }
     }
+
     return $c_el;
   }
 
