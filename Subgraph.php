@@ -47,8 +47,6 @@ class Subgraph {
     if($settings === null)
       $settings = [];
 
-    $settings['graph_x'] = $x;
-    $settings['graph_y'] = $y;
     $this->settings = $settings;
     $this->colours = new Colours;
   }
@@ -64,11 +62,24 @@ class Subgraph {
   /**
    * Fetches the graph content
    */
-  public function fetch()
+  public function fetch($parent)
   {
-    $graph = $this->setup($this->type);
+    // transform any non-numeric dimensions
+    if(is_string($this->x) || is_string($this->y) ||
+      is_string($this->width) || is_string($this->height)) {
+      $coords = new Coords($parent);
+
+      list($this->x, $this->y) = $coords->transformCoords($this->x, $this->y);
+      $this->width = $coords->transform($this->width, 'x');
+      $this->height = $coords->transform($this->height, 'y');
+    }
+
+    // pass position as settings
+    $this->settings['graph_x'] = $this->x;
+    $this->settings['graph_y'] = $this->y;
 
     // no header, defer javascript
+    $graph = $this->setup($this->type);
     return $graph->fetch(false, true);
   }
 }

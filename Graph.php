@@ -1293,7 +1293,7 @@ abstract class Graph {
 
     // fetch any subgraphs
     foreach($this->subgraphs as $subgraph)
-      $foot .= $subgraph->fetch();
+      $foot .= $subgraph->fetch($this);
 
     if(!$defer_javascript)
       $foot .= $this->fetchJavascript(true, !$this->namespace);

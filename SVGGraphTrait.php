@@ -127,13 +127,13 @@ trait SVGGraphTrait {
   public function subgraph($type, $x, $y, $w, $h, $settings = null,
     $extra = null)
   {
-    if($x < 0)
+    if(!is_string($x) && $x < 0)
       $x = $this->width + $x;
-    if($y < 0)
+    if(!is_string($y) && $y < 0)
       $y = $this->height + $y;
-    if($w <= 0)
+    if(!is_string($w) && $w <= 0)
       $w = $this->width - $x + $w;
-    if($h <= 0)
+    if(!is_string($h) && $h <= 0)
       $h = $this->height - $y + $h;
 
     if($settings === null)
