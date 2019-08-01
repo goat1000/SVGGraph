@@ -15,7 +15,13 @@ function duplicate(f,t) {
       a.appendChild(g);
       g = a;
     }
-    a = e.getCTM();
+    a = p.getScreenCTM();
+    if(a.a == 1 && a.b == 0 && a.c == 0 &&
+      a.d == 1 && a.e == 0 && a.f == 0) {
+      a = e.getCTM();
+    } else {
+      a = e.getScreenCTM().inverse().multiply(a);
+    }
     setattr(g,'transform', 'matrix(' + a.a + ' ' + a.b + ' ' + a.c + ' ' + a.d + ' ' + a.e + ' ' + a.f + ')');
     p.appendChild(g);
   }
