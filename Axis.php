@@ -90,12 +90,16 @@ class Axis {
       if($d != floor($d))
         return false;
     }
-    $s = (string)$n;
-    if(preg_match('/^\d(\.\d{1,1})$/', $s))
-      return true;
-    if(preg_match('/^\d+$/', $s))
-      return true;
+    $nn = new Number($n);
+    $nn->precision = 4;
+    $s = (string)$nn;
 
+    // regex is overkill for this
+    if(strpos($s, '.') === false)
+      return true;
+    $good = ['0.1', '0.2', '0.3', '0.4', '0.5', '1.5', '2.5'];
+    if(in_array($s, $good, true))
+      return true;
     return false;
   }
 
