@@ -71,8 +71,8 @@ class Coords {
    */
   public function transformCoords($x, $y)
   {
-    $xy = array($this->transform($x, 'x'), $this->transform($y, 'y'));
-    if($this->isGrid($x, $y) && method_exists($this->graph, 'TransformCoords')) {
+    $xy = [ $this->transform($x, 'x'), $this->transform($y, 'y') ];
+    if($this->isGrid($x, $y) && method_exists($this->graph, 'transformCoords')) {
       $xy = $this->graph->transformCoords($xy[0], $xy[1]);
     }
     return $xy;

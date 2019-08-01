@@ -44,7 +44,10 @@ class PatternList {
     if(method_exists($this, $pattern['pattern'])) {
       if(!isset($pattern['size']))
         $pattern['size'] = 10;
-      $pattern['width'] = $pattern['height'] = $pattern['size'];
+      if(empty($pattern['width']))
+        $pattern['width'] = $pattern['size'];
+      if(empty($pattern['height']))
+        $pattern['height'] = $pattern['size'];
       $opacity = null;
       if(strpos($pattern[0], ':') !== false)
         list($colour, $opacity) = explode(':', $pattern[0]);
@@ -211,6 +214,26 @@ class PatternList {
     if(isset($pattern['opacity']))
       $line['opacity'] = $pattern['opacity'];
     $pattern['pattern'] = $this->graph->element('path', $line);
+    return $pattern;
+  }
+
+  /**
+   * Fill using a pattern
+   */
+  private function figure($pattern)
+  {
+    $fig = $pattern['colour'];
+    $figure_id = $this->graph->figures->getFigure($fig);
+    if(empty($figure_id))
+      throw new \Exception('Figure [' . $fig . '] not defined');
+
+    $figure = [
+      'x' => 0,
+      'y' => 0,
+      'width' => $pattern['width'],
+      'height' => $pattern['height'],
+    ];
+    $pattern['pattern'] = $this->graph->symbols->useSymbol($figure_id, $figure);
     return $pattern;
   }
 
