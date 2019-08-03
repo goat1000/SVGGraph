@@ -80,7 +80,7 @@ class Axis {
   /**
    * Returns TRUE if the number $n is 'nice'
    */
-  private function nice($n, $m)
+  private function nice($n)
   {
     if(is_integer($n) && ($n % 100 == 0 || $n % 10 == 0 || $n % 5 == 0))
       return true;
@@ -104,17 +104,6 @@ class Axis {
   }
 
   /**
-   * Subdivide when the divisions are too large
-   */
-  private function subDivision($length, $min, &$count, &$neg_count, &$magnitude)
-  {
-    $m = $magnitude * 0.5;
-    $magnitude = $m;
-    $count *= 2;
-    $neg_count *= 2;
-  }
-
-  /**
    * Determine the axis divisions
    */
   private function findDivision($length, $min, &$count, &$neg_count, &$magnitude)
@@ -124,24 +113,57 @@ class Axis {
 
     $c = $count - 1;
     $inc = 0;
+    $max_inc = $this->fit ? 0 : floor($count / 5);
+    $candidates = [];
     while($c > 1) {
       $m = ($count + $inc) / $c;
       $l = $length / $c;
-      $test_below = $neg_count ? $c * $neg_count / $count : 1;
-      if($this->nice($m, $count + $inc)) {
-        if($l >= $min && $test_below - floor($test_below) == 0) {
-          $magnitude *= ($count + $inc) / $c;
-          $neg_count *= $c / $count;
-          $count = $c;
-          return;
+      $nc = $neg_count;
+
+      $accept = false;
+      if($this->nice($m) && $l >= $min) {
+        $accept = true;
+
+        // negative values mean an extra check
+        if($nc) {
+          $accept = false;
+          $nm = $nc / $m;
+
+          if(floor($nm) === $nm) {
+            $nc = $nm;
+            $accept = true;
+          } else {
+
+            // negative section doesn't divide cleanly, try adding from $inc
+            if($inc) {
+              for($i = 1; $i <= $inc; ++$i) {
+                $cc = $nc + $i;
+                $nm = ($nc + $i) / $m;
+
+                if(floor($nm) === $nm) {
+                  $nc = $nm;
+                  $accept = true;
+                  break;
+                }
+              }
+            }
+          }
         }
-        --$c;
-        $inc = 0;
-        continue;
       }
 
-      if(!$this->fit && $count % 2 == 1 && $inc == 0) {
-        $inc = 1;
+      if($accept) {
+        // this division is acceptable, store it
+        $candidates[] = [
+          'cost' => ($inc * 1.5) + $m ,
+          'magnitude' => $magnitude * $m,
+          'c' => $c,
+          'neg_count' => $nc,
+        ];
+      }
+
+      if($inc < $max_inc) {
+        // increase the number of base divisions
+        ++$inc;
         continue;
       }
 
@@ -149,14 +171,14 @@ class Axis {
       $inc = 0;
     }
 
-    // try to balance the +ve and -ve a bit
-    if($neg_count) {
-      $c = $count + 1;
-      $p_count = $count - $neg_count;
-      if($p_count > $neg_count && ($neg_count == 1 || $c % $neg_count))
-        ++$neg_count;
-      ++$count;
-    }
+    if(empty($candidates))
+      return;
+
+    usort($candidates, function($a, $b) { return $a['cost'] - $b['cost']; });
+    $winner = $candidates[0];
+    $magnitude = $winner['magnitude'];
+    $count = $winner['c'];
+    $neg_count = $winner['neg_count'];
   }
 
   /**
@@ -229,13 +251,6 @@ class Axis {
         $grid = $this->length / $count;
         $this->uneven = true;
       }
-
-    } elseif(!$this->fit && $magnitude > $this->min_unit &&
-      $grid / $min_space > 2) {
-      // division still seems a bit coarse
-      $this->subDivision($this->length, $min_sub, $count, $neg_count,
-        $magnitude);
-      $grid = $this->length / $count;
     }
 
     $this->unit_size = $this->length / ($magnitude * $count);
