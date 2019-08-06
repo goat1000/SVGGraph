@@ -1,8 +1,13 @@
 function magEvt() {
-  var c, e, nn = '{$string:namespace}svg';
+  var c, e, nn = '{$string:namespace}svg', s, n;
   e = document.querySelectorAll(nn);
   for(c = 0; c < e.length; ++c) {
-    e[c].addEventListener('mousemove', magnifier, false);
-    e[c].addEventListener('mouseleave', closeMagnifier, false);
+    for(s = 0; s < e[c].childNodes.length; ++s) {
+      n = e[c].childNodes[s];
+      if(n.classList && n.classList.contains('svggraph-magnifier')) {
+        e[c].addEventListener('mousemove', magnifier, false);
+        e[c].addEventListener('mouseleave', closeMagnifier, false);
+      }
+    }
   }
 }

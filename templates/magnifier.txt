@@ -1,13 +1,26 @@
 function magnifier(e) {
   var de = svgNode(e), g, m = {$number:magnification}, s = {$number:sensitivity},
-    w, h, x, y, x1, y1, m1, xform;
-  if(!de)
-    return;
+    w, h, x, y, x1, y1, m1, xform, n, pos;
 
-  pos = svgCursorCoords(e);
-  w = de.width.baseVal.value;
-  h = de.height.baseVal.value;
-  g = de.querySelector('.svggraph-magnifier');
+  while(de) {
+    pos = svgCursorCoords(e,de);
+    w = de.width.baseVal.value;
+    h = de.height.baseVal.value;
+    for(x = 0; x < de.childNodes.length; ++x) {
+      n = de.childNodes[x];
+      if(n.classList && n.classList.contains('svggraph-magnifier')) {
+        g = n;
+        break;
+      }
+    }
+    if(g) {
+      de = null;
+    } else {
+      de = de.parentNode;
+      while(de && de.nodeName != '{$string:namespace}svg')
+        de = de.parentNode;
+    }
+  }
   if(!g)
     return;
 

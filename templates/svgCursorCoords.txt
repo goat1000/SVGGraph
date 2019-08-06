@@ -1,5 +1,6 @@
-function svgCursorCoords(e) {
-  var d = svgNode(e), pt;
+function svgCursorCoords(e, d) {
+  var pt;
+  d = d || svgNode(e);
   if(!d || !d.createSVGPoint || !d.getScreenCTM) {
     return [e.clientX,e.clientY];
   }

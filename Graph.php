@@ -266,8 +266,11 @@ abstract class Graph {
     $contents .= $this->drawBackMatter();
     $contents .= $this->drawLegend();
 
-    // magnifying means everthing must be in a group for transformation
-    if($this->getOption('magnify')) {
+    foreach($this->subgraphs as $subgraph)
+      $contents .= $subgraph->fetch($this);
+
+    // magnifying means everything must be in a group for transformation
+    if(!$this->subgraph && $this->getOption('magnify')) {
       $this->javascript->magnifier();
       $group = ['class' => 'svggraph-magnifier'];
       $contents = $this->element('g', $group, null, $contents);
@@ -1290,10 +1293,6 @@ abstract class Graph {
     }
     if($this->svg_class)
       $svg['class'] = $this->svg_class;
-
-    // fetch any subgraphs
-    foreach($this->subgraphs as $subgraph)
-      $foot .= $subgraph->fetch($this);
 
     if(!$defer_javascript)
       $foot .= $this->fetchJavascript(true, !$this->namespace);

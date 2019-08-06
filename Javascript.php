@@ -526,6 +526,7 @@ class Javascript {
     $vars = [
       'magnification' => $mag,
       'sensitivity' => $pan,
+      'namespace' => $this->namespace,
     ];
     $this->addFuncs('magEvt','svgNode','svgCursorCoords','setattr');
     $this->insertTemplate('magnifier', $vars);
