@@ -165,6 +165,8 @@ class DisplayAxis {
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]);
       $styles['l_space'] = $graph->getOption('label_space');
+      $styles['l_pos'] = $graph->getOption(
+        ['axis_label_position_' . $o, $axis_no], 'axis_label_position');
     }
 
     $this->styles = $styles;
@@ -459,7 +461,7 @@ class DisplayAxis {
       $width = $tsize[0];
       $height = $tsize[1];
       $y = $bbox['y'] + $bbox['height'] + $space;
-      $tx = $a_length / 2;
+      $tx = $a_length  * $this->styles['l_pos'];
       $ty = $y + $baseline;
       $x = $tx - $width / 2;
 
@@ -476,7 +478,7 @@ class DisplayAxis {
         $tx = $x + $baseline;
         $x -= $space;
       }
-      $ty = -$a_length / 2;
+      $ty = -$a_length  * $this->styles['l_pos'];;
       $y = $ty - $height / 2;
       $width += $space;
       $angle = $this->axis_no > 0 ? 90 : 270;
