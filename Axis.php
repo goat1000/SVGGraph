@@ -365,7 +365,7 @@ class Axis {
 
     // try structured data first
     if($this->values && $this->values->getData($value, 'axis_text', $text))
-      return $text;
+      return (string)$text;
 
     // use the key if it is not the same as the value
     $key = $this->values ? $this->values->getKey($value) : $value;
@@ -375,11 +375,11 @@ class Axis {
       // assoc keys should have integer indices
       if($this->values && $this->values->associativeKeys())
         $value = (int)round($value);
-      return call_user_func($this->label_callback, $value, $key);
+      return (string)call_user_func($this->label_callback, $value, $key);
     }
 
     if($key !== $value)
-      return $key;
+      return (string)$key;
 
     $n = new Number($value, $this->units_after, $this->units_before);
     return $n->format($this->decimal_digits);
