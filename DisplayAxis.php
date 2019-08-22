@@ -391,7 +391,7 @@ class DisplayAxis {
       for($p = 0; $p < $count; ++$p) {
 
         $point = $points[$p];
-        if($point->text == '')
+        if($point->text === '')
           continue;
 
         $labels .= $this->getText($x + $x_offset, $y + $y_offset, $point,
