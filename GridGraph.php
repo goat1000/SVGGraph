@@ -533,6 +533,16 @@ abstract class GridGraph extends Graph {
       if(!is_numeric($max_h) || !is_numeric($min_h))
         throw new \Exception('Non-numeric min/max');
 
+      if($min_h == $max_h && $flip_axes) {
+        if($x_min_unit > 0) {
+          $inc = $x_min_unit;
+        } else {
+          $fallback = $this->getOption('axis_fallback_max');
+          $inc = $fallback > 0 ? $fallback : 1;
+        }
+        $max_h += $inc;
+      }
+
       if($this->datetime_keys && !$flip_axes) {
         $x_axis = new AxisDateTime($x_len, $max_h, $min_h, $x_min_space,
           $grid_division, $this->settings);
@@ -600,6 +610,16 @@ abstract class GridGraph extends Graph {
 
       if(!is_numeric($max_v) || !is_numeric($min_v))
         throw new \Exception('Non-numeric min/max');
+
+      if($min_v == $max_v && !$flip_axes) {
+        if($y_min_unit > 0) {
+          $inc = $y_min_unit;
+        } else {
+          $fallback = $this->getOption('axis_fallback_max');
+          $inc = $fallback > 0 ? $fallback : 1;
+        }
+        $max_v += $inc;
+      }
 
       if($this->datetime_keys && $flip_axes) {
         $y_axis = new AxisDateTime($y_len, $max_v, $min_v, $y_min_space,

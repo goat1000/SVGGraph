@@ -254,6 +254,16 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
       !is_numeric($max_v) || !is_numeric($min_v))
       throw new \Exception('Non-numeric min/max');
 
+    if($min_h == $max_h) {
+      if($x_min_unit > 0) {
+        $inc = $x_min_unit;
+      } else {
+        $fallback = $this->getOption('axis_fallback_max');
+        $inc = $fallback > 0 ? $fallback : 1;
+      }
+      $max_h += $inc;
+    }
+
     if(!is_numeric($this->grid_division_h)) {
       $x_min_space = $this->getOption(['minimum_grid_spacing_h', 0],
         'minimum_grid_spacing');
