@@ -27,10 +27,7 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
 
   public function __construct($w, $h, $settings, $fixed_settings = [])
   {
-    $fixed = [
-      'legend_reverse' => false,
-      'single_axis' => true,
-    ];
+    $fixed = [ 'single_axis' => true ];
     $fixed_settings = array_merge($fixed, $fixed_settings);
     parent::__construct($w, $h, $settings, $fixed_settings);
   }
@@ -76,6 +73,15 @@ class HorizontalStackedBarGraph extends HorizontalBarGraph {
     else
       $this->last_position_neg[$index] = [$pos, $label_w];
     return [$pos, $target];
+  }
+
+  /**
+   * Returns the ordering for legend entries
+   */
+  public function getLegendOrder()
+  {
+    // bars are stacked from left to right
+    return null;
   }
 }
 

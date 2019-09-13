@@ -25,13 +25,6 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
 
   protected $neg_datasets = [];
 
-  public function __construct($w, $h, $settings, $fixed_settings = [])
-  {
-    $fixed = ['legend_reverse' => false];
-    $fixed_settings = array_merge($fixed, $fixed_settings);
-    parent::__construct($w, $h, $settings, $fixed_settings);
-  }
-
   protected function draw()
   {
     if($this->log_axis_y)

@@ -28,7 +28,6 @@ class Legend {
 
   private $graph;
   private $entry_details = [];
-  private $reverse = false;
   private $autohide;
   private $back_colour;
   private $colour;
@@ -57,10 +56,9 @@ class Legend {
   private $title_font_weight;
   private $type;
 
-  public function __construct(&$graph, $reverse)
+  public function __construct(&$graph)
   {
     $this->graph =& $graph;
-    $this->reverse = $reverse;
 
     // copy options to class
     $opts = ['autohide', 'back_colour', 'colour', 'columns', 'draggable',
@@ -126,7 +124,8 @@ class Legend {
    */
   public function draw()
   {
-    $entry_count = count($this->entry_details);
+    $entries = $this->getEntries();
+    $entry_count = count($entries);
     if($entry_count < 1)
       return '';
 
@@ -172,8 +171,6 @@ class Legend {
     $column = 0;
 
     $text = ['x' => 0];
-    $entries = $this->reverse ? array_reverse($this->entry_details, true) :
-      $this->entry_details;
 
     $column_entry = 0;
     $y = $start_y;
@@ -307,6 +304,39 @@ class Legend {
     if($this->draggable)
       $this->graph->javascript->setDraggable($group);
     return $this->graph->element('g', $group, null, $rect . $title . $parts);
+  }
+
+  /**
+   * Returns the list of entries in the correct order
+   */
+  private function getEntries()
+  {
+    $entry_order = $this->graph->getOption('legend_order');
+    if($entry_order === null || $entry_order == 'auto')
+      $entry_order = $this->graph->getLegendOrder();
+
+    if(is_array($entry_order)) {
+      $entries = [];
+      foreach($entry_order as $e) {
+        if(isset($this->entry_details[$e]))
+          $entries[] = $this->entry_details[$e];
+      }
+      return $entries;
+    }
+
+    $entries = $this->entry_details;
+    if(strpos($entry_order, 'sort') !== false) {
+      usort($entries, function($a, $b) {
+        if($a->text == $b->text)
+          return 0;
+        return $a->text > $b->text ? 1 : -1;
+      });
+    }
+
+    if(strpos($entry_order, 'reverse') !== false)
+      $entries = array_reverse($entries, true);
+
+    return $entries;
   }
 }
 

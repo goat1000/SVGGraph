@@ -33,6 +33,7 @@ class PieGraph extends Graph {
   protected $calc_done;
   protected $slice_info = [];
   protected $total = 0;
+  protected $legend_order = [];
 
   private $sub_total = 0;
 
@@ -186,6 +187,8 @@ class PieGraph extends Graph {
     $slice = 0;
     $slices = [];
     $slice_no = 0;
+    $legend_entries = [];
+    $legend_order = [];
     foreach($values as $value) {
 
       // get the original array position of the value
@@ -201,7 +204,8 @@ class PieGraph extends Graph {
         $this->setStroke($attr, $item, 0, 'round');
 
         // use the original position for legend index
-        $this->setLegendEntry(0, $original_position, $item, $attr);
+        $legend_entries[] = [$original_position, $item, $attr];
+        $legend_order[] = $original_position;
         ++$slice;
       }
 
@@ -272,6 +276,13 @@ class PieGraph extends Graph {
           $slices[] = $this_slice;
       }
     }
+
+    // put the slices back in natural order for the legend
+    usort($legend_entries, function($a, $b) { return $a[0] - $b[0]; });
+    foreach($legend_entries as $e) {
+      $this->setLegendEntry(0, $e[0], $e[1], $e[2]);
+    }
+    $this->legend_order = $legend_order;
 
     $series = $this->drawSlices($slices);
     if($this->semantic_classes)
@@ -482,6 +493,14 @@ class PieGraph extends Graph {
 
     // fall back to default
     return parent::dataLabelTailDirection($dataset, $index, $hpos, $vpos);
+  }
+
+  /**
+   * Returns the order that the slices appear in
+   */
+  public function getLegendOrder()
+  {
+    return $this->legend_order;
   }
 }
 

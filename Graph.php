@@ -308,7 +308,16 @@ abstract class Graph {
     if(empty($entries) && !isset($structure['legend_text']))
       return;
 
-    $this->legend = new Legend($this, $this->getOption('legend_reverse'));
+    $this->legend = new Legend($this);
+  }
+
+  /**
+   * Returns the ordering for legend entries
+   */
+  public function getLegendOrder()
+  {
+    // null for no special order
+    return null;
   }
 
   /**

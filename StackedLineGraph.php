@@ -28,10 +28,7 @@ class StackedLineGraph extends MultiLineGraph {
 
   public function __construct($w, $h, $settings, $fixed_settings = [])
   {
-    $fixed = [
-      'legend_reverse' => true,
-      'single_axis' => true,
-    ];
+    $fixed = [ 'single_axis' => true ];
     $fixed_settings = array_merge($fixed, $fixed_settings);
     parent::__construct($w, $h, $settings, $fixed_settings);
   }
@@ -181,6 +178,14 @@ class StackedLineGraph extends MultiLineGraph {
   public function getMinValue()
   {
     return $this->multi_graph->getMinSumValue();
+  }
+
+  /**
+   * Returns the ordering for legend entries
+   */
+  public function getLegendOrder()
+  {
+    return 'reverse';
   }
 }
 

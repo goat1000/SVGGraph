@@ -33,7 +33,6 @@ class HorizontalBarGraph extends GridGraph {
 
     $fs = [
       'flip_axes' => true,
-      'legend_reverse' => true,
       'label_centre' => true,
     ];
     $fs = array_merge($fs, $fixed_settings);
@@ -136,6 +135,14 @@ class HorizontalBarGraph extends GridGraph {
         $pos = str_replace('left', 'right', $pos);
     }
     return [$pos, $target];
+  }
+
+  /**
+   * Returns the ordering for legend entries
+   */
+  public function getLegendOrder()
+  {
+    return 'reverse';
   }
 }
 

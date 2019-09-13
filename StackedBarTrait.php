@@ -218,5 +218,13 @@ trait StackedBarTrait {
     return isset($this->bar_visibility[$dataset][$item->key]) &&
       $this->bar_visibility[$dataset][$item->key];
   }
+
+  /**
+   * Returns the ordering for legend entries
+   */
+  public function getLegendOrder()
+  {
+    return 'reverse';
+  }
 }
 
