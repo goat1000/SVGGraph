@@ -123,6 +123,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
               $x = $bar_pos + $marker_offset;
               $y = $this->gridY($item->value, $y_axis);
               $points[$line_dataset][] = [$x, $y, $item, $line_dataset, $bnum];
+              $this->bar_visibility[$line_dataset][$item->key] = 1;
             }
             continue;
           }
@@ -144,12 +145,12 @@ class StackedBarAndLineGraph extends StackedBarGraph {
         foreach($chunk_values as $chunk) {
           list($j, $item, $start) = $chunk;
 
+          // store whether the bar can be seen or not
           $top = (++$b == $bar_count);
+          $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
+
           $this->setBarLegendEntry($j, $bnum, $item);
           $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
-
-          // store whether the bar can be seen or not
-          $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
         }
 
         $this->barTotals($item, $bnum, $yplus, $yminus, $j);

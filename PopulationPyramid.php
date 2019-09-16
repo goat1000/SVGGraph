@@ -71,7 +71,10 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
           }
           $bar_style = ['fill' => $this->getColour($item, $bnum, $j)];
           $this->setStroke($bar_style, $item, $j);
-          $this->setLegendEntry($j, $bnum, $item, $bar_style);
+
+          // store whether the bar can be seen or not
+          $this->bar_visibility[$j][$item->key] = ($item->value != 0);
+          $this->setBarLegendEntry($j, $bnum, $item);
 
           $this->barY($value, $bar, $value >= 0 ? $xpos : $xneg);
           if($value < 0)
