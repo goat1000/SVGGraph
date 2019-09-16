@@ -200,5 +200,14 @@ class BarAndLineGraph extends GroupedBarGraph {
     $labels .= $this->linegraph->drawDataLabels();
     return $labels;
   }
+
+  /**
+   * Returns the normal dataset order
+   */
+  public function getLegendOrder()
+  {
+    $datasets = count($this->multi_graph);
+    return range(0, $datasets - 1);
+  }
 }
 

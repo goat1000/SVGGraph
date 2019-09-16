@@ -24,6 +24,7 @@ namespace Goat1000\SVGGraph;
 class StackedBarAndLineGraph extends StackedBarGraph {
 
   protected $linegraph = null;
+  protected $dataset_types = [];
 
   /**
    * We need an instance of the LineGraph class
@@ -75,7 +76,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $this->linegraph->defs =& $this->defs;
 
     // find the lines
-    $lines = $this->line_dataset;
+    $lines = $this->getOption('line_dataset');
     $line_breaks = [];
     $line_points = [];
     $points = [];
@@ -101,6 +102,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     // draw bars, store line points
     $line_dataset = 0;
     $bars = '';
+    $legend_entries = [];
     foreach($this->multi_graph as $bnum => $itemlist) {
       $item = $itemlist[0];
       $bar_pos = $this->gridPosition($item, $bnum);
@@ -115,6 +117,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
           if(array_key_exists($j, $lines)) {
             $line_dataset = $j;
+            $this->dataset_types[$j] = 'l';
             if($line_breaks[$line_dataset] && is_null($item->value) &&
               count($points[$line_dataset]) > 0) {
               $line_points[$line_dataset][] = $points[$line_dataset];
@@ -128,6 +131,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
             continue;
           }
 
+          $this->dataset_types[$j] = 'b';
           if(!is_null($item->value)) {
             // sort the values from bottom to top, assigning position
             if($item->value < 0) {
@@ -149,13 +153,17 @@ class StackedBarAndLineGraph extends StackedBarGraph {
           $top = (++$b == $bar_count);
           $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
 
-          $this->setBarLegendEntry($j, $bnum, $item);
+          $legend_entries[$j][$bnum] = $item;
           $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
         }
 
         $this->barTotals($item, $bnum, $yplus, $yminus, $j);
       }
     }
+
+    foreach($legend_entries as $j => $dataset)
+      foreach($dataset as $bnum => $item)
+        $this->setBarLegendEntry($j, $bnum, $item);
 
     foreach($points as $line_dataset => $line) {
       if(!empty($line))
@@ -295,5 +303,20 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $this->max_values = $axis_max;
   }
 
+  /**
+   * Returns the order that the datasets should appear in
+   */
+  public function getLegendOrder()
+  {
+    $stack = [];
+    $lines = [];
+    foreach($this->dataset_types as $d => $t)
+      if($t == 'l')
+        $lines[] = $d;
+      else
+        array_unshift($stack, $d);
+
+    return array_merge($stack, $lines);
+  }
 }
 

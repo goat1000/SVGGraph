@@ -41,6 +41,7 @@ trait StackedBarTrait {
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
 
     $bars = '';
+    $legend_entries = [];
     foreach($this->multi_graph as $bnum => $itemlist) {
       $item = $itemlist[0];
 
@@ -49,7 +50,7 @@ trait StackedBarTrait {
       $chunk_values = [];
       for($j = 0; $j < $chunk_count; ++$j) {
         $item = $itemlist[$j];
-        if(!is_null($item->value)) {
+        if($item->value !== null) {
           if($item->value < 0) {
             array_unshift($chunk_values, [$j, $item, $yminus]);
             $yminus += $item->value;
@@ -69,12 +70,18 @@ trait StackedBarTrait {
         // store whether the bar can be seen or not
         $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
 
-        $this->setBarLegendEntry($j, $bnum, $item);
+        $legend_entries[$j][$bnum] = $item;
         $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
       }
 
       $this->barTotals($item, $bnum, $yplus, $yminus, $j);
     }
+
+    // assign legend entries in order of datasets
+    foreach($legend_entries as $j => $dataset)
+      foreach($dataset as $bnum => $item)
+        $this->setBarLegendEntry($j, $bnum, $item);
+
     return $bars;
   }
 

@@ -33,21 +33,29 @@ trait GroupedBarTrait {
   protected function drawBars()
   {
     $this->barSetup();
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
+    $dataset_count = count($this->multi_graph);
+    $this->colourSetup($this->multi_graph->itemsCount(-1), $dataset_count);
 
+    // bars must be drawn from left to right, since they might overlap
     $bars = '';
+    $legend_entries = [];
     foreach($this->multi_graph as $bnum => $itemlist) {
       $item = $itemlist[0];
       $bar_pos = $this->gridPosition($item, $bnum);
-      if(!is_null($bar_pos)) {
-        for($j = 0; $j < $chunk_count; ++$j) {
+      if($bar_pos !== null) {
+        for($j = 0; $j < $dataset_count; ++$j) {
           $item = $itemlist[$j];
-          $this->setBarLegendEntry($j, $bnum, $item);
           $bars .= $this->drawBar($item, $bnum, 0, $this->datasetYAxis($j), $j);
+          $legend_entries[$j][$bnum] = $item;
         }
       }
     }
+
+    // legend entries are added in order of dataset
+    foreach($legend_entries as $j => $dataset)
+      foreach($dataset as $bnum => $item)
+        $this->setBarLegendEntry($j, $bnum, $item);
+
     return $bars;
   }
 
@@ -57,11 +65,11 @@ trait GroupedBarTrait {
   protected function barSetup()
   {
     parent::barSetup();
-    $chunk_count = count($this->multi_graph);
+    $dataset_count = count($this->multi_graph);
     list($chunk_width, $bspace, $chunk_unit_width) =
       $this->barPosition($this->bar_width, $this->bar_width_min,
-      $this->x_axes[$this->main_x_axis]->unit(), $chunk_count, $this->bar_space,
-      $this->group_space);
+        $this->x_axes[$this->main_x_axis]->unit(), $dataset_count,
+        $this->bar_space, $this->group_space);
     $this->group_bar_spacing = $chunk_unit_width;
     $this->setBarWidth($chunk_width, $bspace);
   }
@@ -72,7 +80,7 @@ trait GroupedBarTrait {
   protected function barX($item, $index, &$bar, $axis, $dataset)
   {
     $bar_x = $this->gridPosition($item, $index);
-    if(is_null($bar_x))
+    if($bar_x === null)
       return null;
 
     $bar['x'] = $bar_x + $this->calculated_bar_space +

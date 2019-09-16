@@ -39,6 +39,7 @@ trait StackedGroupedBarTrait {
     $this->colourSetup($this->multi_graph->itemsCount(-1), $bar_count);
 
     $bars = '';
+    $legend_entries = [];
     foreach($this->multi_graph as $bnum => $itemlist) {
       $item = $itemlist[0];
       $k = $item->key;
@@ -73,13 +74,17 @@ trait StackedGroupedBarTrait {
             $top = ($b == $stack_last);
             // store whether the bar can be seen or not
             $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
-            $this->setBarLegendEntry($j, $bnum, $item);
             $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
+            $legend_entries[$j][$bnum] = $item;
           }
           $this->barTotals($item, $bnum, $ypos, $yneg, $end_bar - 1);
         }
       }
     }
+
+    foreach($legend_entries as $j => $dataset)
+      foreach($dataset as $bnum => $item)
+        $this->setBarLegendEntry($j, $bnum, $item);
 
     return $bars;
   }
@@ -189,6 +194,23 @@ trait StackedGroupedBarTrait {
       $start = $end + 1;
     }
     return $min;
+  }
+
+  /**
+   * Returns the order that the bar datasets appear in
+   */
+  public function getLegendOrder()
+  {
+    $groups = [];
+    foreach($this->dataset_groups as $d => $g)
+      $groups[$g][] = $d;
+
+    // order is down stack, then left to right in groups
+    $order = [];
+    foreach($groups as $g => $d)
+      foreach(array_reverse($d) as $e)
+        $order[] = $e;
+    return $order;
   }
 }
 
