@@ -1,17 +1,28 @@
 function crosshairs(e) {
-  var de = svgNode(e,1), pos = svgCursorCoords(e,de), xc, yc, grid, bb, on, x, y;
+  var de = svgNode(e,1), pos = svgCursorCoords(e,de), xc, yc, grid, bb, on, x, y, m, pt;
   if(!de)
     return;
-  xc = de.querySelector('.chX');
-  yc = de.querySelector('.chY');
   grid = de.querySelector('.grid');
+
   if(!grid)
     return;
   bb = grid.getBBox();
+  m = de.querySelector('.svggraph-magnifier');
+  if(m && m.transform) {
+    m = m.transform.baseVal.consolidate().matrix.inverse();
+    pt = de.createSVGPoint();
+    pt.x = pos[0];
+    pt.y = pos[1];
+    pt = pt.matrixTransform(m);
+    pos[0] = pt.x;
+    pos[1] = pt.y;
+  }
   x = pos[0];
   y = pos[1];
   on = (x >= bb.x && x <= bb.x + bb.width && y >= bb.y && y <= bb.y + bb.height);
   if(on) {
+    xc = de.querySelector('.chX');
+    yc = de.querySelector('.chY');
     setattr(xc,'y1',setattr(xc,'y2', y));
     setattr(yc,'x1',setattr(yc,'x2', x));
   }
