@@ -1,6 +1,12 @@
-function svgNode(e) {
-  var d = e.target.correspondingUseElement || e.target, nn = '{$string:namespace}svg';
-  while(d.parentNode && d.nodeName != nn)
+function svgNode(e,innermost) {
+  var d = e.target.correspondingUseElement || e.target, nn = '{$string:namespace}svg', s;
+  while(d.parentNode) {
+    if(d.nodeName == nn) {
+      if(innermost)
+        return d;
+      s = d;
+    }
     d = d.parentNode;
-  return d.nodeName == nn ? d : null;
+  }
+  return s;
 }

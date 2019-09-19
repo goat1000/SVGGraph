@@ -4,7 +4,7 @@ function closeContextMenu() {
 }
 function setContextMenu(de,t,e) {
   var te, g, mh = 0, mw = {$number:min_width}, link, text, line = 0,
-    bb, r, pos = svgCursorCoords(e), x = pos[0], y = pos[1],
+    bb, r, pos = svgCursorCoords(e,de), x = pos[0], y = pos[1],
     spacing = {$number:spacing},
     shadow, shadow_opacity = {$number:shadow_opacity}, target = '{$string:link_target}';
   g = newel('g', { id: 'cMenu', 'font-size': {$number:font_size}, 'font-family':
@@ -69,7 +69,7 @@ function contextMenuInit() {
     e && e.addEventListener && e.addEventListener('contextmenu', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      var t = finditem(e,menus), de = svgNode(e), g = getE('cMenu');2
+      var t = finditem(e,menus), de = svgNode(e,1), g = getE('cMenu');
       g && g.parentNode.removeChild(g);
       setContextMenu(de,t,e);
       return false;

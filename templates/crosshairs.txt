@@ -1,5 +1,5 @@
 function crosshairs(e) {
-  var de = svgNode(e), pos = svgCursorCoords(e), xc, yc, grid, bb, on, x, y;
+  var de = svgNode(e,1), pos = svgCursorCoords(e,de), xc, yc, grid, bb, on, x, y;
   if(!de)
     return;
   xc = de.querySelector('.chX');

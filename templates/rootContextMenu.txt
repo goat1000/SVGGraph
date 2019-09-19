@@ -1,6 +1,6 @@
 function rootContextMenu(e) {
   e.preventDefault();
-  var de = svgNode(e), gm, rm, i, item, link;
+  var de = svgNode(e,1), gm, rm, i, item, link;
   closeContextMenu();
   gm = getData(de, 'menu');
   if(gm) {
