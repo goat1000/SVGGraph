@@ -125,15 +125,15 @@ class Pie3DGraph extends PieGraph {
   {
     $item = $edge->slice['item'];
     $attr = [
-      'fill' => $this->getColour($item, $edge->slice['colour_index'], null,
-        true, false),
+      'fill' => $this->getColour($item, $edge->slice['colour_index'],
+        $this->dataset, true, false),
       'id' => $this->newID(),
     ];
     if($this->show_tooltips)
-      $this->setTooltip($attr, $item, 0, $item->key, $item->value, true);
+      $this->setTooltip($attr, $item, $this->dataset, $item->key, $item->value, true);
     if($this->show_context_menu)
-      $this->setContextMenu($attr, 0, $item, true);
-    $this->addLabelClient(0, $edge->slice['original_position'], $attr);
+      $this->setContextMenu($attr, $this->dataset, $item, true);
+    $this->addLabelClient($this->dataset, $edge->slice['original_position'], $attr);
     $content = $edge->draw($this, $x_centre, $y_centre, $depth, $attr);
 
     // the gradient overlay uses a clip-path

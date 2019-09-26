@@ -1,3 +1,16 @@
+Version 3.2 (26/09/2019)
+-----------
+- Added axis_label_position options.
+- Added legend_order option.
+- Added axis_fallback_max option for better handling of all-zero value graphs.
+- Added dataset option for choosing dataset for pie graphs to draw.
+- Fixed legend display for stacked bar and line graphs and population pyramid.
+- Fixed legend display for multi-dataset graphs starting with 0 values.
+- Fixed magnification of tooltips in subgraphs.
+- Fixed incorrect position of crosshairs when magnification enabled.
+- Fixed axis text when using force_assoc and value with a key of 0.
+- Fixed overlapped tooltips from internal edges of 3D polar area graphs.
+
 Version 3.1 (02/08/2019)
 -----------
 - Added subgraph support.

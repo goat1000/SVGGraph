@@ -34,6 +34,7 @@ class PieGraph extends Graph {
   protected $slice_info = [];
   protected $total = 0;
   protected $legend_order = [];
+  protected $dataset = 0;
 
   private $sub_total = 0;
 
@@ -166,13 +167,13 @@ class PieGraph extends Graph {
     if(!$this->calc_done)
       $this->calc();
 
-    $min_slice_angle = $this->getOption(['data_label_min_space', 0]);
+    $min_slice_angle = $this->getOption(['data_label_min_space', $this->dataset]);
     $vcount = 0;
 
     // need to store the original position of each value, because the
     // sorted list must still refer to the relevant legend entries
     $values = [];
-    foreach($this->values[0] as $position => $item) {
+    foreach($this->values[$this->dataset] as $position => $item) {
       $values[] = [$position, $item->value, $item];
       if(!is_null($item->value))
         ++$vcount;
@@ -199,9 +200,9 @@ class PieGraph extends Graph {
       $colour_index = $this->keep_colour_order ? $original_position : $slice;
       if($this->legend_show_empty || $item->value != 0) {
         $attr = [
-          'fill' => $this->getColour($item, $colour_index, null, true, true)
+          'fill' => $this->getColour($item, $colour_index, $this->dataset, true, true)
         ];
-        $this->setStroke($attr, $item, 0, 'round');
+        $this->setStroke($attr, $item, $this->dataset, 'round');
 
         // use the original position for legend index
         $legend_entries[] = [$original_position, $item, $attr];
@@ -244,7 +245,7 @@ class PieGraph extends Graph {
         }
         $label_content = implode("\n", $parts);
 
-        $this->addDataLabel(0, $original_position, $attr, $item,
+        $this->addDataLabel($this->dataset, $original_position, $attr, $item,
           $this->x_centre, $this->y_centre, 1, 1, $label_content);
       }
 
@@ -304,9 +305,10 @@ class PieGraph extends Graph {
       $item = $slice['item'];
 
       if($this->show_tooltips)
-        $this->setTooltip($slice['attr'], $item, 0, $item->key, $item->value, true);
+        $this->setTooltip($slice['attr'], $item, $this->dataset, $item->key,
+          $item->value, true);
       if($this->show_context_menu)
-        $this->setContextMenu($slice['attr'], 0, $item, true);
+        $this->setContextMenu($slice['attr'], $this->dataset, $item, true);
       $path = $this->getSlice($item,
         $slice['angle_start'], $slice['angle_end'],
         $slice['radius_x'], $slice['radius_y'],
@@ -388,12 +390,13 @@ class PieGraph extends Graph {
    */
   protected function checkValues()
   {
+    $this->dataset = $this->getOption('dataset');
     parent::checkValues();
-    if($this->getMinValue() < 0)
+    if($this->values->getMinValue($this->dataset) < 0)
       throw new \Exception('Negative value for pie chart');
 
     $sum = 0;
-    foreach($this->values[0] as $item) {
+    foreach($this->values[$this->dataset] as $item) {
       if(!is_null($item->value) && !is_numeric($item->value))
         throw new \Exception('Non-numeric value');
       $sum += $item->value;

@@ -34,10 +34,10 @@ trait PolarAreaTrait {
   {
     parent::calc();
 
-    $smax = sqrt($this->getMaxValue());
+    $smax = sqrt($this->values->getMaxValue($this->dataset));
     $this->radius_factor_x = $this->radius_x / $smax;
     $this->radius_factor_y = $this->radius_y / $smax;
-    $this->slice_angle = 2.0 * M_PI / ($this->getMaxKey() + 1);
+    $this->slice_angle = 2.0 * M_PI / ($this->values->getMaxKey($this->dataset) + 1);
   }
 
   /**

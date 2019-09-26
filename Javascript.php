@@ -410,8 +410,6 @@ class Javascript {
     $this->insertVariable('tips', $element['id'], $text);
 
     if($duplicate) {
-      if(!isset($element['id']))
-        $element['id'] = $this->graph->newID();
       $this->addOverlay($element['id'], $this->graph->newID());
     }
   }
@@ -538,6 +536,10 @@ class Javascript {
   public function addOverlay($from, $to)
   {
     $this->addFunction('duplicate');
+
+    // order matters, so clear previous value
+    if(isset($this->variables['dups'][$from]))
+      unset($this->variables['dups'][$from]);
     $this->insertVariable('dups', $from, $to);
   }
 
