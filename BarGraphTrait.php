@@ -149,6 +149,12 @@ trait BarGraphTrait {
     if($this->show_context_menu)
       $this->setContextMenu($bar, $dataset, $item, $label_shown);
 
+    $round = max($this->getItemOption('bar_round', $dataset, $item), 0);
+    if($round > 0) {
+      // don't allow the round corner to be more than 1/2 bar width or height
+      $bar['rx'] = $bar['ry'] = min($round, $bar['width'] / 2, $bar['height'] / 2);
+    }
+
     $bar_part = $this->element('rect', $bar);
     return $this->getLink($item, $item->key, $bar_part);
   }

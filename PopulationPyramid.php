@@ -85,6 +85,12 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
           if($bar['width'] > 0) {
             ++$bars_shown[$j];
 
+            $round = max($this->getItemOption('bar_round', $j, $item), 0);
+            if($round > 0) {
+              $bar['rx'] = $bar['ry'] = min($round, $bar['width'] / 2,
+                $bar['height'] / 2);
+            }
+
             $show_label = $this->addDataLabel($j, $bnum, $bar, $item,
               $bar['x'], $bar['y'], $bar['width'], $bar['height']);
             if($this->show_tooltips)

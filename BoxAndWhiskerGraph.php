@@ -58,8 +58,9 @@ class BoxAndWhiskerGraph extends PointGraph {
 
         $top = $item->top;
         $bottom = $item->bottom;
+        $round = max($this->getItemOption('bar_round', 0, $item), 0);
         $shape = $this->whiskerBox($bspace + $bar_pos, $bar_width, $item->value,
-          $top, $bottom, $item->wtop, $item->wbottom);
+          $top, $bottom, $item->wtop, $item->wbottom, $round);
 
         // wrap the whisker box in a group
         $g = [];
@@ -111,7 +112,7 @@ class BoxAndWhiskerGraph extends PointGraph {
    * Returns the code for a box with whiskers
    */
   protected function whiskerBox($x, $w, $median, $top, $bottom,
-    $wtop, $wbottom)
+    $wtop, $wbottom, $round)
   {
     $t = $this->gridY($top);
     $b = $this->gridY($bottom);
@@ -119,6 +120,10 @@ class BoxAndWhiskerGraph extends PointGraph {
     $wb = $this->gridY($wbottom);
 
     $box = ['x' => $x, 'y' => $t, 'width' => $w, 'height' => $b - $t];
+    if($round > 0) {
+      $box['rx'] = $box['ry'] = min($round, $box['width'] / 2,
+        $box['height'] / 2);
+    }
     $rect = $this->element('rect', $box);
 
     // whisker lines
