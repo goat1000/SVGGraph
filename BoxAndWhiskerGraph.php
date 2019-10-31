@@ -127,7 +127,7 @@ class BoxAndWhiskerGraph extends PointGraph {
     $rect = $this->element('rect', $box);
 
     // whisker lines
-    $lg = $w * (1 - $this->whisker_width) * 0.5;
+    $lg = $w * (1 - $this->getOption('whisker_width')) * 0.5;
     $ll = $x + $lg;
     $lr = $x + $w - $lg;
     $l = ['x1' => $ll, 'x2' => $lr];
@@ -140,11 +140,17 @@ class BoxAndWhiskerGraph extends PointGraph {
     $l['x1'] = $x;
     $l['x2'] = $x + $w;
     $l['y1'] = $l['y2'] = $this->gridY($median);
-    $style = ['stroke-width' => $this->median_stroke_width];
+    $style = [ 'stroke-width' => $this->getOption('median_stroke_width') ];
+    $m_colour = $this->getOption('median_colour');
+    $m_dash = $this->getOption('median_dash');
+    if(!empty($m_colour))
+      $style['stroke'] = $m_colour;
+    if(!empty($m_dash))
+      $style['stroke-dasharray'] = $m_dash;
     $l3 = $this->element('line', array_merge($l, $style));
 
     // whisker dashed lines
-    $style = ['stroke-dasharray' => $this->whisker_dash];
+    $style = [ 'stroke-dasharray' => $this->getOption('whisker_dash') ];
     $l['x1'] = $l['x2'] = $x + $w / 2;
     $l['y1'] = $wt;
     $l['y2'] = $t;
