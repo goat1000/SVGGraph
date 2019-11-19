@@ -26,35 +26,35 @@ namespace Goat1000\SVGGraph;
  */
 class Legend {
 
-  private $graph;
-  private $entry_details = [];
-  private $autohide;
-  private $back_colour;
-  private $colour;
-  private $columns;
-  private $draggable;
-  private $entries;
-  private $entry_height;
-  private $entry_width;
-  private $font;
-  private $font_adjust;
-  private $font_size;
-  private $font_weight;
-  private $padding;
-  private $position;
-  private $round;
-  private $shadow_opacity;
-  private $show_empty;
-  private $stroke_colour;
-  private $stroke_width;
-  private $text_side;
-  private $title;
-  private $title_colour;
-  private $title_font;
-  private $title_font_adjust;
-  private $title_font_size;
-  private $title_font_weight;
-  private $type;
+  protected $graph;
+  protected $entry_details = [];
+  protected $autohide;
+  protected $back_colour;
+  protected $colour;
+  protected $columns;
+  protected $draggable;
+  protected $entries;
+  protected $entry_height;
+  protected $entry_width;
+  protected $font;
+  protected $font_adjust;
+  protected $font_size;
+  protected $font_weight;
+  protected $padding;
+  protected $position;
+  protected $round;
+  protected $shadow_opacity;
+  protected $show_empty;
+  protected $stroke_colour;
+  protected $stroke_width;
+  protected $text_side;
+  protected $title;
+  protected $title_colour;
+  protected $title_font;
+  protected $title_font_adjust;
+  protected $title_font_size;
+  protected $title_font_weight;
+  protected $type;
 
   public function __construct(&$graph)
   {
@@ -309,7 +309,7 @@ class Legend {
   /**
    * Returns the list of entries in the correct order
    */
-  private function getEntries()
+  protected function getEntries()
   {
     $entry_order = $this->graph->getOption('legend_order');
     if($entry_order === null || $entry_order == 'auto')
