@@ -103,16 +103,19 @@ trait SVGGraphTrait {
    */
   private function setup($class)
   {
-    $full_class = '\\Goat1000\\SVGGraph\\' . $class;
-    if(!class_exists($full_class)) {
+    if(!strstr($class, '\\')) {
+        $class = __NAMESPACE__ . '\\' . $class;
+    }
+
+    if(!class_exists($class)) {
       throw new \InvalidArgumentException('Unknown graph type: ' . $class);
     }
 
-    if(!is_subclass_of($full_class, '\\Goat1000\\SVGGraph\\Graph')) {
+    if(!is_subclass_of($class, '\\Goat1000\\SVGGraph\\Graph')) {
       throw new \InvalidArgumentException('Not a graph class: ' . $class);
     }
 
-    $g = new $full_class($this->width, $this->height, $this->settings);
+    $g = new $class($this->width, $this->height, $this->settings);
     $g->subgraph = $this->subgraph;
     $g->values($this->values);
     $g->links($this->links);
