@@ -111,7 +111,7 @@ trait SVGGraphTrait {
       throw new \InvalidArgumentException('Unknown graph type: ' . $class);
     }
 
-    if(!is_subclass_of($class, Graph::class)) {
+    if(!is_subclass_of($class, '\\Goat1000\\SVGGraph\\Graph')) {
       throw new \InvalidArgumentException('Not a graph class: ' . $class);
     }
 
