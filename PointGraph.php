@@ -26,10 +26,10 @@ namespace Goat1000\SVGGraph;
  */
 abstract class PointGraph extends GridGraph {
 
-  private $markers = [];
-  private $marker_ids = [];
-  private $marker_link_ids = [];
-  private $marker_types = [];
+  protected $markers = [];
+  protected $marker_ids = [];
+  protected $marker_link_ids = [];
+  protected $marker_types = [];
 
   /**
    * Changes to crosshair cursor by overlaying a transparent rectangle
@@ -100,7 +100,7 @@ abstract class PointGraph extends GridGraph {
   /**
    * Returns a marker element
    */
-  private function getMarker($marker, $set)
+  protected function getMarker($marker, $set)
   {
     $id = isset($marker->id) ? $marker->id : $this->marker_ids[$set];
     $use = ['x' => $marker->x, 'y' => $marker->y];
@@ -155,7 +155,7 @@ abstract class PointGraph extends GridGraph {
   /**
    * Creates a single marker element and its link version
    */
-  private function createMarker($type, $size, $fill, $stroke_width,
+  protected function createMarker($type, $size, $fill, $stroke_width,
     $stroke_colour, $opacity, $angle)
   {
     $m_key = serialize(func_get_args());
@@ -180,7 +180,7 @@ abstract class PointGraph extends GridGraph {
   /**
    * Returns true if a marker is different to others in its set
    */
-  private function specialMarker($set, &$item)
+  protected function specialMarker($set, &$item)
   {
     $null_item = null;
     if($this->getItemOption('marker_colour', $set, $item, 'colour') !=
@@ -199,7 +199,7 @@ abstract class PointGraph extends GridGraph {
   /**
    * Creates a single marker for the data set
    */
-  private function createSingleMarker($set, &$item = null)
+  protected function createSingleMarker($set, &$item = null)
   {
     $type = $this->getItemOption('marker_type', $set, $item);
     $size = $this->getItemOption('marker_size', $set, $item);
@@ -227,7 +227,7 @@ abstract class PointGraph extends GridGraph {
   /**
    * Creates the marker types
    */
-  private function createMarkers()
+  protected function createMarkers()
   {
     foreach(array_keys($this->markers) as $set) {
       // set the ID for this data set to use
