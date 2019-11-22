@@ -42,33 +42,42 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $bars_shown = array_fill(0, $chunk_count, 0);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $bars = '';
+    $datasets = $this->multi_graph->getEnabledDatasets();
 
     foreach($this->multi_graph as $itemlist) {
       $item = $itemlist[0];
       $k = $item->key;
       $bar_pos = $this->gridPosition($item, $bnum);
-      if(!is_null($bar_pos)) {
+      if($bar_pos !== null) {
         $bar['y'] = $bar_pos - $bspace - $bar_height;
         $xpos = $xneg = 0;
 
         // find greatest -/+ bar
         $max_neg_bar = $max_pos_bar = -1;
-        for($j = 0; $j < $chunk_count; ++$j) {
+        for($j = 0, $enabled = 0; $j < $chunk_count; ++$j) {
+          if(!in_array($j, $datasets))
+            continue;
+
           $item = $itemlist[$j];
-          $value = $j % 2 ? $item->value : -$item->value;
+          $value = $enabled % 2 ? $item->value : -$item->value;
           if($value > 0)
             $max_pos_bar = $j;
           else
             $max_neg_bar = $j;
+          ++$enabled;
         }
-        for($j = 0; $j < $chunk_count; ++$j) {
+        for($j = 0, $enabled = 0; $j < $chunk_count; ++$j) {
+          if(!in_array($j, $datasets))
+            continue;
+
           $item = $itemlist[$j];
-          if($j % 2) {
+          if($enabled % 2) {
             $value = $item->value;
           } else {
             $value = -$item->value;
             $this->neg_datasets[] = $j;
           }
+          ++$enabled;
           $bar_style = ['fill' => $this->getColour($item, $bnum, $j)];
           $this->setStroke($bar_style, $item, $j);
 
@@ -166,17 +175,22 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
   public function getMaxValue()
   {
     $sums = [ [], [] ];
-    $sets = count($this->values);
-    if($sets < 2)
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    if(count($datasets) < 2)
       return $this->multi_graph->getMaxValue();
-    for($i = 0; $i < $sets; ++$i) {
+
+    $i = 0;
+    foreach($datasets as $d) {
       $dir = $i % 2;
-      foreach($this->values[$i] as $item) {
+      foreach($this->values[$d] as $item) {
+        if($item->value === null)
+          continue;
         if(isset($sums[$dir][$item->key]))
           $sums[$dir][$item->key] += $item->value;
         else
           $sums[$dir][$item->key] = $item->value;
       }
+      ++$i;
     }
     if(!count($sums[0]))
       return null;
@@ -189,19 +203,24 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
   public function getMinValue()
   {
     $sums = [ [], [] ];
-    $sets = count($this->values);
-    if($sets < 2)
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    if(count($datasets) < 2)
       return $this->multi_graph->getMinValue();
-    for($i = 0; $i < $sets; ++$i) {
+
+    $i = 0;
+    foreach($datasets as $d) {
       $dir = $i % 2;
-      foreach($this->values[$i] as $item) {
-        if(!is_null($item->value) && !is_numeric($item->value))
+      foreach($this->values[$d] as $item) {
+        if($item->value === null)
+          continue;
+        if(!is_numeric($item->value))
           throw new \Exception('Non-numeric value');
         if(isset($sums[$dir][$item->key]))
           $sums[$dir][$item->key] += $item->value;
         else
           $sums[$dir][$item->key] = $item->value;
       }
+      ++$i;
     }
     if(!count($sums[0]))
       return null;

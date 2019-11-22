@@ -38,13 +38,21 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
   protected function barSetup()
   {
     parent::barSetup();
-    $chunk_count = count($this->multi_graph);
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    $dataset_count = count($datasets);
+
     list($chunk_width, $bspace, $chunk_unit_width) =
       $this->barPosition($this->bar_width, $this->bar_width_min,
-      $this->y_axes[$this->main_y_axis]->unit(), $chunk_count, $this->bar_space,
-      $this->group_space);
+        $this->y_axes[$this->main_y_axis]->unit(), $dataset_count,
+        $this->bar_space, $this->group_space);
     $this->group_bar_spacing = $chunk_unit_width;
     $this->setBarWidth($chunk_width, $bspace);
+
+    $offset = 0;
+    foreach($datasets as $d) {
+      $this->dataset_offsets[$d] = $offset;
+      ++$offset;
+    }
   }
 
   /**
@@ -53,12 +61,13 @@ class HorizontalGroupedBarGraph extends HorizontalBarGraph {
   protected function barDimensions($item, $index, $start, $axis, $dataset)
   {
     $bar_y = $this->gridPosition($item, $index);
-    if(is_null($bar_y))
+    if($bar_y === null)
       return [];
 
+    $d_offset = $this->dataset_offsets[$dataset];
     $bar = [
       'y' => $bar_y - $this->calculated_bar_space -
-        ($dataset * $this->group_bar_spacing) - $this->calculated_bar_width,
+        ($d_offset * $this->group_bar_spacing) - $this->calculated_bar_width,
       'height' => $this->calculated_bar_width,
     ];
 

@@ -40,12 +40,14 @@ class BubbleGraph extends PointGraph {
   protected function draw()
   {
     $body = $this->grid() . $this->underShapes();
-    $this->colourSetup($this->values->itemsCount());
+    $dataset = $this->getOption(['dataset', 0], 0);
+    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bnum = 0;
     $y_axis = $this->y_axes[$this->main_y_axis];
     $series = '';
-    foreach($this->values[0] as $item) {
+
+    foreach($this->values[$dataset] as $item) {
       $area = $item->area;
       $x = $this->gridPosition($item, $bnum);
       $y = null;
@@ -55,7 +57,7 @@ class BubbleGraph extends PointGraph {
       if($y !== null) {
         $r = $this->bubble_scale * $y_axis->unit() * sqrt(abs($area) / M_PI);
         $circle = ['cx' => $x, 'cy' => $y, 'r' => $r];
-        $colour = $this->getColour($item, $bnum);
+        $colour = $this->getColour($item, $bnum, $dataset);
         $circle_style = ['fill' => $colour];
         if($area < 0) {
           // draw negative bubbles with a checked pattern
@@ -63,21 +65,21 @@ class BubbleGraph extends PointGraph {
           $pid = $this->addPattern($pattern);
           $circle_style['fill'] = 'url(#' . $pid . ')';
         }
-        $this->setStroke($circle_style, $item);
-        $this->addDataLabel(0, $bnum, $circle, $item,
+        $this->setStroke($circle_style, $item, $dataset);
+        $this->addDataLabel($dataset, $bnum, $circle, $item,
           $x - $r, $y - $r, $r * 2, $r * 2);
 
         if($this->show_tooltips)
-          $this->setTooltip($circle, $item, 0, $item->key, $area, true);
+          $this->setTooltip($circle, $item, $dataset, $item->key, $area, true);
         if($this->show_context_menu)
-          $this->setContextMenu($circle, 0, $item, true);
+          $this->setContextMenu($circle, $dataset, $item, true);
         if($this->semantic_classes)
           $circle['class'] = 'series0';
         $bubble = $this->element('circle', array_merge($circle, $circle_style));
         $series .= $this->getLink($item, $item->key, $bubble);
 
-        $this->addMarker($x, $y, $item);
-        $this->setLegendEntry(0, $bnum, $item, $circle_style);
+        $this->addMarker($x, $y, $item, null, $dataset);
+        $this->setLegendEntry($dataset, $bnum, $item, $circle_style);
       }
 
       ++$bnum;

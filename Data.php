@@ -216,6 +216,22 @@ class Data implements \Countable, \ArrayAccess, \Iterator {
   }
 
   /**
+   * Returns the min/max sum values for an array of datasets
+   */
+  public function getMinMaxSumValuesFor($datasets)
+  {
+    // Data class can't handle multiple datasets
+    if(count($datasets) > 1)
+      throw new \InvalidArgumentException('Multiple datasets not supported');
+
+    $d = array_pop($datasets);
+    if($d < 0 || $d >= $this->datasets)
+      throw new \Exception('Dataset not found');
+
+    return [$this->getMinValue($d), $this->getMaxValue($d)];
+  }
+
+  /**
    * Returns TRUE if the item exists, setting the $value
    */
   public function getData($index, $name, &$value)

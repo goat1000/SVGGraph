@@ -33,13 +33,13 @@ trait FloatingBarTrait {
   {
     $bar = [];
     $bar_x = $this->barX($item, $index, $bar, $axis, $dataset);
-    if(is_null($bar_x))
+    if($bar_x === null)
       return [];
 
     $start = $item->value;
     $value = $item->end - $start;
     $y_pos = $this->barY($value, $bar, $start, $axis);
-    if(is_null($y_pos))
+    if($y_pos === null)
       return [];
     return $bar;
   }
@@ -59,16 +59,16 @@ trait FloatingBarTrait {
    */
   public function getMaxValue()
   {
-    if(!is_null($this->max_value))
+    if($this->max_value !== null)
       return $this->max_value;
     $max = null;
     foreach($this->values[0] as $item) {
       $s = $item->value;
       $e = $item->end;
-      if(is_null($s) || is_null($e))
+      if($s === null || $e === null)
         continue;
       $m = max($s, $e);
-      if(is_null($max) || $m > $max)
+      if($max === null || $m > $max)
         $max = $m;
     }
     return ($this->max_value = $max);
@@ -79,16 +79,16 @@ trait FloatingBarTrait {
    */
   public function getMinValue()
   {
-    if(!is_null($this->min_value))
+    if($this->min_value !== null)
       return $this->min_value;
     $min = null;
     foreach($this->values[0] as $item) {
       $s = $item->value;
       $e = $item->end;
-      if(is_null($s) || is_null($e))
+      if($s === null || $e === null)
         continue;
       $m = min($s, $e);
-      if(is_null($min) || $m < $min)
+      if($min === null || $m < $min)
         $min = $m;
     }
     return ($this->min_value = $min);

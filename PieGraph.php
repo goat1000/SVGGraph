@@ -390,7 +390,7 @@ class PieGraph extends Graph {
    */
   protected function checkValues()
   {
-    $this->dataset = $this->getOption('dataset');
+    $this->dataset = $this->getOption(['dataset',0], 0);
     parent::checkValues();
     if($this->values->getMinValue($this->dataset) < 0)
       throw new \Exception('Negative value for pie chart');

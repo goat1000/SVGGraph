@@ -38,11 +38,14 @@ trait MultiGraphTrait {
   public function values($values)
   {
     parent::values($values);
-    if(!$this->values->error)
+    if(!$this->values->error) {
       $this->multi_graph = new MultiGraph($this->values,
         $this->getOption('force_assoc'),
         $this->datetime_keys,
         $this->getOption('require_integer_keys'));
+
+      $this->multi_graph->setEnabledDatasets($this->getOption('dataset'));
+    }
   }
 
   public function getMinValue()

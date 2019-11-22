@@ -43,17 +43,18 @@ class ScatterGraph extends PointGraph {
     // a scatter graph without markers is empty!
     if($this->marker_size == 0)
       $this->marker_size = 1;
-    $this->colourSetup($this->values->itemsCount());
+    $dataset = $this->getOption(['dataset', 0], 0);
+    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bnum = 0;
-    foreach($this->values[0] as $item) {
+    foreach($this->values[$dataset] as $item) {
       $x = $this->gridPosition($item, $bnum);
       if(!is_null($item->value) && !is_null($x)) {
         $y = $this->gridY($item->value);
         if(!is_null($y)) {
-          $marker_id = $this->markerLabel(0, $bnum, $item, $x, $y);
+          $marker_id = $this->markerLabel($dataset, $bnum, $item, $x, $y);
           $extra = empty($marker_id) ? null : ['id' => $marker_id];
-          $this->addMarker($x, $y, $item, $extra);
+          $this->addMarker($x, $y, $item, $extra, $dataset);
         }
       }
       ++$bnum;

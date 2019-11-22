@@ -41,6 +41,11 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
     // validate secondary axis datasets are only lines
     if(isset($settings['dataset_axis'])) {
+      if(!is_array($settings['dataset_axis'])) {
+        $this->setOption('dataset_axis', null);
+        return;
+      }
+
       $lines = is_array($settings['line_dataset']) ? $settings['line_dataset'] :
         [$settings['line_dataset']];
 
@@ -98,6 +103,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $chunk_count = count($this->multi_graph);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $marker_offset = $this->x_axes[$this->main_x_axis]->unit() / 2;
+    $datasets = $this->multi_graph->getEnabledDatasets();
 
     // draw bars, store line points
     $line_dataset = 0;
@@ -107,22 +113,22 @@ class StackedBarAndLineGraph extends StackedBarGraph {
       $item = $itemlist[0];
       $bar_pos = $this->gridPosition($item, $bnum);
 
-      if(!is_null($bar_pos)) {
+      if($bar_pos !== null) {
 
         $yplus = $yminus = 0;
         $chunk_values = [];
-        for($j = 0; $j < $chunk_count; ++$j) {
+        foreach($datasets as $j) {
           $y_axis = $this->datasetYAxis($j);
           $item = $itemlist[$j];
 
           if(array_key_exists($j, $lines)) {
             $line_dataset = $j;
             $this->dataset_types[$j] = 'l';
-            if($line_breaks[$line_dataset] && is_null($item->value) &&
+            if($line_breaks[$line_dataset] && $item->value === null &&
               count($points[$line_dataset]) > 0) {
               $line_points[$line_dataset][] = $points[$line_dataset];
               $points[$line_dataset] = [];
-            } elseif(!is_null($item->value)) {
+            } elseif($item->value !== null) {
               $x = $bar_pos + $marker_offset;
               $y = $this->gridY($item->value, $y_axis);
               $points[$line_dataset][] = [$x, $y, $item, $line_dataset, $bnum];
@@ -132,7 +138,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
           }
 
           $this->dataset_types[$j] = 'b';
-          if(!is_null($item->value)) {
+          if($item->value !== null) {
             // sort the values from bottom to top, assigning position
             if($item->value < 0) {
               array_unshift($chunk_values, [$j, $item, $yminus]);
@@ -220,7 +226,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
    */
   protected function getAxisMinValue($axis)
   {
-    if(is_null($this->min_values))
+    if($this->min_values === null)
       $this->calcMinMaxValues();
     return isset($this->min_values[$axis]) ? $this->min_values[$axis] : null;
   }
@@ -230,7 +236,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
    */
   protected function getAxisMaxValue($axis)
   {
-    if(is_null($this->max_values))
+    if($this->max_values === null)
       $this->calcMinMaxValues();
     return isset($this->max_values[$axis]) ? $this->max_values[$axis] : null;
   }
@@ -251,15 +257,22 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $axis_min = array_fill(0, $axis_count, null);
     $stack_max = null;
     $stack_min = null;
-    $datasets = count($this->multi_graph);
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    $bar_datasets = 0;
+    foreach($datasets as $j) {
+      if(!array_key_exists($j, $lines))
+        ++$bar_datasets;
+    }
+    if($bar_datasets === 0)
+      throw new \Exception('No bar datasets enabled');
 
     foreach($this->multi_graph as $itemlist) {
 
       $stack_pos = $stack_neg = 0;
 
-      for($j = 0; $j < $datasets; ++$j) {
+      foreach($datasets as $j) {
         $item = $itemlist[$j];
-        if(is_null($item->value))
+        if($item->value === null)
           continue;
         if(!is_numeric($item->value))
           throw new \Exception('Non-numeric value');
@@ -267,9 +280,9 @@ class StackedBarAndLineGraph extends StackedBarGraph {
         if(array_key_exists($j, $lines)) {
           // for lines  find the global min/max for each axis
           $axis = $this->datasetYAxis($j);
-          if(is_null($axis_min[$axis]) || $axis_min[$axis] > $item->value)
+          if($axis_min[$axis] === null || $axis_min[$axis] > $item->value)
             $axis_min[$axis] = $item->value;
-          if(is_null($axis_max[$axis]) || $axis_max[$axis] < $item->value)
+          if($axis_max[$axis] === null || $axis_max[$axis] < $item->value)
             $axis_max[$axis] = $item->value;
         } else {
 
@@ -282,21 +295,21 @@ class StackedBarAndLineGraph extends StackedBarGraph {
         }
       }
 
-      if(is_null($stack_min) || $stack_neg < $stack_min)
+      if($stack_min === null || $stack_neg < $stack_min)
         $stack_min = $stack_neg;
-      if(is_null($stack_max) || $stack_neg > $stack_max)
+      if($stack_max === null || $stack_neg > $stack_max)
         $stack_max = $stack_neg;
 
-      if(is_null($stack_min) || $stack_pos < $stack_min)
+      if($stack_min === null || $stack_pos < $stack_min)
         $stack_min = $stack_pos;
-      if(is_null($stack_max) || $stack_pos > $stack_max)
+      if($stack_max === null || $stack_pos > $stack_max)
         $stack_max = $stack_pos;
     }
 
-    if(is_null($axis_min[0]) || $stack_min < $axis_min[0])
+    if($axis_min[0] === null || $stack_min < $axis_min[0])
       $axis_min[0] = $stack_min;
 
-    if(is_null($axis_max[0]) || $stack_max > $axis_max[0])
+    if($axis_max[0] === null || $stack_max > $axis_max[0])
       $axis_max[0] = $stack_max;
 
     $this->min_values = $axis_min;

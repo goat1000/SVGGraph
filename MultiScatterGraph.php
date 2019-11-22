@@ -48,15 +48,16 @@ class MultiScatterGraph extends PointGraph {
 
     $chunk_count = count($this->multi_graph);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
-    $best_fit_above = $best_fit_below = '';
-    for($i = 0; $i < $chunk_count; ++$i) {
+    $datasets = $this->multi_graph->getEnabledDatasets();
+
+    foreach($datasets as $i) {
       $bnum = 0;
       $axis = $this->datasetYAxis($i);
       foreach($this->multi_graph[$i] as $item) {
         $x = $this->gridPosition($item, $bnum);
-        if(!is_null($item->value) && !is_null($x)) {
+        if($item->value !== null && $x !== null) {
           $y = $this->gridY($item->value, $axis);
-          if(!is_null($y)) {
+          if($y !== null) {
             $marker_id = $this->markerLabel($i, $bnum, $item, $x, $y);
             $extra = empty($marker_id) ? null : ['id' => $marker_id];
             $this->addMarker($x, $y, $item, $extra, $i);

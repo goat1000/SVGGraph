@@ -51,24 +51,25 @@ class RadarGraph extends LineGraph {
     $bnum = 0;
     $cmd = 'M';
     $y_axis = $this->y_axes[$this->main_y_axis];
+    $dataset = $this->getOption(['dataset', 0], 0);
 
     $graph_line = '';
-    $line_breaks = $this->getOption(['line_breaks', 0]);
+    $line_breaks = $this->getOption(['line_breaks', $dataset]);
     $points = [];
     $first_point = null;
-    foreach($this->values[0] as $item) {
-      if($line_breaks && is_null($item->value) && count($points) > 0) {
-        $graph_line .= $this->drawLine(0, $points, 0, true);
+    foreach($this->values[$dataset] as $item) {
+      if($line_breaks && $item->value === null && count($points) > 0) {
+        $graph_line .= $this->drawLine($dataset, $points, 0, true);
         $points = [];
       } else {
         $point_pos = $this->gridPosition($item, $bnum);
-        if(!is_null($item->value) && !is_null($point_pos)) {
+        if($item->value !== null && $point_pos !== null) {
           $val = $y_axis->position($item->value);
           $angle = $this->arad + $point_pos / $this->g_height;
           $x = $this->xc + ($val * sin($angle));
           $y = $this->yc + ($val * cos($angle));
-          $points[] = [$x, $y, $item, 0, $bnum];
-          if(is_null($first_point))
+          $points[] = [$x, $y, $item, $dataset, $bnum];
+          if($first_point === null)
             $first_point = $points[0];
         }
       }
@@ -81,7 +82,7 @@ class RadarGraph extends LineGraph {
       $points[] = $first_point;
     }
 
-    $graph_line .= $this->drawLine(0, $points, 0, true);
+    $graph_line .= $this->drawLine($dataset, $points, 0, true);
     $group = [];
     $this->clipGrid($group);
     if($this->semantic_classes)
@@ -340,7 +341,7 @@ class RadarGraph extends LineGraph {
       $num_colours = count($colours);
       $num_points = count($y_points);
       while($c < $num_points - 1) {
-        if(!is_null($colours[$c % $num_colours])) {
+        if($colours[$c % $num_colours] !== null) {
           $s_points = [$y_points[$c], $y_points[$c + 1]];
           $bpath = [
             'fill' => $this->parseColour($colours[$c % $num_colours]),
@@ -410,7 +411,7 @@ class RadarGraph extends LineGraph {
    */
   protected function setGridDimensions()
   {
-    if(is_null($this->radius)) {
+    if($this->radius === null) {
       $w = $this->width - $this->pad_left - $this->pad_right;
       $h = $this->height - $this->pad_top - $this->pad_bottom;
       $this->xc = $this->pad_left + $w / 2;

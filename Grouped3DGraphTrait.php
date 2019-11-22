@@ -38,7 +38,8 @@ trait Grouped3DGraphTrait {
     $num = $ends['k_max'][0] - $ends['k_min'][0] + 1;
 
     $block = $x_len / $num;
-    $group = count($this->values);
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    $group = count($datasets);
     $a = $this->bar_space;
     $b = $this->group_space;
     $c = (($block) - $a - ($group - 1) * $b) / $group;

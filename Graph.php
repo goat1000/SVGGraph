@@ -62,25 +62,8 @@ abstract class Graph {
     $this->height = $h;
 
     // get settings from ini file that are relevant to this class
-    $ini_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'svggraph.ini';
-    $ini_settings = false;
-    if(file_exists($ini_file))
-      $ini_settings = parse_ini_file($ini_file, true);
-    if($ini_settings === false)
-      throw new \Exception('INI file [' . $ini_file . '] could not be loaded');
-
     $class = get_class($this);
-    $hierarchy = [$class];
-    while($class = get_parent_class($class))
-      array_unshift($hierarchy, $class);
-
-    while(count($hierarchy)) {
-      $class = array_shift($hierarchy);
-      $ns = strrpos($class, '\\');
-      $class = substr($class, $ns + 1);
-      if(array_key_exists($class, $ini_settings))
-        $this->settings = array_merge($this->settings, $ini_settings[$class]);
-    }
+    $ini_settings = $this->ini_settings($class);
 
     // default option overrides - subclasses can override these
     $fixed_setting_defaults = [
@@ -89,7 +72,7 @@ abstract class Graph {
       'require_structured' => false,
       'require_integer_keys' => true,
     ];
-    $this->settings = array_merge($this->settings, $settings,
+    $this->settings = array_merge($this->settings, $ini_settings, $settings,
       $fixed_setting_defaults, $fixed_settings);
     $this->namespace = $this->getOption('namespace');
   }
@@ -151,6 +134,34 @@ abstract class Graph {
   }
 
   /**
+   * Returns the settings from the ini file for a class
+   */
+  protected function ini_settings($class)
+  {
+    $ini_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'svggraph.ini';
+    $ini_settings = false;
+    if(file_exists($ini_file))
+      $ini_settings = parse_ini_file($ini_file, true);
+    if($ini_settings === false)
+      throw new \Exception('INI file [' . $ini_file . '] could not be loaded');
+
+    $hierarchy = [$class];
+    while($class = get_parent_class($class))
+      array_unshift($hierarchy, $class);
+
+    $settings = [];
+    while(count($hierarchy)) {
+      $class = array_shift($hierarchy);
+      $ns = strrpos($class, '\\');
+      $class = substr($class, $ns + 1);
+      if(array_key_exists($class, $ini_settings))
+        $settings = array_merge($settings, $ini_settings[$class]);
+    }
+
+    return $settings;
+  }
+
+  /**
    * Sets the graph values
    */
   public function values($values)
@@ -198,12 +209,29 @@ abstract class Graph {
         $datetime_keys, $structure,
         $this->getOption('repeated_keys'), $this->getOption('sort_keys'),
         $this->getOption('require_integer_keys'), $require_structured);
+    } else {
+      $this->values = new Data($new_values, $force_assoc, $datetime_keys);
+      if(!$this->values->error && !empty($require_structured))
+        $this->values->error = get_class($this) . ' requires structured data';
+    }
+
+    if($this->values->error)
+      return;
+
+    $dataset = $this->getOption('dataset', 0);
+    if($dataset === 0)
+      return;
+
+    $dcount = count($this->values);
+    $dataset = $this->getOption(['dataset', 0], 0);
+    if($dcount <= $dataset) {
+      $this->values->error = 'No valid datasets selected';
       return;
     }
 
-    $this->values = new Data($new_values, $force_assoc, $datetime_keys);
-    if(!$this->values->error && !empty($require_structured))
-      $this->values->error = get_class($this) . ' requires structured data';
+    // dataset option doesn't work well without structured data
+    $this->values = StructuredData::convertFrom($this->values, $force_assoc,
+      $datetime_keys, $this->getOption('require_integer_keys'));
   }
 
   /**
@@ -232,19 +260,23 @@ abstract class Graph {
 
   public function getMinValue()
   {
-    return $this->values->getMinValue();
+    $d = $this->getOption(['dataset', 0], 0);
+    return $this->values->getMinValue($d);
   }
   public function getMaxValue()
   {
-    return $this->values->getMaxValue();
+    $d = $this->getOption(['dataset', 0], 0);
+    return $this->values->getMaxValue($d);
   }
   public function getMinKey()
   {
-    return $this->values->getMinKey();
+    $d = $this->getOption(['dataset', 0], 0);
+    return $this->values->getMinKey($d);
   }
   public function getMaxKey()
   {
-    return $this->values->getMaxKey();
+    $d = $this->getOption(['dataset', 0], 0);
+    return $this->values->getMaxKey($d);
   }
   public function getKey($i)
   {
@@ -1263,9 +1295,16 @@ abstract class Graph {
         throw $e;
 
       $err = $e->getMessage();
-      if($this->getOption('exception_details'))
+      $details = $this->getOption('exception_details');
+      if($details)
         $err .= ' [' . basename($e->getFile()) . ' #' . $e->getLine() . ']';
       $body = $this->errorText($err);
+
+      if($details) {
+        $body .= "<!--\nException thrown from " .
+          $e->getFile() . " @ " . $e->getLine() . "\nTrace: \n" .
+          $e->getTraceAsString() . "\n-->\n";
+      }
     }
 
     $svg = [

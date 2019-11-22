@@ -26,6 +26,7 @@ trait GroupedBarTrait {
   use MultiGraphTrait;
 
   protected $group_bar_spacing;
+  protected $dataset_offsets = [];
 
   /**
    * Draws the bars
@@ -35,6 +36,7 @@ trait GroupedBarTrait {
     $this->barSetup();
     $dataset_count = count($this->multi_graph);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $dataset_count);
+    $datasets = $this->multi_graph->getEnabledDatasets();
 
     // bars must be drawn from left to right, since they might overlap
     $bars = '';
@@ -44,6 +46,8 @@ trait GroupedBarTrait {
       $bar_pos = $this->gridPosition($item, $bnum);
       if($bar_pos !== null) {
         for($j = 0; $j < $dataset_count; ++$j) {
+          if(!in_array($j, $datasets))
+            continue;
           $item = $itemlist[$j];
           $bars .= $this->drawBar($item, $bnum, 0, $this->datasetYAxis($j), $j);
           $legend_entries[$j][$bnum] = $item;
@@ -65,13 +69,21 @@ trait GroupedBarTrait {
   protected function barSetup()
   {
     parent::barSetup();
-    $dataset_count = count($this->multi_graph);
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    $dataset_count = count($datasets);
+
     list($chunk_width, $bspace, $chunk_unit_width) =
       $this->barPosition($this->bar_width, $this->bar_width_min,
         $this->x_axes[$this->main_x_axis]->unit(), $dataset_count,
         $this->bar_space, $this->group_space);
     $this->group_bar_spacing = $chunk_unit_width;
     $this->setBarWidth($chunk_width, $bspace);
+
+    $offset = 0;
+    foreach($datasets as $d) {
+      $this->dataset_offsets[$d] = $offset;
+      ++$offset;
+    }
   }
 
   /**
@@ -83,8 +95,9 @@ trait GroupedBarTrait {
     if($bar_x === null)
       return null;
 
+    $d_offset = $this->dataset_offsets[$dataset];
     $bar['x'] = $bar_x + $this->calculated_bar_space +
-        ($dataset * $this->group_bar_spacing);
+        ($d_offset * $this->group_bar_spacing);
     $bar['width'] = $this->calculated_bar_width;
     return $bar_x;
   }

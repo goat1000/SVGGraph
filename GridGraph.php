@@ -28,6 +28,7 @@ abstract class GridGraph extends Graph {
   protected $main_x_axis = 0;
   protected $main_y_axis = 0;
   protected $y_axis_positions = [];
+  protected $dataset_axes = null;
 
   protected $g_width = null;
   protected $g_height = null;
@@ -263,28 +264,61 @@ abstract class GridGraph extends Graph {
   }
 
   /**
+   * Returns the list of datasets and their axis numbers
+   */
+  public function getDatasetAxes()
+  {
+    if($this->dataset_axes !== null)
+      return $this->dataset_axes;
+
+    $dataset_axis = $this->getOption('dataset_axis');
+    $default_axis = $this->getOption('axis_right') ? 1 : 0;
+    $single_axis = $this->getOption('single_axis');
+    if(empty($this->multi_graph)) {
+      $enabled_datasets = [0];
+      $v =& $this->values;
+    } else {
+      $enabled_datasets = $this->multi_graph->getEnabledDatasets();
+      $v =& $this->multi_graph->getValues();
+    }
+
+    $d_axes = [];
+    foreach($enabled_datasets as $d) {
+      $axis = $default_axis;
+
+      // only use the chosen dataset axis when allowed and not empty
+      if(!$single_axis && isset($dataset_axis[$d]) && $v->itemsCount($d) > 0)
+        $axis = $dataset_axis[$d];
+      $d_axes[$d] = $axis;
+    }
+
+    // check that the axes are used in order
+    $used = [];
+    foreach($d_axes as $a)
+      $used[$a] = 1;
+    $max = max($d_axes);
+    $unused = [];
+    for($a = $default_axis; $a <= $max; ++$a)
+      if(!isset($used[$a]))
+        $unused[] = $a;
+
+    if(count($unused))
+      throw new \Exception('Unused axis: ' . implode(', ', $unused));
+
+    $this->dataset_axes = $d_axes;
+    return $this->dataset_axes;
+  }
+
+  /**
    * Returns the number of Y-axes
    */
   protected function yAxisCount()
   {
-    if($this->getOption('single_axis') || empty($this->dataset_axis) ||
-      empty($this->multi_graph) || !is_array($this->dataset_axis) ||
-      count($this->multi_graph) < 2)
+    $dataset_axes = $this->getDatasetAxes();
+    if(count($dataset_axes) <= 1)
       return 1;
-    $y_axes = [];
-    $dataset_count = count($this->multi_graph);
-    foreach($this->dataset_axis as $dataset => $axis) {
 
-      // skip trailing empty datasets
-      if($this->multi_graph->getValues()->itemsCount($dataset) < 1)
-        continue;
-
-      // finished assigning axes?
-      if($dataset >= $dataset_count)
-        break;
-      $y_axes[] = $axis;
-    }
-    return count(array_unique($y_axes));
+    return count(array_unique($dataset_axes));
   }
 
   /**
@@ -313,8 +347,9 @@ abstract class GridGraph extends Graph {
    */
   protected function datasetYAxis($dataset)
   {
-    if(!empty($this->dataset_axis) && isset($this->dataset_axis[$dataset]))
-      return $this->dataset_axis[$dataset];
+    $dataset_axes = $this->getDatasetAxes();
+    if(isset($dataset_axes[$dataset]))
+      return $dataset_axes[$dataset];
     return $this->axis_right ? 1 : 0;
   }
 
@@ -323,15 +358,17 @@ abstract class GridGraph extends Graph {
    */
   protected function getAxisMinValue($axis)
   {
-    if($this->getOption('single_axis') || empty($this->dataset_axis) ||
-      empty($this->multi_graph))
+    if($this->yAxisCount() <= 1)
       return $this->getMinValue();
 
     $min = [];
-    $datasets = count($this->values);
-    for($i = 0; $i < $datasets; ++$i) {
-      if($this->datasetYAxis($i) == $axis)
-        $min[] = $this->values->getMinValue($i);
+    $dataset_axes = $this->getDatasetAxes();
+    foreach($dataset_axes as $dataset => $d_axis) {
+      if($d_axis == $axis) {
+        $min_val = $this->values->getMinValue($dataset);
+        if($min_val !== null)
+          $min[] = $min_val;
+      }
     }
     return empty($min) ? null : min($min);
   }
@@ -341,15 +378,17 @@ abstract class GridGraph extends Graph {
    */
   protected function getAxisMaxValue($axis)
   {
-    if($this->getOption('single_axis') || empty($this->dataset_axis) ||
-      empty($this->multi_graph))
+    if($this->yAxisCount() <= 1)
       return $this->getMaxValue();
 
     $max = [];
-    $datasets = count($this->values);
-    for($i = 0; $i < $datasets; ++$i) {
-      if($this->datasetYAxis($i) == $axis)
-        $max[] = $this->values->getMaxValue($i);
+    $dataset_axes = $this->getDatasetAxes();
+    foreach($dataset_axes as $dataset => $d_axis) {
+      if($d_axis == $axis) {
+        $max_val = $this->values->getMaxValue($dataset);
+        if($max_val !== null)
+          $max[] = $max_val;
+      }
     }
     return empty($max) ? null : max($max);
   }
@@ -663,7 +702,7 @@ abstract class GridGraph extends Graph {
 
     // can't have multiple invisible axes
     if(!$this->show_axes)
-      $this->dataset_axis = null;
+      $this->setOption('dataset_axis', null);
 
     $ends = $this->getAxisEnds();
     if(!$this->label_adjust_done)

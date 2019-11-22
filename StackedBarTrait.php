@@ -40,6 +40,7 @@ trait StackedBarTrait {
     $chunk_count = count($this->multi_graph);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
 
+    $datasets = $this->multi_graph->getEnabledDatasets();
     $bars = '';
     $legend_entries = [];
     foreach($this->multi_graph as $bnum => $itemlist) {
@@ -49,6 +50,8 @@ trait StackedBarTrait {
       $yplus = $yminus = 0;
       $chunk_values = [];
       for($j = 0; $j < $chunk_count; ++$j) {
+        if(!in_array($j, $datasets))
+          continue;
         $item = $itemlist[$j];
         if($item->value !== null) {
           if($item->value < 0) {

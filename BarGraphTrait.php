@@ -50,13 +50,14 @@ trait BarGraphTrait {
    */
   protected function drawBars()
   {
+    $dataset = $this->getOption(['dataset', 0], 0);
     $this->barSetup();
-    $this->colourSetup($this->values->itemsCount());
+    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bars = '';
-    foreach($this->values[0] as $bnum => $item) {
-      $this->setBarLegendEntry(0, $bnum, $item);
-      $bars .= $this->drawBar($item, $bnum);
+    foreach($this->values[$dataset] as $bnum => $item) {
+      $this->setBarLegendEntry($dataset, $bnum, $item);
+      $bars .= $this->drawBar($item, $bnum, 0, null, $dataset);
     }
     return $bars;
   }

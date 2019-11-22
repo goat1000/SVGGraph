@@ -59,7 +59,7 @@ class BarAndLineGraph extends GroupedBarGraph {
 
     // find the lines
     $chunk_count = count($this->multi_graph);
-    $lines = $this->line_dataset;
+    $lines = $this->getOption('line_dataset');
     $line_breaks = [];
     $line_points = [];
     $points = [];
@@ -82,23 +82,26 @@ class BarAndLineGraph extends GroupedBarGraph {
     $marker_offset = $this->x_axes[$this->main_x_axis]->unit() / 2;
 
     // draw bars, store line points
+    $datasets = $this->multi_graph->getEnabledDatasets();
     $line_dataset = 0;
     $bars = '';
     foreach($this->multi_graph as $bnum => $itemlist) {
       $item = $itemlist[0];
       $bar_pos = $this->gridPosition($item, $bnum);
-      if(!is_null($bar_pos)) {
+      if($bar_pos !== null) {
         for($j = 0; $j < $chunk_count; ++$j) {
+          if(!in_array($j, $datasets))
+            continue;
           $y_axis = $this->datasetYAxis($j);
           $item = $itemlist[$j];
 
           if(array_key_exists($j, $lines)) {
             $line_dataset = $j;
-            if($line_breaks[$line_dataset] && is_null($item->value) &&
+            if($line_breaks[$line_dataset] && $item->value === null &&
               count($points[$line_dataset]) > 0) {
               $line_points[$line_dataset][] = $points[$line_dataset];
               $points[$line_dataset] = [];
-            } elseif(!is_null($item->value)) {
+            } elseif($item->value !== null) {
               $x = $bar_pos + $marker_offset;
               $y = $this->gridY($item->value, $y_axis);
               $points[$line_dataset][] = [$x, $y, $item, $line_dataset, $bnum];
@@ -148,14 +151,19 @@ class BarAndLineGraph extends GroupedBarGraph {
   protected function barSetup()
   {
     parent::barSetup();
-    $datasets = $chunk_count = count($this->multi_graph);
-    for($i = 0, $bar = 0; $i < $datasets; ++$i) {
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    $chunk_count = count($datasets);
+    $bar = 0;
+    foreach($datasets as $i) {
       // reduce chunk count for lines, add bars to list
       if(array_key_exists($i, $this->line_datasets))
         --$chunk_count;
       else
         $this->bar_datasets[$i] = $bar++;
     }
+
+    if(count($this->bar_datasets) < 1)
+      throw new \Exception('No bar datasets enabled');
 
     list($chunk_width, $bspace, $chunk_unit_width) =
       $this->barPosition($this->bar_width, $this->bar_width_min,
@@ -171,7 +179,7 @@ class BarAndLineGraph extends GroupedBarGraph {
   protected function barX($item, $index, &$bar, $axis, $dataset)
   {
     $bar_x = $this->gridPosition($item, $index);
-    if(is_null($bar_x))
+    if($bar_x === null)
       return null;
 
     // relative position of bars stored in barSetup()

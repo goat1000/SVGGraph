@@ -35,7 +35,8 @@ class MultiRadarGraph extends RadarGraph {
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $plots = '';
 
-    for($i = 0; $i < $chunk_count; ++$i) {
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    foreach($datasets as $i) {
       $bnum = 0;
       $points = [];
       $plot = '';
@@ -43,18 +44,18 @@ class MultiRadarGraph extends RadarGraph {
       $y_axis = $this->y_axes[$this->main_y_axis];
       $first_point = null;
       foreach($this->multi_graph[$i] as $item) {
-        if($line_breaks && is_null($item->value) && count($points) > 0) {
+        if($line_breaks && $item->value === null && count($points) > 0) {
           $plot .= $this->drawLine($i, $points, 0);
           $points = [];
         } else {
           $point_pos = $this->gridPosition($item, $bnum);
-          if(!is_null($item->value) && !is_null($point_pos)) {
+          if($item->value !== null && $point_pos !== null) {
             $val = $y_axis->position($item->value);
             $angle = $this->arad + $point_pos / $this->g_height;
             $x = $this->xc + ($val * sin($angle));
             $y = $this->yc + ($val * cos($angle));
             $points[] = [$x, $y, $item, $i, $bnum];
-            if(is_null($first_point))
+            if($first_point === null)
               $first_point = $points[0];
           }
         }

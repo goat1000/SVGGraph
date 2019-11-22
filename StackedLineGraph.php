@@ -44,7 +44,9 @@ class StackedLineGraph extends MultiLineGraph {
     $chunk_count = count($this->multi_graph);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $stack = [];
-    for($i = 0; $i < $chunk_count; ++$i) {
+
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    foreach($datasets as $i) {
       $bnum = 0;
       $cmd = 'M';
       $path = new PathData;
@@ -79,7 +81,7 @@ class StackedLineGraph extends MultiLineGraph {
 
           // no need to repeat same L command
           $cmd = $cmd == 'M' ? 'L' : '';
-          if(!is_null($item->value))
+          if($item->value !== null)
             ++$point_count;
         }
         ++$bnum;
@@ -127,10 +129,10 @@ class StackedLineGraph extends MultiLineGraph {
           $x = $this->gridPosition($item, $bnum);
           // key might not be an integer, so convert to string for $stack
           $strkey = serialize($item->key);
-          if(!is_null($x)) {
+          if($x !== null) {
             $y = $this->gridY($stack[$strkey]);
 
-            if(!is_null($item->value)) {
+            if($item->value !== null) {
               $marker_id = $this->markerLabel($i, $bnum, $item, $x, $y);
               $extra = empty($marker_id) ? null : ['id' => $marker_id];
               $this->addMarker($x, $y, $item, $extra, $i);

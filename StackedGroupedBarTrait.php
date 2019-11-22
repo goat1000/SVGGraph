@@ -40,6 +40,7 @@ trait StackedGroupedBarTrait {
 
     $bars = '';
     $legend_entries = [];
+    $datasets = $this->multi_graph->getEnabledDatasets();
     foreach($this->multi_graph as $bnum => $itemlist) {
       $item = $itemlist[0];
       $k = $item->key;
@@ -55,6 +56,8 @@ trait StackedGroupedBarTrait {
           // stack the bars in order they must be drawn
           $stack = [];
           for($j = $start_bar; $j < $end_bar; ++$j) {
+            if(!in_array($j, $datasets))
+              continue;
             $item = $itemlist[$j];
             if(!is_null($item->value)) {
               if($item->value < 0) {
@@ -72,12 +75,14 @@ trait StackedGroupedBarTrait {
             list($j, $start) = $stack_bar;
             $item = $itemlist[$j];
             $top = ($b == $stack_last);
+            if($top)
+              $top_dataset = $j;
             // store whether the bar can be seen or not
             $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
             $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
             $legend_entries[$j][$bnum] = $item;
           }
-          $this->barTotals($item, $bnum, $ypos, $yneg, $end_bar - 1);
+          $this->barTotals($item, $bnum, $ypos, $yneg, $top_dataset);
         }
       }
     }
@@ -127,33 +132,50 @@ trait StackedGroupedBarTrait {
   protected function checkValues()
   {
     parent::checkValues();
-    if(empty($this->stack_group))
+    $stack_group = $this->getOption('stack_group');
+    if(empty($stack_group))
       throw new \Exception('stack_group not set');
 
     // make sure the group details are stored in an array
-    if(!is_array($this->stack_group))
-      $this->stack_group = [$this->stack_group];
+    if(!is_array($stack_group))
+      $stack_group = [$stack_group];
 
     // make the list of groups
     $datasets = count($this->multi_graph);
-    $this->groups = [0]; // first starts at 0, obviously
-    $this->dataset_groups = array_fill(0, $datasets, 0);
+    $groups = [0]; // first starts at 0, obviously
+    $dataset_groups = array_fill(0, $datasets, 0);
 
     $last_start = 0;
-    foreach($this->stack_group as $key => $group_start) {
+    foreach($stack_group as $key => $group_start) {
       if($group_start <= $last_start)
         throw new \Exception('Invalid stack_group option');
       if($group_start < $datasets)
-        $this->groups[] = $group_start;
+        $groups[] = $group_start;
       $last_start = $group_start;
       for($d = $group_start; $d < $datasets; ++$d) {
-        $this->dataset_groups[$d] = $key + 1;
+        $dataset_groups[$d] = $key + 1;
       }
     }
 
     // without this check there will be an invalid axis error
-    if(count($this->groups) == 1)
+    if(count($groups) == 1)
       throw new \Exception('Too few datasets for grouping');
+
+    // check disabled datasets
+    $datasets = $this->multi_graph->getEnabledDatasets();
+    $cleaned_dg = [];
+    foreach($dataset_groups as $d => $g) {
+      if(in_array($d, $datasets))
+        $cleaned_dg[$d] = $g;
+    }
+
+    // check for unused groups
+    $u = array_unique($cleaned_dg);
+    if(count($u) < count($groups))
+      throw new \Exception('Disabled datasets prevent grouping');
+
+    $this->groups = $groups;
+    $this->dataset_groups = $cleaned_dg;
   }
 
   /**
@@ -163,15 +185,23 @@ trait StackedGroupedBarTrait {
   {
     $max = null;
     $values = &$this->multi_graph->getValues();
+    $datasets = $this->multi_graph->getEnabledDatasets();
 
     // find the max for each group from the MultiGraph's structured data
     for($i = 0; $i < count($this->groups); ++$i) {
       $start = $this->groups[$i];
-      $end = isset($this->groups[$i + 1]) ? $this->groups[$i + 1] - 1 : null;
-      list($junk, $group_max) = $values->getMinMaxSumValues($start, $end);
-      if(is_null($max) || $group_max > $max)
+      $end = isset($this->groups[$i + 1]) ? $this->groups[$i + 1] - 1 :
+        count($this->multi_graph) - 1;
+
+      $stack = [];
+      for($j = $start; $j <= $end; ++$j)
+        if(in_array($j, $datasets))
+          $stack[] = $j;
+
+      list($junk, $group_max) = $values->getMinMaxSumValuesFor($stack);
+
+      if($max === null || $group_max > $max)
         $max = $group_max;
-      $start = $end + 1;
     }
     return $max;
   }
@@ -183,15 +213,23 @@ trait StackedGroupedBarTrait {
   {
     $min = null;
     $values = &$this->multi_graph->getValues();
+    $datasets = $this->multi_graph->getEnabledDatasets();
 
     // find the min for each group from the MultiGraph's structured data
     for($i = 0; $i < count($this->groups); ++$i) {
       $start = $this->groups[$i];
-      $end = isset($this->groups[$i + 1]) ? $this->groups[$i + 1] - 1 : null;
-      list($group_min) = $values->getMinMaxSumValues($start, $end);
-      if(is_null($min) || $group_min < $min)
+      $end = isset($this->groups[$i + 1]) ? $this->groups[$i + 1] - 1 :
+        count($this->multi_graph) - 1;
+
+      $stack = [];
+      for($j = $start; $j <= $end; ++$j)
+        if(in_array($j, $datasets))
+          $stack[] = $j;
+
+      list($group_min) = $values->getMinMaxSumValuesFor($stack);
+
+      if($min === null || $group_min < $min)
         $min = $group_min;
-      $start = $end + 1;
     }
     return $min;
   }

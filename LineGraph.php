@@ -49,7 +49,8 @@ class LineGraph extends PointGraph {
   protected function draw()
   {
     $body = $this->grid() . $this->underShapes();
-    $this->colourSetup($this->values->itemsCount());
+    $dataset = $this->getOption(['dataset', 0], 0);
+    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bnum = 0;
     $cmd = 'M';
@@ -58,23 +59,23 @@ class LineGraph extends PointGraph {
     $y_bottom = min($y_axis_pos, $this->height - $this->pad_bottom);
 
     $graph_line = '';
-    $line_breaks = $this->getOption(['line_breaks', 0]);
+    $line_breaks = $this->getOption(['line_breaks', $dataset]);
     $points = [];
-    foreach($this->values[0] as $item) {
+    foreach($this->values[$dataset] as $item) {
       if($line_breaks && is_null($item->value) && count($points) > 0) {
-        $graph_line .= $this->drawLine(0, $points, $y_bottom, true);
+        $graph_line .= $this->drawLine($dataset, $points, $y_bottom, true);
         $points = [];
       } else {
         $x = $this->gridPosition($item, $bnum);
         if(!is_null($item->value) && !is_null($x)) {
           $y = $this->gridY($item->value);
-          $points[] = [$x, $y, $item, 0, $bnum];
+          $points[] = [$x, $y, $item, $dataset, $bnum];
         }
       }
       ++$bnum;
     }
 
-    $graph_line .= $this->drawLine(0, $points, $y_bottom, true);
+    $graph_line .= $this->drawLine($dataset, $points, $y_bottom, true);
     $group = [];
     $this->clipGrid($group);
     if($this->semantic_classes)

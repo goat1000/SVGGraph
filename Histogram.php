@@ -43,20 +43,23 @@ class Histogram extends BarGraph {
   {
     if(!empty($values)) {
       parent::values($values);
+      if($this->values->error)
+        return;
       $values = [];
 
       // find min, max, strip out nulls
       $min = $max = null;
-      foreach($this->values[0] as $item) {
-        if(!is_null($item->value)) {
+      $dataset = $this->getOption(['dataset', 0], 0);
+      foreach($this->values[$dataset] as $item) {
+        if($item->value !== null) {
           if(!is_numeric($item->value)) {
             $this->values->error = 'Non-numeric value';
             return;
           }
 
-          if(is_null($min) || $item->value < $min)
+          if($min === null || $item->value < $min)
             $min = $item->value;
-          if(is_null($max) || $item->value > $max)
+          if($max === null || $item->value > $max)
             $max = $item->value;
           $values[] = $item->value;
         }
@@ -112,9 +115,21 @@ class Histogram extends BarGraph {
         $values = $map;
       }
 
-      // turn off structured data
-      $this->setOption('structure', null);
-      $this->setOption('structured_data', false);
+      // turn into structured data
+      $new_values = [];
+      foreach($values as $k => $v)
+        $new_values[] = [$k, $v];
+      $values = $new_values;
+
+      // make structure use the same dataset number
+      $structure = [ 'key' => 0, 'value' => 1 ];
+      if($dataset !== 0) {
+        $structure['value'] = array_fill(0, $dataset, 2);
+        $structure['value'][$dataset] = 1;
+      }
+
+      $this->setOption('structure', $structure);
+      $this->setOption('structured_data', true);
 
       // set up options to make bar graph class draw the histogram properly
       $this->setOption('minimum_units_y', 1);

@@ -1,3 +1,10 @@
+Version 3.3 (22/11/2019)
+-----------
+- Added ArrayGraph type for simple multiple-graph documents.
+- Added dataset option support to all graph types.
+- Added bar_round option for rounded corners on bar graphs.
+- Added median_colour and median_dash options for box and whisker graphs.
+
 Version 3.2 (26/09/2019)
 -----------
 - Added axis_label_position options.

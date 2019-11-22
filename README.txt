@@ -1,4 +1,4 @@
-SVGGraph Library version 3.2
+SVGGraph Library version 3.3
 ============================
 
 This library provides PHP classes and functions for easily creating SVG
@@ -93,6 +93,8 @@ At the moment these types of graph are supported by SVGGraph:
  ExplodedPieGraph - a pie graph with slices exploded out from the centre.
 
  ExplodedPie3DGraph - a 3D version of the exploded pie graph.
+
+ ArrayGraph - a graph containing other graphs.
 
 There are also these graphs that are really hard to describe:
 

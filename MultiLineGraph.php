@@ -39,20 +39,21 @@ class MultiLineGraph extends LineGraph {
 
     $chunk_count = count($this->multi_graph);
     $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
+    $datasets = $this->multi_graph->getEnabledDatasets();
 
-    for($i = 0; $i < $chunk_count; ++$i) {
+    foreach($datasets as $i) {
       $bnum = 0;
       $points = [];
       $plot = '';
       $line_breaks = $this->getOption(['line_breaks', $i]);
       $axis = $this->datasetYAxis($i);
       foreach($this->multi_graph[$i] as $item) {
-        if($line_breaks && is_null($item->value) && count($points) > 0) {
+        if($line_breaks && $item->value === null && count($points) > 0) {
           $plot .= $this->drawLine($i, $points, $y_bottom);
           $points = [];
         } else {
           $x = $this->gridPosition($item, $bnum);
-          if(!is_null($x) && !is_null($item->value)) {
+          if($x !== null && $item->value !== null) {
             $y = $this->gridY($item->value, $axis);
             $points[] = [$x, $y, $item, $i, $bnum];
           }

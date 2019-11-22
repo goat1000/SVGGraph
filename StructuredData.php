@@ -145,6 +145,36 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   }
 
   /**
+   * Converts plain Data to StructuredData
+   */
+  public static function convertFrom($values, $force_assoc, $datetime_keys,
+    $int_keys)
+  {
+    if(count($values) > 1 && $values instanceof Data) {
+      $new_data = [];
+      $count = count($values);
+      for($i = 0; $i < $count; ++$i) {
+        foreach($values[$i] as $item) {
+          if(!isset($new_data[$item->key])) {
+            // fill the data item with NULLs
+            $new_data[$item->key] = array_fill(0, $count + 1, null);
+            $new_data[$item->key][0] = $item->key;
+          }
+          $new_data[$item->key][$i + 1] = $item->value;
+        }
+      }
+      $new_data = array_values($new_data);
+
+      $new_values = new StructuredData($new_data, $force_assoc,
+        $datetime_keys, null, false, false, $int_keys, null, true);
+      return $new_values;
+    }
+
+    // just return the old values
+    return $values;
+  }
+
+  /**
    * Sets up normal structured data from scatter_2d datasets
    */
   private function scatter2DDatasets(&$data)
@@ -412,12 +442,20 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
 
     if($end === null)
       $end = $this->datasets - 1;
+    return $this->getMinMaxSumValuesFor(range($start, $end));
+  }
+
+  /**
+   * Returns the min/max sum values for an array of datasets
+   */
+  public function getMinMaxSumValuesFor($datasets)
+  {
     $min_stack = [];
     $max_stack = [];
 
     foreach($this->data as $item) {
       $smin = $smax = 0;
-      for($dataset = $start; $dataset <= $end; ++$dataset) {
+      foreach($datasets as $dataset) {
         $vfield = $this->dataset_fields[$dataset];
         if(!isset($item[$vfield]))
           continue;

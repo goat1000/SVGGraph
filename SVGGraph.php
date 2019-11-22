@@ -25,7 +25,7 @@ class SVGGraph {
 
   use SVGGraphTrait;
 
-  const VERSION = 'SVGGraph 3.2';
+  const VERSION = 'SVGGraph 3.3';
   private $width = 100;
   private $height = 100;
   private $settings = [];

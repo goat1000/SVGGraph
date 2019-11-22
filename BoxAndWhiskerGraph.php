@@ -41,36 +41,37 @@ class BoxAndWhiskerGraph extends PointGraph {
     $body = $this->grid() . $this->underShapes();
 
     $bar_width = $this->barWidth();
+    $dataset = $this->getOption(['dataset', 0], 0);
     $x_axis = $this->x_axes[$this->main_x_axis];
 
     $bspace = max(0, ($this->x_axes[$this->main_x_axis]->unit() - $bar_width) / 2);
     $bnum = 0;
-    $this->colourSetup($this->values->itemsCount());
+    $this->colourSetup($this->values->itemsCount($dataset));
     $series = '';
-    foreach($this->values[0] as $item) {
+    foreach($this->values[$dataset] as $item) {
       $bar_pos = $this->gridPosition($item, $bnum);
 
-      if(!is_null($item->value) && !is_null($bar_pos)) {
+      if($item->value !== null && $bar_pos !== null) {
 
-        $box_style = ['fill' => $this->getColour($item, $bnum)];
-        $this->setStroke($box_style, $item);
-        $this->setLegendEntry(0, $bnum, $item, $box_style);
+        $box_style = ['fill' => $this->getColour($item, $bnum, $dataset)];
+        $this->setStroke($box_style, $item, $dataset);
+        $this->setLegendEntry($dataset, $bnum, $item, $box_style);
 
         $top = $item->top;
         $bottom = $item->bottom;
-        $round = max($this->getItemOption('bar_round', 0, $item), 0);
+        $round = max($this->getItemOption('bar_round', $dataset, $item), 0);
         $shape = $this->whiskerBox($bspace + $bar_pos, $bar_width, $item->value,
           $top, $bottom, $item->wtop, $item->wbottom, $round);
 
         // wrap the whisker box in a group
         $g = [];
-        $show_label = $this->addDataLabel(0, $bnum, $g, $item,
+        $show_label = $this->addDataLabel($dataset, $bnum, $g, $item,
           $bspace + $bar_pos, $this->gridY($top), $bar_width,
           $this->gridY($bottom) - $this->gridY($top));
         if($this->show_tooltips)
-          $this->setTooltip($g, $item, 0, $item->key, $item->value, $show_label);
+          $this->setTooltip($g, $item, $dataset, $item->key, $item->value, $show_label);
         if($this->show_context_menu)
-          $this->setContextMenu($g, 0, $item, $show_label);
+          $this->setContextMenu($g, $dataset, $item, $show_label);
 
         if($this->semantic_classes)
           $g['class'] = 'series0';
@@ -204,16 +205,17 @@ class BoxAndWhiskerGraph extends PointGraph {
    */
   public function getMaxValue()
   {
-    if(!is_null($this->max_value))
+    if($this->max_value !== null)
       return $this->max_value;
     $max = null;
-    foreach($this->values[0] as $item) {
-      if(is_null($item->value))
+    $dataset = $this->getOption(['dataset', 0], 0);
+    foreach($this->values[$dataset] as $item) {
+      if($item->value === null)
         continue;
       $points = [$item->wtop];
       $points = array_merge($points, $this->getOutliers($item));
       $m = max($points);
-      if(is_null($max) || $m > $max)
+      if($max === null || $m > $max)
         $max = $m;
     }
     return ($this->max_value = $max);
@@ -224,16 +226,17 @@ class BoxAndWhiskerGraph extends PointGraph {
    */
   public function getMinValue()
   {
-    if(!is_null($this->min_value))
+    if($this->min_value !== null)
       return $this->min_value;
     $min = null;
-    foreach($this->values[0] as $item) {
-      if(is_null($item->value))
+    $dataset = $this->getOption(['dataset', 0], 0);
+    foreach($this->values[$dataset] as $item) {
+      if($item->value === null)
         continue;
       $points = [$item->wbottom];
       $points = array_merge($points, $this->getOutliers($item));
       $m = min($points);
-      if(is_null($min) || $m < $min)
+      if($min === null || $m < $min)
         $min = $m;
     }
     return ($this->min_value = $min);
@@ -253,7 +256,7 @@ class BoxAndWhiskerGraph extends PointGraph {
     $max = $item->wtop;
     foreach($this->structure['outliers'] as $o) {
       $v = $item->rawData($o);
-      if(!is_null($v) && ($v > $max || $v < $min))
+      if($v !== null && ($v > $max || $v < $min))
         $outliers[] = $v;
     }
     return $outliers;

@@ -25,6 +25,7 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
 
   private $values;
   private $datasets = 0;
+  private $enabled_datasets = null;
   private $force_assoc;
   private $datetime_keys;
   private $max_key = null;
@@ -47,24 +48,36 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
 
     // convert unstructured data to structured
     if(count($values) > 1 && $this->values instanceof Data) {
-      $new_data = [];
-      $count = count($values);
-      for($i = 0; $i < $count; ++$i) {
-        foreach($this->values[$i] as $item) {
-          if(!isset($new_data[$item->key])) {
-            // fill the data item with NULLs
-            $new_data[$item->key] = array_fill(0, $count + 1, null);
-            $new_data[$item->key][0] = $item->key;
-          }
-          $new_data[$item->key][$i + 1] = $item->value;
-        }
-      }
-      $new_data = array_values($new_data);
-
-      $this->values = new StructuredData($new_data, $force_assoc,
-        $datetime_keys, null, false, false, $int_keys, null, true);
+      $this->values = StructuredData::convertFrom($values, $force_assoc,
+        $datetime_keys, $int_keys);
     }
     $this->datasets = count($this->values);
+    $this->enabled_datasets = range(0, $this->datasets - 1);
+  }
+
+  /**
+   * Sets the list of datasets that are enabled
+   */
+  public function setEnabledDatasets($datasets)
+  {
+    if($datasets === null)
+      $datasets = range(0, $this->datasets - 1);
+    if(!is_array($datasets))
+      $datasets = [$datasets];
+
+    $enabled = [];
+    foreach($datasets as $d)
+      if($d >= 0 && $d < $this->datasets)
+        $enabled[] = $d;
+    $this->enabled_datasets = $enabled;
+  }
+
+  /**
+   * Returns the list of enabled datasets
+   */
+  public function getEnabledDatasets()
+  {
+    return $this->enabled_datasets;
   }
 
   /**
@@ -154,14 +167,17 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getMaxValue()
   {
-    if(!is_null($this->max_value))
+    if($this->max_value !== null)
       return $this->max_value;
     $maxima = [];
     $chunk_count = count($this->values);
-    for($i = 0; $i < $chunk_count; ++$i)
+    for($i = 0; $i < $chunk_count; ++$i) {
+      if(!in_array($i, $this->enabled_datasets))
+        continue;
       $maxima[] = $this->values->getMaxValue($i);
+    }
 
-    $this->max_value = max($maxima);
+    $this->max_value = count($maxima) ? max($maxima) : null;
     return $this->max_value;
   }
 
@@ -171,17 +187,19 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getMinValue()
   {
-    if(!is_null($this->min_value))
+    if($this->min_value !== null)
       return $this->min_value;
     $minima = [];
     $chunk_count = count($this->values);
     for($i = 0; $i < $chunk_count; ++$i) {
+      if(!in_array($i, $this->enabled_datasets))
+        continue;
       $min_val = $this->values->getMinValue($i);
-      if(!is_null($min_val))
+      if($min_val !== null)
         $minima[] = $min_val;
     }
 
-    $this->min_value = min($minima);
+    $this->min_value = count($minima) ? min($minima) : null;
     return $this->min_value;
   }
 
@@ -191,13 +209,16 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getMaxKey()
   {
-    if(!is_null($this->max_key))
+    if($this->max_key !== null)
       return $this->max_key;
 
     $max = [];
-    for($i = 0; $i < $this->datasets; ++$i)
+    for($i = 0; $i < $this->datasets; ++$i) {
+      if(!in_array($i, $this->enabled_datasets))
+        continue;
       $max[] = $this->values->getMaxKey($i);
-    $this->max_key = max($max);
+    }
+    $this->max_key = count($max) ? max($max) : null;
     return $this->max_key;
   }
 
@@ -206,13 +227,16 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getMinKey()
   {
-    if(!is_null($this->min_key))
+    if($this->min_key !== null)
       return $this->min_key;
 
     $min = [];
-    for($i = 0; $i < $this->datasets; ++$i)
+    for($i = 0; $i < $this->datasets; ++$i) {
+      if(!in_array($i, $this->enabled_datasets))
+        continue;
       $min[] = $this->values->getMinKey($i);
-    $this->min_key = min($min);
+    }
+    $this->min_key = count($min) ? min($min) : null;
     return $this->min_key;
   }
 
@@ -221,7 +245,7 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getMaxSumValue()
   {
-    if(is_null($this->max_sum_value))
+    if($this->max_sum_value === null)
       $this->calcMinMaxSumValues();
     return $this->max_sum_value;
   }
@@ -231,7 +255,7 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getMinSumValue()
   {
-    if(is_null($this->min_sum_value))
+    if($this->min_sum_value === null)
       $this->calcMinMaxSumValues();
     return $this->min_sum_value;
   }
@@ -240,10 +264,10 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Calculates the minimum and maximum sum values
    */
-  private function calcMinMaxSumValues()
+  public function calcMinMaxSumValues()
   {
     list($this->min_sum_value, $this->max_sum_value) =
-      $this->values->getMinMaxSumValues();
+      $this->values->getMinMaxSumValuesFor($this->enabled_datasets);
   }
 
   /**
