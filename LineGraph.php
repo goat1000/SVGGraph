@@ -120,10 +120,12 @@ class LineGraph extends PointGraph {
       $dash = $this->getOption(['line_dash', $dataset]);
       $stroke_width = $this->getOption(['line_stroke_width', $dataset]);
       $attr = ['fill' => 'none'];
-      if($stroke_colour)
-        $attr['stroke'] = $this->getOption(['stroke_colour', $dataset]);
-      else
-        $attr['stroke'] = $this->getColour(null, 0, $dataset, true);
+      if($stroke_colour) {
+        $attr['stroke'] = new Colour($this,
+          $this->getOption(['stroke_colour', $dataset]));
+      } else {
+        $attr['stroke'] = $this->getColour(null, 0, $dataset, false, false);
+      }
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;

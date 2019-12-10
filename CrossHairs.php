@@ -75,17 +75,17 @@ class CrossHairs {
 
     $show = 'show_' . $orientation;
     if($this->$show) {
-      $hch['stroke'] = $this->graph->solidColour(
-        $this->graph->getOption(
-          'crosshairs_colour_' . $orientation, 'crosshairs_colour'));
+      $stroke = $this->graph->getOption('crosshairs_colour_' . $orientation,
+        'crosshairs_colour');
+      $hch['stroke'] = new Colour($this->graph, $stroke, false, false);
       $hch['stroke-width'] = $this->graph->getOption(
         'crosshairs_stroke_width_' . $orientation, 'crosshairs_stroke_width');
       $opacity = $this->graph->getOption(
         'crosshairs_opacity_' . $orientation, 'crosshairs_opacity');
       if($opacity > 0 && $opacity < 1)
         $hch['opacity'] = $opacity;
-      $dash = $this->graph->getOption(
-        'crosshairs_dash_' . $orientation, 'crosshairs_dash');
+      $dash = $this->graph->getOption('crosshairs_dash_' . $orientation,
+        'crosshairs_dash');
       if(!empty($dash))
         $hch['stroke-dasharray'] = $dash;
     }
@@ -123,7 +123,7 @@ class CrossHairs {
     $text_group = ['id' => $this->graph->newId(), 'visibility' => 'hidden'];
     $text_rect = [
       'x' => '0', 'y' => '0', 'width' => '10', 'height' => '10',
-      'fill' => $this->graph->parseColour($t_opt['back_colour']),
+      'fill' => new Colour($this->graph, $t_opt['back_colour']),
     ];
     if($t_opt['round'])
       $text_rect['rx'] = $text_rect['ry'] = $t_opt['round'];

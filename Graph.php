@@ -629,21 +629,14 @@ abstract class Graph {
   protected function canvas($id)
   {
     $bg = $this->backgroundImage();
-    $colour = $this->parseColour($this->back_colour);
-    $opacity = 1;
-    if(strpos($colour, ':') !== false)
-      list($colour, $opacity) = explode(':', $colour);
-
+    $colour = new Colour($this, $this->back_colour);
     $canvas = [
       'width' => '100%', 'height' => '100%',
       'fill' => $colour,
       'stroke-width' => 0,
     ];
-    if($opacity < 1)
-      if($opacity <= 0)
-        $canvas['fill'] = 'none';
-      else
-        $canvas['opacity'] = $opacity;
+    if($colour->opacity() < 1)
+      $canvas['opacity'] = $colour->opacity(true);
 
     if($this->back_round)
       $canvas['rx'] = $canvas['ry'] = $this->back_round;
@@ -790,66 +783,27 @@ abstract class Graph {
   }
 
   /**
-   * Returns a colour reference
+   * Returns a Colour
    */
-  protected function getColour($item, $key, $dataset = null,
-    $no_gradient = false, $allow_pattern = false)
+  protected function getColour($item, $key, $dataset, $allow_gradient = true,
+    $allow_pattern = true)
   {
-    $colour = 'none';
-    $icolour = ($item === null ? null : $item->colour);
-    if($icolour !== null) {
-      $colour = $icolour;
-      $key = null; // don't reuse existing colours
-    } else {
-      $c = $this->colours->getColour($key, $dataset);
-      if($c !== null)
-        $colour = $c;
+    if($item !== null && $item->colour !== null)
+      return new Colour($this, $item->colour, $allow_gradient, $allow_pattern);
 
-      // make key reflect dataset as well (for gradients)
-      if($dataset !== null)
-        $key = $dataset . ':' . $key;
-    }
-    return $this->parseColour($colour, $key, $no_gradient, $allow_pattern);
-  }
+    $c = $this->colours->getColour($key, $dataset);
+    if($c === null)
+      return new Colour($this, null);
 
-  /**
-   * Converts a SVGGraph colour/gradient/pattern to a SVG attribute
-   */
-  public function parseColour($colour, $key = null, $no_gradient = false,
-    $allow_pattern = false, $radial_gradient = false)
-  {
-    if(is_array($colour)) {
-      if(!isset($colour['pattern']))
-        $allow_pattern = false;
-      if(count($colour) < 2 || ($no_gradient && !$allow_pattern)) {
-        $colour = $this->solidColour($colour);
-      } elseif(isset($colour['pattern'])) {
-        $pattern_id = $this->addPattern($colour);
-        $colour = 'url(#' . $pattern_id . ')';
-      } else {
-        $err = array_diff_key($colour, array_keys(array_keys($colour)));
-        if($err)
-          throw new \Exception('Malformed gradient/pattern');
-        $gradient_id = $this->addGradient($colour, $key, $radial_gradient);
-        $colour = 'url(#' . $gradient_id . ')';
-      }
-    }
+    $colour = new Colour($this, $c, $allow_gradient, $allow_pattern);
+
+    // make key reflect dataset as well (for gradients)
+    if($dataset !== null)
+      $key = $dataset . ':' . $key;
+    if($key !== null)
+      $colour->setGradientKey($key);
+
     return $colour;
-  }
-
-  /**
-   * Returns the solid colour from a gradient
-   */
-  public static function solidColour($c)
-  {
-    if(is_array($c)) {
-      // grab the first colour in the array, discarding opacity
-      $c = $c[0];
-      $colon = strpos($c, ':');
-      if($colon)
-        $c = substr($c, 0, $colon);
-    }
-    return $c;
   }
 
   /**
@@ -969,19 +923,27 @@ abstract class Graph {
   /**
    * Sets the stroke options for an element
    */
-  protected function setStroke(&$attr, &$item, $set = 0, $line_join = null)
+  protected function setStroke(&$attr, &$item, $key, $dataset, $line_join = null)
   {
     unset($attr['stroke'], $attr['stroke-width'], $attr['stroke-linejoin'],
       $attr['stroke-dasharray']);
 
-    $stroke_width = $this->getItemOption('stroke_width', $set, $item);
+    $stroke_width = $this->getItemOption('stroke_width', $dataset, $item);
     if($stroke_width > 0) {
-      $attr['stroke'] = $this->getItemOption('stroke_colour', $set, $item);
+      $stroke_colour = $this->getItemOption('stroke_colour', $dataset, $item);
+      if($stroke_colour == 'fillColour')
+        $stroke_colour = $this->getColour($item, $key, $dataset, false, false);
+      elseif($stroke_colour == 'fill')
+        $stroke_colour = $this->getColour($item, $key, $dataset);
+
+      $attr['stroke'] = new Colour($this, $stroke_colour);
+      if($attr['stroke']->opacity() < 1)
+        $attr['stroke-opacity'] = $attr['stroke']->opacity(true);
       $attr['stroke-width'] = $stroke_width;
       if($line_join !== null)
         $attr['stroke-linejoin'] = $line_join;
 
-      $dash = $this->getItemOption('stroke_dash', $set, $item);
+      $dash = $this->getItemOption('stroke_dash', $dataset, $item);
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
     }

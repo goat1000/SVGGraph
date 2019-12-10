@@ -95,8 +95,8 @@ abstract class ThreeDGraph extends GridGraph {
     $yd = new Number($yd);
 
     $back = $subpath = $path = '';
-    $back_colour = $this->parseColour($this->grid_back_colour);
-    if(!empty($back_colour) && $back_colour != 'none') {
+    $back_colour = new Colour($this, $this->getOption('grid_back_colour'));
+    if(!$back_colour->isNone()) {
       $dpath = new PathData('M', $xleft, $ybottom, 'v', $minus_y_h, 'l', $xd, $yd);
       $dpath->add('h', $x_w, 'v', $y_h, 'l', $minus_xd, $minus_yd, 'z');
       $bpath = [
@@ -121,13 +121,14 @@ abstract class ThreeDGraph extends GridGraph {
       $last_pos = $first->position;
       foreach($points as $y) {
         $y = $y->position;
-        if(!is_null($colours[$c % $num_colours])) {
+        $cc = $colours[$c % $num_colours];
+        if($cc !== null) {
           $y1 = $last_pos - $y;
           $dpath = new PathData('M', $xleft, $y, 'l', $xd, $yd);
           $dpath->add('h', $x_w, 'v', $y1, 'h', $minus_x_w);
           $dpath->add('l', $minus_xd, $minus_yd, 'z');
           $bpath = [
-            'fill' => $this->parseColour($colours[$c % $num_colours]),
+            'fill' => new Colour($this, $cc),
             'd' => $dpath,
           ];
           if($this->grid_back_stripe_opacity != 1)

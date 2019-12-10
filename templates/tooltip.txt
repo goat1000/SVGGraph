@@ -5,7 +5,7 @@ function tooltip(e,callback,on,param) {
     sw, sh, de = svgNode(e);
   if(on && !tt) {
     tt = newel('g',{id:'tooltip',visibility:'visible'});
-    rect = newel('rect',{id:'ttrect',stroke:'{$string:colour}',
+    rect = newel('rect',{id:'ttrect',stroke:'{$string:stroke}',
       'stroke-width':'{$number:stroke_width}px',
       fill:'{$string:back_colour}'{$string:round_part},
       width:'10px',height:'10px'

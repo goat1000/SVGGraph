@@ -117,7 +117,7 @@ class Javascript {
       $this->addFuncs('getE', 'setattr', 'newel', 'showhide', 'svgNode',
         'svgCursorCoords');
       $this->insertVariable('tooltipOn', '');
-      $opts = ['stroke_width', 'shadow_opacity', 'round', 'padding', 'colour',
+      $opts = ['stroke_width', 'shadow_opacity', 'round', 'padding',
         'back_colour', 'offset'];
       $vars = [];
       foreach($opts as $opt) {
@@ -127,6 +127,8 @@ class Javascript {
       $round_part = '';
       $shadow_part = '';
       $vars['edge_space'] = $vars['stroke_width'];
+      $vars['stroke'] = $this->graph->getOption('tooltip_stroke_colour',
+        'tooltip_colour', ['@','#000']);
       if($vars['round'] > 0) {
         $round = new Number($vars['round'], 'px');
         $round_part = ',rx:"' . $round . '",ry:"' . $round . '"';
@@ -149,7 +151,8 @@ class Javascript {
       $vars['round_part'] = $round_part;
       $vars['shadow_part'] = $shadow_part;
       $vars['dpad'] = 2 * $vars['padding'];
-      $vars['back_colour'] = $this->graph->parseColour($vars['back_colour']);
+      $vars['back_colour'] = new Colour($this->graph, $vars['back_colour']);
+      $vars['stroke'] = new Colour($this->graph, $vars['stroke']);
       return $this->insertTemplate('tooltip', $vars);
 
     case 'texttt' :
@@ -158,7 +161,7 @@ class Javascript {
       $vars = [];
       foreach($opts as $opt)
         $vars[$opt] = $this->graph->getOption('tooltip_' . $opt);
-
+      $vars['colour'] = new Colour($this->graph, $vars['colour'], false, false);
       $vars['tty'] = $vars['font_size'] + $vars['padding'];
       return $this->insertTemplate('texttt', $vars);
 

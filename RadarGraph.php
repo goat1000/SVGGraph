@@ -315,13 +315,13 @@ class RadarGraph extends LineGraph {
       return '';
 
     $back = $subpath = '';
-    $back_colour = $this->parseColour($this->grid_back_colour, null, false,
-      false, true);
+    $back_colour = new Colour($this, $this->getOption('grid_back_colour'),
+      true, true, true);
     $y_points = $this->getGridPointsY(0);
     $x_points = $this->getGridPointsX(0);
     $y_subdivs = $this->getSubDivsY(0);
     $x_subdivs = $this->getSubDivsX(0);
-    if(!empty($back_colour) && $back_colour != 'none') {
+    if(!$back_colour->isNone()) {
       // use the YGrid function to get the path
       $points = [new GridPoint($this->radius, '', 0)];
       $bpath = [
@@ -341,10 +341,11 @@ class RadarGraph extends LineGraph {
       $num_colours = count($colours);
       $num_points = count($y_points);
       while($c < $num_points - 1) {
-        if($colours[$c % $num_colours] !== null) {
+        $cc = $colours[$c % $num_colours];
+        if($cc !== null) {
           $s_points = [$y_points[$c], $y_points[$c + 1]];
           $bpath = [
-            'fill' => $this->parseColour($colours[$c % $num_colours]),
+            'fill' => new Colour($this, $cc, false),
             'd' => $this->yGrid($s_points),
             'fill-rule' => 'evenodd',
           ];

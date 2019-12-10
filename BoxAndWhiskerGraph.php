@@ -54,7 +54,7 @@ class BoxAndWhiskerGraph extends PointGraph {
       if($item->value !== null && $bar_pos !== null) {
 
         $box_style = ['fill' => $this->getColour($item, $bnum, $dataset)];
-        $this->setStroke($box_style, $item, $dataset);
+        $this->setStroke($box_style, $item, $bnum, $dataset);
         $this->setLegendEntry($dataset, $bnum, $item, $box_style);
 
         $top = $item->top;

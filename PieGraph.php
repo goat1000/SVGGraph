@@ -200,9 +200,9 @@ class PieGraph extends Graph {
       $colour_index = $this->keep_colour_order ? $original_position : $slice;
       if($this->legend_show_empty || $item->value != 0) {
         $attr = [
-          'fill' => $this->getColour($item, $colour_index, $this->dataset, true, true)
+          'fill' => $this->getColour($item, $colour_index, $this->dataset, false, true)
         ];
-        $this->setStroke($attr, $item, $this->dataset, 'round');
+        $this->setStroke($attr, $item, $colour_index, $this->dataset, 'round');
 
         // use the original position for legend index
         $legend_entries[] = [$original_position, $item, $attr];

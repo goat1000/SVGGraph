@@ -48,8 +48,9 @@ class Bar3DGraph extends ThreeDGraph {
   {
     $bw = $this->calculated_bar_width;
     $bar_top = '';
+    $skew = $this->getOption('skew_top', true);
 
-    if($this->skew_top) {
+    if($skew) {
       $sc = abs($this->by / $bw);
       $a = 90 - $this->project_angle;
       $path = new PathData('M', 0, 0, 'l', 0, -$bw,
@@ -60,14 +61,14 @@ class Bar3DGraph extends ThreeDGraph {
       $top = [
         'd' => $path,
         'transform' => $xform,
-        'stroke' => 'none'
+        'stroke' => 'none',
       ];
       $bar_top = $this->element('path', $top);
     }
     $path = new PathData('M', 0, 0, 'l', $bw, 0,
       'l', $this->bx, $this->by, 'l', -$bw, 0, 'z');
-    $top = ['d' => $path];
-    if($this->skew_top)
+    $top = [ 'd' => $path ];
+    if($skew)
       $top['fill'] = 'none';
     $bar_top .= $this->element('path', $top);
     return $this->symbols->define($bar_top);
@@ -132,8 +133,8 @@ class Bar3DGraph extends ThreeDGraph {
       $xform = new Transform;
       $xform->translate($bar['x'], $bar['y']);
       $top = ['transform' => $xform];
-      $top['fill'] = $this->getColour($item, $index, $dataset,
-        $this->skew_top ? false : true);
+      $skew = $this->getOption('skew_top', true);
+      $top['fill'] = $this->getColour($item, $index, $dataset, $skew, $skew);
       if($top_overlay)
         $top['stroke'] = 'none';
       $bar_top = $this->symbols->useSymbol($this->top_id, $top);
@@ -211,7 +212,7 @@ class Bar3DGraph extends ThreeDGraph {
 
     // fill and stroke the group
     $group = ['fill' => $this->getColour($item, $index, $dataset)];
-    $this->setStroke($group, $item, $dataset);
+    $this->setStroke($group, $item, $index, $dataset);
 
     if($this->semantic_classes)
       $group['class'] = 'series' . $dataset;
@@ -238,7 +239,7 @@ class Bar3DGraph extends ThreeDGraph {
     // override to allow 0 to be shown
     if($this->legend_show_empty || $this->show_data_labels || $item->value !== null) {
       $bar = ['fill' => $this->getColour($item, $index, $dataset)];
-      $this->setStroke($bar, $item, $dataset);
+      $this->setStroke($bar, $item, $index, $dataset);
       $this->setLegendEntry($dataset, $index, $item, $bar);
     }
   }

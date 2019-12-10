@@ -96,7 +96,7 @@ class GradientList {
       if(strpos($colour, ':') !== false) {
         // opacity, stop offset or both
         $parts = explode(':', $colour);
-        if(is_numeric($parts[0])) {
+        if(is_numeric($parts[0]) || count($parts) == 3) {
           $poffset = array_shift($parts);
         }
         $colour = array_shift($parts);

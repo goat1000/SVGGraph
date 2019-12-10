@@ -126,7 +126,7 @@ class Pie3DGraph extends PieGraph {
     $item = $edge->slice['item'];
     $attr = [
       'fill' => $this->getColour($item, $edge->slice['colour_index'],
-        $this->dataset, true, false),
+        $this->dataset, false, false),
       'id' => $this->newID(),
     ];
     if($this->show_tooltips)

@@ -89,7 +89,7 @@ class StackedLineGraph extends MultiLineGraph {
 
       if($point_count > 0) {
         $attr['d'] = $path;
-        $attr['stroke'] = $this->getColour(null, 0, $i, true);
+        $attr['stroke'] = $this->getColour(null, 0, $i, false, false);
         if($this->semantic_classes)
           $attr['class'] = 'series' . $i;
         $graph_line = $this->element('path', $attr);

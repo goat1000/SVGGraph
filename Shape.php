@@ -49,8 +49,8 @@ abstract class Shape {
    * colour gradients/patterns, and whether to allow gradients
    */
   private $colour_convert = [
-    'stroke' => true,
-    'fill' => false
+    'stroke' => false,
+    'fill' => true
   ];
 
   /**
@@ -107,7 +107,7 @@ abstract class Shape {
         if(isset($this->transform[$attr])) {
           $val = $this->coords->transform($value, $this->transform[$attr]);
         } elseif(isset($this->colour_convert[$attr])) {
-          $val = $graph->parseColour($value, null, $this->colour_convert[$attr]);
+          $val = new Colour($graph, $value, $this->colour_convert[$attr]);
         }
         $attr = str_replace('_', '-', $attr);
         $attributes[$attr] = $val;

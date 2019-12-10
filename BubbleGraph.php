@@ -65,7 +65,7 @@ class BubbleGraph extends PointGraph {
           $pid = $this->addPattern($pattern);
           $circle_style['fill'] = 'url(#' . $pid . ')';
         }
-        $this->setStroke($circle_style, $item, $dataset);
+        $this->setStroke($circle_style, $item, $bnum, $dataset);
         $this->addDataLabel($dataset, $bnum, $circle, $item,
           $x - $r, $y - $r, $r * 2, $r * 2);
 

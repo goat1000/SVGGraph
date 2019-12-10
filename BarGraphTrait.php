@@ -112,7 +112,7 @@ trait BarGraphTrait {
   {
     if($this->legend_show_empty || $this->show_data_labels || $item->value != 0) {
       $bar = ['fill' => $this->getColour($item, $index, $dataset)];
-      $this->setStroke($bar, $item, $dataset);
+      $this->setStroke($bar, $item, $index, $dataset);
       $this->setLegendEntry($dataset, $index, $item, $bar);
     }
   }
@@ -123,7 +123,7 @@ trait BarGraphTrait {
   protected function drawBar(DataItem $item, $index, $start = 0, $axis = null,
     $dataset = 0, $options = [])
   {
-    if(is_null($item->value))
+    if($item->value === null)
       return '';
 
     $bar = $this->barDimensions($item, $index, $start, $axis, $dataset);
@@ -135,7 +135,7 @@ trait BarGraphTrait {
       !$this->show_data_labels)
       return '';
 
-    $this->setStroke($bar, $item, $dataset);
+    $this->setStroke($bar, $item, $index, $dataset);
     $bar['fill'] = $this->getColour($item, $index, $dataset);
 
     if($this->semantic_classes)
@@ -175,11 +175,11 @@ trait BarGraphTrait {
   {
     $bar = [];
     $bar_x = $this->barX($item, $index, $bar, $axis, $dataset);
-    if(is_null($bar_x))
+    if($bar_x === null)
       return [];
 
     $y_pos = $this->barY($item->value, $bar, $start, $axis);
-    if(is_null($y_pos))
+    if($y_pos === null)
       return [];
     return $bar;
   }
@@ -190,7 +190,7 @@ trait BarGraphTrait {
   protected function barX($item, $index, &$bar, $axis, $dataset)
   {
     $bar_x = $this->gridPosition($item, $index);
-    if(is_null($bar_x))
+    if($bar_x === null)
       return null;
 
     $bar['x'] = $bar_x + $this->calculated_bar_space;
@@ -207,12 +207,12 @@ trait BarGraphTrait {
     if($start)
       $value += $start;
 
-    $startpos = is_null($start) ? $this->originY($axis) :
+    $startpos = $start === null ? $this->originY($axis) :
       $this->gridY($start, $axis);
-    if(is_null($startpos))
+    if($startpos === null)
       $startpos = $this->originY($axis);
     $pos = $this->gridY($value, $axis);
-    if(is_null($pos)) {
+    if($pos === null) {
       $bar['height'] = 0;
     } else {
       $l1 = $this->clampVertical($startpos);
@@ -251,7 +251,7 @@ trait BarGraphTrait {
       $pos = str_replace(['top','middle','bottom'], 'outside top inside ', $pos);
 
     // flip top/bottom for negative values
-    if(!is_null($item) && $item->value < 0) {
+    if($item !== null && $item->value < 0) {
       if(strpos($pos, 'top') !== false)
         $pos = str_replace('top','bottom', $pos);
       elseif(strpos($pos, 'above') !== false)

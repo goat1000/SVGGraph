@@ -143,7 +143,7 @@ class CylinderGraph extends Bar3DGraph {
       $xform = new Transform;
       $xform->translate($bar['x'], $bar['y']);
       $top = ['transform' => $xform];
-      $top['fill'] = $this->getColour($item, $index, $dataset, true);
+      $top['fill'] = $this->getColour($item, $index, $dataset, false, false);
       $cyl_top = $this->symbols->useSymbol($this->top_id, $top);
     }
 

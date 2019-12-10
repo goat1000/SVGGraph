@@ -91,7 +91,7 @@ class ContextMenu {
 
     $vars['pad_x'] = $this->graph->getOption('context_padding_x', 'context_padding');
     $vars['pad_y'] = $this->graph->getOption('context_padding_y', 'context_padding');
-    $vars['back_colour'] = $this->graph->parseColour($vars['back_colour']);
+    $vars['back_colour'] = new Colour($this->graph, $vars['back_colour']);
     $vars['text_start'] = $vars['pad_y'] + $text_baseline;
     $vars['rect_start'] = $vars['pad_y'] - $vars['spacing'] / 2;
     $vars['spacing'] += $text_height;

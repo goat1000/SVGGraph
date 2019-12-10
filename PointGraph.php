@@ -205,20 +205,22 @@ abstract class PointGraph extends GridGraph {
     $size = $this->getItemOption('marker_size', $set, $item);
     $angle = $this->getItemOption('marker_angle', $set, $item);
     $opacity = $this->getItemOption('marker_opacity', $set, $item);
-    $stroke_colour = $this->getItemOption('marker_stroke_colour', $set,
-      $item);
+    $stroke_colour = $this->getItemOption('marker_stroke_colour', $set, $item);
     $stroke_width = '';
-    if(!empty($stroke_colour) && $stroke_colour != 'none') {
-      $stroke_width = $this->getItemOption('marker_stroke_width', $set,
-        $item);
-    }
+    if(!empty($stroke_colour) && $stroke_colour != 'none')
+      $stroke_width = $this->getItemOption('marker_stroke_width', $set, $item);
 
+    // support gradients/patterns?
+    $gpat = !($this->getOption('marker_solid', true));
     $mcolour = $this->getItemOption('marker_colour', $set, $item, 'colour');
     if(!empty($mcolour)) {
-      $fill = $this->solidColour($mcolour);
+      $fill = new Colour($this, $mcolour, $gpat, $gpat);
     } else {
-      $fill = $this->getColour(null, 0, $set, true);
+      $fill = $this->getColour(null, 0, $set, $gpat, $gpat);
     }
+
+    if($stroke_colour !== null)
+      $stroke_colour = new Colour($this, $stroke_colour);
 
     return $this->createMarker($type, $size, $fill, $stroke_width,
       $stroke_colour, $opacity, $angle);

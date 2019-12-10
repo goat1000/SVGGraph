@@ -554,7 +554,7 @@ class DataLabels {
       $element = $this->{$type_info['shape']}($x, $y, $label_w, $label_h,
         $style, $surround);
       if($element) {
-        $surround['stroke'] = $style['stroke'];
+        $surround['stroke'] = new Colour($this->graph, $style['stroke']);
         if($style['stroke_width'] != 1)
           $surround['stroke-width'] = (float)$style['stroke_width'];
 
@@ -762,7 +762,7 @@ class DataLabels {
     if($style['round'])
       $surround['rx'] = $surround['ry'] = min((float)$style['round'],
         $h / 2, $w / 2);
-    $surround['fill'] = $this->graph->parseColour($style['fill']);
+    $surround['fill'] = new Colour($this->graph, $style['fill']);
     return 'rect';
   }
 
@@ -846,7 +846,7 @@ class DataLabels {
     $start->add($tl);
     $start->add($t);
     $surround['d'] = $start;
-    $surround['fill'] = $this->graph->parseColour($style['fill']);
+    $surround['fill'] = new Colour($this->graph, $style['fill']);
     return 'path';
   }
 
@@ -870,7 +870,7 @@ class DataLabels {
     $surround['cx'] = $params[0];
     $surround['cy'] = $params[1];
     $surround['r'] = $params[2];
-    $surround['fill'] = $this->graph->parseColour($style['fill']);
+    $surround['fill'] = new Colour($this->graph, $style['fill']);
     return 'circle';
   }
 
@@ -1212,7 +1212,7 @@ class DataLabels {
       $len = sqrt($l1 * $l1 + $l2 * $l2);
     }
 
-    $surround['fill'] = $this->graph->parseColour($style['fill']);
+    $surround['fill'] = new Colour($this->graph, $style['fill']);
     $path = new PathData('M', $p1, 'L', $p2);
     $path->add($this->getTailEnding($target[0], $target[1], $angle, $t_width,
       $len, $style));
@@ -1487,7 +1487,7 @@ class DataLabels {
       $t_width, $distance, $style));
     $box_path->add('z');
 
-    $surround['fill'] = $this->graph->parseColour($style['fill']);
+    $surround['fill'] = new Colour($this->graph, $style['fill']);
     $surround['d'] = $box_path;
     return 'path';
   }
@@ -1510,8 +1510,7 @@ class DataLabels {
     $p2x = $cx + $bbradius * cos($angle + $l_angle);
     $p2y = $cy + $bbradius * sin($angle + $l_angle);
 
-    $surround['fill'] = $this->graph->parseColour($style['fill']);
-
+    $surround['fill'] = new Colour($this->graph, $style['fill']);
     $path = new PathData('M', $p1x, $p1y, 'A', $bbradius, $bbradius, 0, 1, 0,
       $p2x, $p2y);
     $path->add($this->getTailEnding($target[0], $target[1], $angle, $t_width, $len, $style));

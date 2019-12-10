@@ -893,9 +893,8 @@ abstract class GridGraph extends Graph {
       return empty($crosshairs) ? '' :
         $this->element('g', $grid_group, null, $crosshairs);
 
-    $back_colour = $this->parseColour($this->grid_back_colour);
-    if(!empty($back_colour) && $back_colour != 'none') {
-
+    $back_colour = new Colour($this, $this->getOption('grid_back_colour'));
+    if(!$back_colour->isNone()) {
       $rect = [
         'x' => $left_num, 'y' => $top_num,
         'width' => $width_num, 'height' => $height_num,
@@ -922,10 +921,11 @@ abstract class GridGraph extends Graph {
         $first = array_shift($points);
         $last_pos = $first->position;
         foreach($points as $grid_point) {
-          if(!is_null($colours[$c % $num_colours])) {
+          $cc = $colours[$c % $num_colours];
+          if($cc !== null) {
             $rect['x'] = $last_pos;
             $rect['width'] = $grid_point->position - $last_pos;
-            $rect['fill'] = $this->parseColour($colours[$c % $num_colours]);
+            $rect['fill'] = new Colour($this, $cc);
             $bars .= $this->element('rect', $rect);
           }
           $last_pos = $grid_point->position;
@@ -939,10 +939,11 @@ abstract class GridGraph extends Graph {
         $first = array_shift($points);
         $last_pos = $first->position;
         foreach($points as $grid_point) {
-          if(!is_null($colours[$c % $num_colours])) {
+          $cc = $colours[$c % $num_colours];
+          if($cc !== null) {
             $rect['y'] = $grid_point->position;
             $rect['height'] = $last_pos - $grid_point->position;
-            $rect['fill'] = $this->parseColour($colours[$c % $num_colours]);
+            $rect['fill'] = new Colour($this, $cc);
             $bars .= $this->element('rect', $rect);
           }
           $last_pos = $grid_point->position;

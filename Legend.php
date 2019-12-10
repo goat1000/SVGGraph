@@ -249,7 +249,7 @@ class Legend {
 
     // create box and title
     $box = [
-      'fill' => $this->graph->parseColour($this->back_colour),
+      'fill' => new Colour($this->graph, $this->back_colour),
       'width' => $width,
       'height' => $height,
     ];
@@ -257,7 +257,7 @@ class Legend {
       $box['rx'] = $box['ry'] = $this->round;
     if($this->stroke_width) {
       $box['stroke-width'] = $this->stroke_width;
-      $box['stroke'] = $this->stroke_colour;
+      $box['stroke'] = new Colour($this->graph, $this->stroke_colour);
     }
     $rect = $this->graph->element('rect', $box);
     if($this->title != '') {
