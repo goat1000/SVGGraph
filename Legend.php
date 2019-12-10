@@ -40,7 +40,6 @@ class Legend {
   protected $font_adjust;
   protected $font_size;
   protected $font_weight;
-  protected $padding;
   protected $position;
   protected $round;
   protected $shadow_opacity;
@@ -63,7 +62,7 @@ class Legend {
     // copy options to class
     $opts = ['autohide', 'back_colour', 'colour', 'columns', 'draggable',
       'entries', 'entry_height', 'entry_width', 'font', 'font_adjust',
-      'font_size', 'font_weight', 'padding', 'position', 'round',
+      'font_size', 'font_weight', 'position', 'round',
       'shadow_opacity', 'show_empty', 'stroke_colour', 'stroke_width',
       'text_side', 'title', 'title_font_weight', 'type'];
     foreach($opts as $opt) {
@@ -148,7 +147,9 @@ class Legend {
 
     $title = '';
     $title_width = $entries_x = 0;
-    $start_y = $padding = $this->padding;
+    $padding_y = $this->graph->getOption('legend_padding_y', 'legend_padding', 1);
+    $padding_x = $this->graph->getOption('legend_padding_x', 'legend_padding', 1);
+    $start_y = $padding_y;
 
     $w = $this->entry_width;
     $x = 0;
@@ -161,8 +162,9 @@ class Legend {
         $this->title_font_adjust);
       list($tw, $th) = $svg_text_title->measure($this->title, $title_font_size,
         0, $title_font_size);
-      $title_width = $tw + $padding * 2;
-      $start_y += $th + $padding;
+      $title_width = $tw + $padding_x * 2;
+      $start_y += $th + $this->graph->getOption('legend_title_spacing',
+        'legend_padding', 1);
     }
 
     $columns = max(1, min(ceil($this->columns), $entry_count));
@@ -177,7 +179,15 @@ class Legend {
     $text_columns = array_fill(0, $columns, '');
     $entry_columns = array_fill(0, $columns, '');
     $valid_entries = 0;
+    $spacing = $this->graph->getOption('legend_spacing', 'legend_padding', 1);
+    $entry_space = $this->graph->getOption('legend_entry_spacing',
+      'legend_padding', 1);
+    $col_space = $this->graph->getOption('legend_column_spacing',
+      'legend_padding', 1);
+  
     foreach($entries as $entry) {
+      $y = $start_y + $column_entry * ($entry_height + $spacing);
+
       // position the graph element
       $e_y = $y + ($entry_height - $this->entry_height) / 2;
       $element = $this->graph->drawLegendEntry($x, $e_y, $w,
@@ -188,12 +198,10 @@ class Legend {
         $text_element = $svg_text->text($entry->text, $font_size, $text);
         $text_columns[$column] .= $text_element;
         $entry_columns[$column] .= $element;
-        $y += $entry_height + $padding;
 
         ++$valid_entries;
         if(++$column_entry == $per_column) {
           $column_entry = 0;
-          $y = $start_y;
           ++$column;
         }
       }
@@ -203,17 +211,19 @@ class Legend {
       return '';
 
     if($this->text_side == 'left') {
-      $text_x_offset = $max_width + $padding;
-      $entries_x_offset = $max_width + $padding * 2;
+      $text_x_offset = $max_width + $padding_x;
+      $entries_x_offset = $max_width + $padding_x + $entry_space;
     } else {
-      $text_x_offset = $w + $padding * 2;
-      $entries_x_offset = $padding;
+      $text_x_offset = $w + $padding_x + $entry_space;
+      $entries_x_offset = $padding_x;
     }
-    $longest_width = $padding * (2 * $columns + 1) +
+    $longest_width = $padding_x * 2 + ($entry_space * $columns) +
+      $col_space * ($columns - 1) +
       ($this->entry_width + $max_width) * $columns;
-    $column_width = $padding * 2 + $this->entry_width + $max_width;
+    $column_width = $col_space + $this->entry_width + $entry_space + $max_width;
     $width = max($title_width, $longest_width);
-    $height = $start_y + $per_column * ($entry_height + $padding);
+    $height = $start_y + $per_column * ($entry_height + $spacing) - $spacing
+      + $padding_y;
 
     // centre the entries if the title makes the box bigger
     if($width > $longest_width) {
@@ -262,7 +272,7 @@ class Legend {
     $rect = $this->graph->element('rect', $box);
     if($this->title != '') {
       $text['x'] = $width / 2;
-      $text['y'] = $padding + $svg_text_title->baseline($title_font_size);
+      $text['y'] = $padding_y + $svg_text_title->baseline($title_font_size);
       $text['text-anchor'] = 'middle';
       if($this->title_font != $this->font)
         $text['font-family'] = $this->title_font;
