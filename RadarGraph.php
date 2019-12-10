@@ -344,8 +344,12 @@ class RadarGraph extends LineGraph {
         $cc = $colours[$c % $num_colours];
         if($cc !== null) {
           $s_points = [$y_points[$c], $y_points[$c + 1]];
+          $c1 = new Colour($this, $cc);
+          if($c1->isGradient())
+            $c1 = $this->remapGradient($cc, $s_points);
+
           $bpath = [
-            'fill' => new Colour($this, $cc, false),
+            'fill' => $c1,
             'd' => $this->yGrid($s_points),
             'fill-rule' => 'evenodd',
           ];
@@ -464,6 +468,27 @@ class RadarGraph extends LineGraph {
   protected function calcGuidelines($g = null)
   {
     // in the case of radar graphs, prevents junk guidelines being drawn
+  }
+
+  /**
+   * Remaps gradient to make it start at the right radius
+   */
+  protected function remapGradient($g, $points)
+  {
+    $d = GradientList::decompose($g);
+
+    $p1 = $points[0]->position;
+    $p2 = $points[1]->position;
+    $offset = 100 * $p1 / $p2;
+    $mult = (100 - $offset) / 100;
+
+    $remapped = [ rtrim(implode(':', $d[0]), ':') ];
+    foreach($d as $stop) {
+      $stop[0] = $offset + $stop[0] * $mult;
+      $remapped[] = rtrim(implode(':', $stop), ':');
+    }
+
+    return new Colour($this, $remapped, true, true, true);
   }
 }
 

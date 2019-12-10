@@ -88,8 +88,26 @@ class GradientList {
       $gradient = ['id' => $id, 'x1' => 0, 'x2' => $x2, 'y1' => 0, 'y2' => $y2];
     }
 
+    $segments = $this->decompose($colours);
+    foreach($segments as $segment) {
+      list($offset, $colour, $opacity) = $segment;
+      $stop = ['offset' => $offset . '%', 'stop-color' => $colour];
+      if(is_numeric($opacity))
+        $stop['stop-opacity'] = $opacity;
+      $stops .= $this->graph->element('stop', $stop);
+    }
+
+    return $this->graph->element($type, $gradient, null, $stops);
+  }
+
+  /**
+   * Breaks gradient array down into components
+   */
+  static public function decompose($colours)
+  {
     $col_mul = 100 / (count($colours) - 1);
     $offset = 0;
+    $decomposed = [];
     foreach($colours as $pos => $colour) {
       $opacity = null;
       $poffset = $pos * $col_mul;
@@ -104,13 +122,9 @@ class GradientList {
       }
       // set the offset to the most meaningful number
       $offset = min(100, max(0, $offset, $poffset));
-      $stop = ['offset' => $offset . '%', 'stop-color' => $colour];
-      if(is_numeric($opacity))
-        $stop['stop-opacity'] = $opacity;
-      $stops .= $this->graph->element('stop', $stop);
+      $decomposed[] = [$offset, $colour, $opacity];
     }
-
-    return $this->graph->element($type, $gradient, null, $stops);
+    return $decomposed;
   }
 
   /**
