@@ -47,9 +47,9 @@ class Bar3DGraph extends ThreeDGraph {
   protected function barTop()
   {
     $bw = $this->calculated_bar_width;
-    $bar_top = '';
     $skew = $this->getOption('skew_top', true);
 
+    $top = ['stroke' => 'none'];
     if($skew) {
       $sc = abs($this->by / $bw);
       $a = 90 - $this->project_angle;
@@ -58,19 +58,13 @@ class Bar3DGraph extends ThreeDGraph {
       $xform = new Transform;
       $xform->skewX(-$a);
       $xform->scale(1, $sc);
-      $top = [
-        'd' => $path,
-        'transform' => $xform,
-        'stroke' => 'none',
-      ];
-      $bar_top = $this->element('path', $top);
+      $top['transform'] = $xform;
+    } else {
+      $path = new PathData('M', 0, 0, 'l', $bw, 0,
+        'l', $this->bx, $this->by, 'l', -$bw, 0, 'z');
     }
-    $path = new PathData('M', 0, 0, 'l', $bw, 0,
-      'l', $this->bx, $this->by, 'l', -$bw, 0, 'z');
-    $top = [ 'd' => $path ];
-    if($skew)
-      $top['fill'] = 'none';
-    $bar_top .= $this->element('path', $top);
+    $top['d'] = $path;
+    $bar_top = $this->element('path', $top);
     return $this->symbols->define($bar_top);
   }
 
@@ -101,31 +95,22 @@ class Bar3DGraph extends ThreeDGraph {
       $xform->translate($side_x, $bar['y']);
       $xform->skewY(-$a);
       $xform->scale($sc, 1);
-      $side = [
-        'd' => $path,
-        'transform' => $xform,
-        'stroke' => 'none',
-      ];
-      $bar_side = $this->element('path', $side);
+    } else {
+      $path = new PathData('M', 0, 0, 'l', $this->bx, $this->by,
+        'l', 0, $bh, 'l', -$this->bx, -$this->by, 'z');
+      $xform = new Transform;
+      $xform->translate($side_x, $bar['y']);
     }
-    $path = new PathData('M', 0, 0, 'l', $this->bx, $this->by,
-      'l', 0, $bh, 'l', -$this->bx, -$this->by, 'z');
-    $xform = new Transform;
-    $xform->translate($side_x, $bar['y']);
     $side = [
       'd' => $path,
       'transform' => $xform,
+      'stroke' => 'none',
     ];
-    if($this->skew_side)
-      $side['fill'] = 'none';
-    if($side_overlay)
-      $side['stroke'] = 'none'; // only stroke top layer
-    $bar_side .= $this->element('path', $side);
+    $bar_side = $this->element('path', $side);
 
     if($side_overlay) {
       $side['fill-opacity'] = $side_overlay;
       $side['fill'] = $this->bar_side_overlay_colour;
-      unset($side['stroke']);
       $bar_side .= $this->element('path', $side);
     }
 
@@ -135,31 +120,53 @@ class Bar3DGraph extends ThreeDGraph {
       $top = ['transform' => $xform];
       $skew = $this->getOption('skew_top', true);
       $top['fill'] = $this->getColour($item, $index, $dataset, $skew, $skew);
-      if($top_overlay)
-        $top['stroke'] = 'none';
       $bar_top = $this->symbols->useSymbol($this->top_id, $top);
 
       if($top_overlay) {
-        unset($top['stroke']);
         $top['fill-opacity'] = $top_overlay;
         $top['fill'] = $this->bar_top_overlay_colour;
         $bar_top .= $this->symbols->useSymbol($this->top_id, $top);
       }
     }
 
-    if($front_overlay)
-      $bar['stroke'] = 'none';
+    $bar['stroke'] = 'none';
     $rect = $this->element('rect', $bar);
 
     if($front_overlay) {
-      unset($bar['stroke']);
       $obar = $bar;
       $obar['fill-opacity'] = $front_overlay;
       $obar['fill'] = $this->bar_front_overlay_colour;
       $rect .= $this->element('rect', $obar);
     }
 
-    return $rect . $bar_top . $bar_side;
+    // to prevent sharp corners, draw the outline over the top
+    if($bar['height'] > 0) {
+      $path = new PathData(
+        // surround
+        'M', $bar['x'], $bar['y'] + $bar['height'],
+        'l', 0, -$bar['height'],
+        $this->bx, $this->by,
+        $bar['width'], 0,
+        0, $bar['height'],
+        -$this->bx, -$this->by, 'z',
+
+        // vertical
+        'M', $bar['x'] + $bar['width'], $bar['y'], 'v', $bar['height'],
+
+        // top front and side
+        'M', $bar['x'], $bar['y'], 'l', $bar['width'], 0, $this->bx, $this->by
+      );
+    } else {
+      // no height, just a parallelogram
+      $path = new PathData(
+        'M', $bar['x'], $bar['y'],
+        'l', $this->bx, $this->by,
+        $bar['width'], 0,
+        -$this->bx, -$this->by, 'z'
+      );
+    }
+    $edges = $this->element('path', ['d' => $path, 'fill' => 'none']);
+    return $rect . $bar_top . $bar_side . $edges;
   }
 
   /**

@@ -153,7 +153,7 @@ class CylinderGraph extends Bar3DGraph {
     $path = new PathData('M', $x, $y, 'v', $h);
     $path->add($this->arc_path);
     $path->add('v', -$h, 'z');
-    $side = ['d' => $path];
+    $side = ['d' => $path, 'stroke-linejoin' => 'bevel'];
     $cyl_side = $this->element('path', $side);
 
     if($this->shade_gradient_id) {
