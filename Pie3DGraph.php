@@ -90,8 +90,7 @@ class Pie3DGraph extends PieGraph {
     });
 
     $edges = [];
-    $overlay = ($this->getOption('separate_slices') &&
-      is_array($this->getOption('depth_shade_gradient')));
+    $overlay = is_array($this->getOption('depth_shade_gradient'));
     foreach($edge_list as $edge) {
 
       $edges[] = $this->getEdge($edge, $this->x_centre, $this->y_centre,
@@ -134,16 +133,28 @@ class Pie3DGraph extends PieGraph {
     if($this->show_context_menu)
       $this->setContextMenu($attr, $this->dataset, $item, true);
     $this->addLabelClient($this->dataset, $edge->slice['original_position'], $attr);
-    $content = $edge->draw($this, $x_centre, $y_centre, $depth, $attr);
+
+    $content = '';
 
     // the gradient overlay uses a clip-path
     if($overlay && $edge->curve()) {
       $clip_id = $this->newID();
       $this->defs->add($edge->getClipPath($this, $x_centre, $y_centre, $depth,
         $clip_id));
+
+      // fill without stroking
+      $attr['stroke'] = 'none';
+      $content = $edge->draw($this, $x_centre, $y_centre, $depth, $attr);
+
+      // overlay
       $content .= $this->getEdgeOverlay($x_centre, $y_centre, $depth, $clip_id,
         $edge->slice['radius_x'], $edge->slice['radius_y']);
+
+      // stroke without filling
+      unset($attr['stroke']);
+      $attr['fill'] = 'none';
     }
+    $content .= $edge->draw($this, $x_centre, $y_centre, $depth, $attr);
     return $this->getLink($item, $item->key, $content);
   }
 
@@ -152,14 +163,8 @@ class Pie3DGraph extends PieGraph {
    */
   protected function pieExtras()
   {
-    if($this->getOption('separate_slices'))
-      return '';
-
-    // this is only used when not drawing each segment separately
-    if(is_array($this->getOption('depth_shade_gradient')))
-      return $this->getEdgeOverlay($this->x_centre, $this->y_centre,
-        $this->depth);
-
+    // removed the overlay code because it drew over the stroked edges -
+    // overlays are always drawn separately now
     return '';
   }
 
