@@ -214,10 +214,9 @@ class Axis {
       $this->max_value += $this->min_unit;
     $scale = $this->max_value - $this->min_value;
 
-    // get magnitude from greater of |+ve|, |-ve|
     $abs_min = abs($this->min_value);
     $magnitude = max(pow(10, floor(log10($scale))), $this->min_unit);
-    if($this->fit) {
+    if($this->min_value > 0 || $this->fit) {
       $count = ceil($scale / $magnitude);
     } else {
       $count = ceil($this->max_value / $magnitude) -
@@ -230,7 +229,7 @@ class Axis {
         floor($this->min_value / $magnitude);
     }
 
-    $neg_count = ceil($abs_min / $magnitude);
+    $neg_count = $this->min_value < 0 ? ceil($abs_min / $magnitude) : 0;
     $this->findDivision($this->length, $min_sub, $count, $neg_count,
       $magnitude);
     $grid = $this->length / $count;
