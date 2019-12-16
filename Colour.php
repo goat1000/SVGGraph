@@ -76,7 +76,9 @@ class Colour {
       throw new \InvalidArgumentException('Malformed gradient/pattern: ' .
         serialize($colour));
     $this->gradient = true;
-    $this->radial = $radial_gradient;
+
+    $last = count($colour) - 1;
+    $this->radial = $radial_gradient || $colour[$last] == 'r';
   }
 
   /**
@@ -184,6 +186,14 @@ class Colour {
   public function isNone()
   {
     return $this->colour === 'none';
+  }
+
+  /**
+   * Returns true if a radial gradient
+   */
+  public function isRadial()
+  {
+    return $this->gradient && $this->radial;
   }
 }
 
