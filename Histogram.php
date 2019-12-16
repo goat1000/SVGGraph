@@ -94,7 +94,7 @@ class Histogram extends BarGraph {
         $this->getOption('thousands'));
       for($i = $start; $i < $end; $i += $increment) {
         $key = (int)$i;
-        $map[$key] = null;
+        $map[$key] = 0;
       }
 
       foreach($values as $val) {
