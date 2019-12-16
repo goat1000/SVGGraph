@@ -632,6 +632,8 @@ class Javascript {
     $script = $variables  . "\n" . $functions . "\n";
     if(is_callable($minifier))
       $script = call_user_func($minifier, $script);
+    elseif($minifier !== null)
+      $script = $this->minify($script);
 
     // make closure
     $script = '(function(){' . $script . "\n})();";
@@ -640,6 +642,20 @@ class Javascript {
       $script = "// <![CDATA[\n" . $script . "\n// ]]>";
 
     return $script;
+  }
+
+  /**
+   * Simple minifier
+   */
+  public static function minify($code)
+  {
+    $start = strlen($code);
+    $code = preg_replace(
+      ['/^\s+/m', '/\s*([{}=+<>,;?:)\/*-]|&&|\|\|)\s*/', ],
+      ['', '$1', ],
+      $code);
+
+    return $code;
   }
 }
 
