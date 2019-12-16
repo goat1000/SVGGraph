@@ -62,7 +62,7 @@ class BubbleGraph extends PointGraph {
         if($area < 0) {
           // draw negative bubbles with a checked pattern
           $pattern = [$colour, 'pattern' => 'check', 'size' => 8];
-          $pid = $this->addPattern($pattern);
+          $pid = $this->defs->addPattern($pattern);
           $circle_style['fill'] = 'url(#' . $pid . ')';
         }
         $this->setStroke($circle_style, $item, $bnum, $dataset);
@@ -85,8 +85,15 @@ class BubbleGraph extends PointGraph {
       ++$bnum;
     }
 
+    $group = [];
     if($this->semantic_classes)
-      $series = $this->element('g', ['class' => 'series'], null, $series);
+      $group['class'] = 'series';
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $series = $this->element('g', $group, null, $series);
+
     list($best_fit_above, $best_fit_below) = $this->bestFitLines();
     $body .= $best_fit_below;
     $body .= $series;

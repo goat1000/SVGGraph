@@ -65,7 +65,7 @@ class Bar3DGraph extends ThreeDGraph {
     }
     $top['d'] = $path;
     $bar_top = $this->element('path', $top);
-    return $this->symbols->define($bar_top);
+    return $this->defs->defineSymbol($bar_top);
   }
 
   /**
@@ -120,12 +120,12 @@ class Bar3DGraph extends ThreeDGraph {
       $top = ['transform' => $xform];
       $skew = $this->getOption('skew_top', true);
       $top['fill'] = $this->getColour($item, $index, $dataset, $skew, $skew);
-      $bar_top = $this->symbols->useSymbol($this->top_id, $top);
+      $bar_top = $this->defs->useSymbol($this->top_id, $top);
 
       if($top_overlay) {
         $top['fill-opacity'] = $top_overlay;
         $top['fill'] = $this->bar_top_overlay_colour;
-        $bar_top .= $this->symbols->useSymbol($this->top_id, $top);
+        $bar_top .= $this->defs->useSymbol($this->top_id, $top);
       }
     }
 

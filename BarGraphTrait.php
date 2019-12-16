@@ -102,6 +102,9 @@ trait BarGraphTrait {
     $group = [];
     if($this->semantic_classes)
       $group['class'] = 'series';
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
     return $group;
   }
 

@@ -123,11 +123,11 @@ class Colour {
       return $this->as_string;
 
     if($this->gradient) {
-      $gradient_id = $this->graph->addGradient($this->colour, $this->key,
+      $gradient_id = $this->graph->defs->addGradient($this->colour, $this->key,
         $this->radial);
       $this->as_string = 'url(#' . $gradient_id . ')';
     } elseif($this->pattern) {
-      $pattern_id = $this->graph->addPattern($this->colour);
+      $pattern_id = $this->graph->defs->addPattern($this->colour);
       $this->as_string = 'url(#' . $pattern_id . ')';
     }
 

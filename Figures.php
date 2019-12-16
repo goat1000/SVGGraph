@@ -69,7 +69,7 @@ class Figures {
         $content .= $shape->draw($this->graph);
       }
     }
-    $id = $this->graph->symbols->define($content);
+    $id = $this->graph->defs->defineSymbol($content);
     $this->figure_map[$name] = $id;
   }
 

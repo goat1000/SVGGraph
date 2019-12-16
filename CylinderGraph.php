@@ -39,7 +39,7 @@ class CylinderGraph extends Bar3DGraph {
     // set the gradient overlay
     $gradient = $this->getOption('depth_shade_gradient');
     if(is_array($gradient))
-      $this->shade_gradient_id = $this->addGradient($gradient);
+      $this->shade_gradient_id = $this->defs->addGradient($gradient);
   }
 
   /**
@@ -97,7 +97,7 @@ class CylinderGraph extends Bar3DGraph {
     ];
 
     $ellipse = $this->element('ellipse', $top);
-    $top_id = $this->symbols->define($ellipse);
+    $top_id = $this->defs->defineSymbol($ellipse);
     return $top_id;
   }
 
@@ -144,7 +144,7 @@ class CylinderGraph extends Bar3DGraph {
       $xform->translate($bar['x'], $bar['y']);
       $top = ['transform' => $xform];
       $top['fill'] = $this->getColour($item, $index, $dataset, false, false);
-      $cyl_top = $this->symbols->useSymbol($this->top_id, $top);
+      $cyl_top = $this->defs->useSymbol($this->top_id, $top);
     }
 
     $x = $bar['x'] + $this->cyl_offset_x;

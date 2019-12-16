@@ -64,7 +64,7 @@ class ContextMenu {
       $menu = $graph->element('svggraph:menu', null, null, $entries);
       $xml = $graph->element('svggraph:data',
         ['xmlns:svggraph' => 'http://www.goat1000.com/svggraph'], null, $menu);
-      $graph->addDefs($xml);
+      $graph->defs->add($xml);
     }
   }
 

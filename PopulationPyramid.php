@@ -143,8 +143,14 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
       ++$bnum;
     }
 
+    $group = [];
     if($this->semantic_classes)
-      $bars = $this->element('g', ['class' => 'series'], null, $bars);
+      $group['class'] = 'series';
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $bars = $this->element('g', $group, null, $bars);
     $body .= $bars;
     $body .= $this->overShapes();
     $body .= $this->axes();

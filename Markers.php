@@ -209,7 +209,7 @@ class Markers {
       $marker = array_merge($marker, $more);
 
     $marker_content = $this->graph->element($element, $marker, null, $content);
-    return $this->graph->symbols->define($marker_content);
+    return $this->graph->defs->defineSymbol($marker_content);
   }
 }
 

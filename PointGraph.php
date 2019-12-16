@@ -80,8 +80,14 @@ abstract class PointGraph extends GridGraph {
         $markers .= $this->drawMarkerSet($set, $data);
     }
 
+    $group = [];
     if($this->semantic_classes)
-      $markers = $this->element('g', ['class' => 'series'], null, $markers);
+      $group['class'] = 'series';
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $markers = $this->element('g', $group, null, $markers);
     return $markers;
   }
 
@@ -117,9 +123,9 @@ abstract class PointGraph extends GridGraph {
     if($this->getLinkURL($marker->item, $marker->key)) {
       $id = $this->marker_link_ids[$id];
       $element = $this->getLink($marker->item, $marker->key,
-        $this->symbols->useSymbol($id, $use));
+        $this->defs->useSymbol($id, $use));
     } else {
-      $element = $this->symbols->useSymbol($id, $use);
+      $element = $this->defs->useSymbol($id, $use);
     }
 
     return $element;
@@ -144,12 +150,12 @@ abstract class PointGraph extends GridGraph {
       return ''; // no marker!
 
     // if the standard marker is unused, must be a link marker
-    if(!$this->symbols->useCount($id))
+    if(!$this->defs->symbolUseCount($id))
       $id = $this->marker_link_ids[$id];
 
     // use data stored with legend to look up marker
     $m = ['x' => $x + $w/2, 'y' => $y + $h/2];
-    return $this->symbols->useSymbol($id, $m);
+    return $this->defs->useSymbol($id, $m);
   }
 
   /**

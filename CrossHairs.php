@@ -271,7 +271,7 @@ class CrossHairs {
     $xml = $gridx . $gridy . $chtext . $keys_xml;
     $defs = $this->graph->element('svggraph:data',
       ['xmlns:svggraph' => 'http://www.goat1000.com/svggraph'], null, $xml);
-    $this->graph->addDefs($defs);
+    $this->graph->defs->add($defs);
 
     // add the main function at the end - it can fill in any defaults
     $this->graph->javascript->addFunction('crosshairs');

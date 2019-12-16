@@ -139,8 +139,8 @@ class Pie3DGraph extends PieGraph {
     // the gradient overlay uses a clip-path
     if($overlay && $edge->curve()) {
       $clip_id = $this->newID();
-      $this->defs[] = $edge->getClipPath($this, $x_centre, $y_centre, $depth,
-        $clip_id);
+      $this->defs->add($edge->getClipPath($this, $x_centre, $y_centre, $depth,
+        $clip_id));
       $content .= $this->getEdgeOverlay($x_centre, $y_centre, $depth, $clip_id,
         $edge->slice['radius_x'], $edge->slice['radius_y']);
     }
@@ -169,7 +169,7 @@ class Pie3DGraph extends PieGraph {
   protected function getEdgeOverlay($x_centre, $y_centre, $depth,
     $clip_path = null, $rx = 0, $ry = 0)
   {
-    $gradient_id = $this->addGradient($this->depth_shade_gradient);
+    $gradient_id = $this->defs->addGradient($this->depth_shade_gradient);
     $start = $this->reverse ? M_PI : M_PI * 2;
     $end = $this->reverse ? M_PI * 2 : M_PI;
 

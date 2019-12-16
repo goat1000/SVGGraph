@@ -117,7 +117,7 @@ class PatternList {
   public function makePatterns(&$defs)
   {
     foreach($this->patterns as $pat)
-      $defs[] = $pat;
+      $defs->add($pat);
   }
 
   /**
@@ -233,7 +233,7 @@ class PatternList {
       'width' => $pattern['width'],
       'height' => $pattern['height'],
     ];
-    $pattern['pattern'] = $this->graph->symbols->useSymbol($figure_id, $figure);
+    $pattern['pattern'] = $this->graph->defs->useSymbol($figure_id, $figure);
     return $pattern;
   }
 

@@ -133,7 +133,7 @@ class GradientList {
   public function makeGradients(&$defs)
   {
     foreach($this->gradients as $key => $gradient)
-      $defs[] = $this->makeGradient($key);
+      $defs->add($this->makeGradient($key));
   }
 }
 

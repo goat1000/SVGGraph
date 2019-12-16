@@ -37,9 +37,7 @@ abstract class Graph {
   protected $links = [];
 
   protected $colours = null;
-  protected $gradients = null;
-  protected $pattern_list = null;
-  protected $defs = [];
+  public $defs = null;
   protected $subgraphs = [];
   protected $back_matter = '';
 
@@ -60,6 +58,7 @@ abstract class Graph {
   {
     $this->width = $w;
     $this->height = $h;
+    $this->defs = new Defs($this);
 
     // get settings from ini file that are relevant to this class
     $class = get_class($this);
@@ -92,9 +91,6 @@ abstract class Graph {
     case 'data_labels':
       $this->data_labels = new DataLabels($this);
       return $this->data_labels;
-    case 'symbols':
-      $this->symbols = new Symbols($this);
-      return $this->symbols;
     case 'shapes':
       $this->shapes = new ShapeList($this);
       $this->shapes->load($this->settings);
@@ -614,7 +610,7 @@ abstract class Graph {
         'patternUnits' => 'userSpaceOnUse'
       ];
       // tiled image becomes a pattern to replace background colour
-      $this->defs[] = $this->element('pattern', $pattern, null, $im);
+      $this->defs->add($this->element('pattern', $pattern, null, $im));
       $this->back_colour = 'url(#' . $pattern['id'] . ')';
     } else {
       $im = $this->element('image', $image, $style);
@@ -648,7 +644,7 @@ abstract class Graph {
 
     // create a clip path for rounded rectangle
     if($this->back_round)
-      $this->defs[] = $this->element('clipPath', ['id' => $id], null, $c_el);
+      $this->defs->add($this->element('clipPath', ['id' => $id], null, $c_el));
     // if the background image is an element, insert it between the background
     // colour and border rect
     if($bg != '') {
@@ -969,39 +965,11 @@ abstract class Graph {
   }
 
   /**
-   * Adds to the defs section of the document
-   */
-  public function addDefs($def)
-  {
-    $this->defs[] = $def;
-  }
-
-  /**
    * Adds markup to be inserted between graph and legend
    */
   public function addBackMatter($fragment)
   {
     $this->back_matter .= $fragment;
-  }
-
-  /**
-   * Adds a pattern, returning the element ID
-   */
-  public function addPattern($pattern)
-  {
-    if($this->pattern_list === null)
-      $this->pattern_list = new PatternList($this);
-    return $this->pattern_list->add($pattern);
-  }
-
-  /**
-   * Adds a gradient to the list, returning the element ID for use in url
-   */
-  public function addGradient($colours, $key = null, $radial = false)
-  {
-    if($this->gradients === null)
-      $this->gradients = new GradientList($this);
-    return $this->gradients->addGradient($colours, $key, $radial);
   }
 
   /**
@@ -1307,19 +1275,8 @@ abstract class Graph {
     if(!$defer_javascript)
       $foot .= $this->fetchJavascript(true, !$this->namespace);
 
-    // insert any gradients that are used
-    if($this->gradients !== null)
-      $this->gradients->makeGradients($this->defs);
-    // and any patterns
-    if($this->pattern_list !== null)
-      $this->pattern_list->makePatterns($this->defs);
-
-    // show defs and body content
-    if(count($this->defs) || isset($this->symbols)) {
-      $defs = implode('', $this->defs);
-      $defs .= $this->symbols->definitions();
-      $heading .= $this->element('defs', null, null, $defs);
-    }
+    // add defs to heading
+    $heading .= $this->defs->get();
 
     // display version string
     if($this->show_version) {

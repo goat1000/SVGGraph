@@ -87,8 +87,16 @@ class RadarGraph extends LineGraph {
     $this->clipGrid($group);
     if($this->semantic_classes)
       $group['class'] = 'series';
+    $graph_line = $this->element('g', $group, null, $graph_line);
 
-    $body .= $this->element('g', $group, null, $graph_line);
+    $group = [];
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $graph_line = $this->element('g', $group, null, $graph_line);
+
+    $body .= $graph_line;
     $body .= $this->overShapes();
     $body .= $this->axes();
     $body .= $this->crossHairs();

@@ -143,20 +143,26 @@ class StackedLineGraph extends MultiLineGraph {
       }
     }
 
+    $plots = array_reverse($plots);
+    $all_plots = implode($plots);
+
     $group = [];
     $this->clipGrid($group);
+    if($this->semantic_classes)
+      $group['class'] = 'series';
+    if(!empty($group))
+      $all_plots = $this->element('g', $group, null, $all_plots);
 
-    $plots = array_reverse($plots);
-    $all_plots = '';
-    if($this->semantic_classes) {
-      foreach($plots as $p)
-        $all_plots .= $this->element('g', ['class' => 'series'], null, $p);
-    } else {
-      $all_plots = implode($plots);
-    }
+    $group = [];
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $all_plots = $this->element('g', $group, null, $all_plots);
+
     list($best_fit_above, $best_fit_below) = $this->bestFitLines();
     $body .= $best_fit_below;
-    $body .= $this->element('g', $group, null, $all_plots);
+    $body .= $all_plots;
     $body .= $this->overShapes();
     $body .= $this->axes();
     $body .= $this->crossHairs();

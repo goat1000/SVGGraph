@@ -56,9 +56,9 @@ class MarkerShape extends Shape {
       $group = ['clip-path' => $use['clip-path']];
       unset($use['clip-path']);
       $e = $graph->element('g', $group, null,
-        $graph->symbols->useSymbol($id, $use));
+        $graph->defs->useSymbol($id, $use));
     } else {
-      $e = $graph->symbols->useSymbol($id, $use);
+      $e = $graph->defs->useSymbol($id, $use);
     }
     return $e;
   }

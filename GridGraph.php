@@ -1052,8 +1052,8 @@ abstract class GridGraph extends Graph {
       'height' => $this->height - $this->pad_top - $this->pad_bottom
     ];
     $clip_id = $this->newID();
-    $this->defs[] = $this->element('clipPath', ['id' => $clip_id], null,
-      $this->element('rect', $rect));
+    $this->defs->add($this->element('clipPath', ['id' => $clip_id], null,
+      $this->element('rect', $rect)));
     return ($this->grid_clip_id = $clip_id);
   }
 

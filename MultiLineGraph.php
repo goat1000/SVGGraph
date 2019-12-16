@@ -62,18 +62,26 @@ class MultiLineGraph extends LineGraph {
       }
 
       $plot .= $this->drawLine($i, $points, $y_bottom);
-      if($this->semantic_classes)
-        $plots .= $this->element('g', ['class' => 'series'], null, $plot);
-      else
-        $plots .= $plot;
+      $plots .= $plot;
     }
 
     $group = [];
     $this->clipGrid($group);
+    if($this->semantic_classes)
+      $group['class'] = 'series';
+    if(!empty($group))
+      $plots = $this->element('g', $group, null, $plots);
+
+    $group = [];
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $plots = $this->element('g', $group, null, $plots);
 
     list($best_fit_above, $best_fit_below) = $this->bestFitLines();
     $body .= $best_fit_below;
-    $body .= $this->element('g', $group, null, $plots);
+    $body .= $plots;
     $body .= $this->overShapes();
     $body .= $this->axes();
     $body .= $this->crossHairs();

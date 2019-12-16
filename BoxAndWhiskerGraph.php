@@ -88,8 +88,15 @@ class BoxAndWhiskerGraph extends PointGraph {
       ++$bnum;
     }
 
+    $group = [];
     if($this->semantic_classes)
-      $series = $this->element('g', ['class' => 'series'], null, $series);
+      $group['class'] = 'series';
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $series = $this->element('g', $group, null, $series);
+
     $body .= $series;
     $body .= $this->overShapes();
     $body .= $this->axes();

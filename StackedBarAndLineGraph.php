@@ -76,8 +76,6 @@ class StackedBarAndLineGraph extends StackedBarGraph {
       $this->linegraph->{$member} = $this->{$member};
 
     // keep gradients and patterns synced
-    $this->linegraph->gradients =& $this->gradients;
-    $this->linegraph->pattern_list =& $this->pattern_list;
     $this->linegraph->defs =& $this->defs;
 
     // find the lines
@@ -187,8 +185,14 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $this->clipGrid($group);
     $bars .= $this->element('g', $group, null, $graph_line);
 
+    $group = [];
     if($this->semantic_classes)
-      $bars = $this->element('g', ['class' => 'series'], null, $bars);
+      $group['class'] = 'series';
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $bars = $this->element('g', $group, null, $bars);
     $body .= $bars;
 
     $body .= $this->overShapes();
@@ -196,7 +200,6 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
     // add in the markers created by line graph
     $body .= $this->linegraph->drawMarkers();
-    $this->defs[] = $this->linegraph->symbols->definitions();
 
     return $body;
   }

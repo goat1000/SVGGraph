@@ -79,7 +79,16 @@ class MultiRadarGraph extends RadarGraph {
     $this->clipGrid($group);
     if($this->semantic_classes)
       $group['class'] = 'series';
-    $body .= $this->element('g', $group, null, $plots);
+    $plots = $this->element('g', $group, null, $plots);
+
+    $group = [];
+    $shadow_id = $this->defs->getShadow();
+    if($shadow_id !== null)
+      $group['filter'] = 'url(#' . $shadow_id . ')';
+    if(!empty($group))
+      $plots = $this->element('g', $group, null, $plots);
+
+    $body .= $plots;
     $body .= $this->overShapes();
     $body .= $this->axes();
     $body .= $this->crossHairs();
