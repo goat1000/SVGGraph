@@ -113,11 +113,9 @@ trait BarGraphTrait {
    */
   protected function setBarLegendEntry($dataset, $index, DataItem $item)
   {
-    if($this->legend_show_empty || $this->show_data_labels || $item->value != 0) {
-      $bar = ['fill' => $this->getColour($item, $index, $dataset)];
-      $this->setStroke($bar, $item, $index, $dataset);
-      $this->setLegendEntry($dataset, $index, $item, $bar);
-    }
+    $bar = ['fill' => $this->getColour($item, $index, $dataset)];
+    $this->setStroke($bar, $item, $index, $dataset);
+    $this->setLegendEntry($dataset, $index, $item, $bar);
   }
 
   /**

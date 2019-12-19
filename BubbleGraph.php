@@ -78,7 +78,7 @@ class BubbleGraph extends PointGraph {
         $bubble = $this->element('circle', array_merge($circle, $circle_style));
         $series .= $this->getLink($item, $item->key, $bubble);
 
-        $this->addMarker($x, $y, $item, null, $dataset);
+        $this->addMarker($x, $y, $item, null, $dataset, false);
         $this->setLegendEntry($dataset, $bnum, $item, $circle_style);
       }
 

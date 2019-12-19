@@ -50,7 +50,8 @@ abstract class PointGraph extends GridGraph {
   /**
    * Adds a marker to the list
    */
-  public function addMarker($x, $y, $item, $extra = null, $set = 0)
+  public function addMarker($x, $y, $item, $extra = null, $set = 0,
+    $legend = true)
   {
     $m = new Marker($x, $y, $item, $extra);
     if($this->specialMarker($set, $item))
@@ -59,9 +60,10 @@ abstract class PointGraph extends GridGraph {
     $this->markers[$set][] = $m;
     $index = count($this->markers[$set]) - 1;
 
-    // index 0 for now
-    $legend_info = ['dataset' => $set, 'index' => $index];
-    $this->setLegendEntry($set, $index, $item, $legend_info);
+    if($legend) {
+      $legend_info = ['dataset' => $set, 'index' => $index];
+      $this->setLegendEntry($set, $index, $item, $legend_info);
+    }
   }
 
   /**

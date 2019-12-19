@@ -25,6 +25,8 @@ trait StackedGroupedBarTrait {
 
   use GroupedBarTrait;
 
+  protected $bar_visibility = [];
+
   // stores the actual group starts
   protected $groups = [];
 
@@ -77,8 +79,7 @@ trait StackedGroupedBarTrait {
             $top = ($b == $stack_last);
             if($top)
               $top_dataset = $j;
-            // store whether the bar can be seen or not
-            $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
+            $this->setBarVisibility($j, $item, $top);
             $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
             $legend_entries[$j][$bnum] = $item;
           }
@@ -92,6 +93,14 @@ trait StackedGroupedBarTrait {
         $this->setBarLegendEntry($j, $bnum, $item);
 
     return $bars;
+  }
+
+  /**
+   * Sets whether a bar is visible or not
+   */
+  protected function setBarVisibility($dataset, DataItem $item, $top)
+  {
+    $this->bar_visibility[$dataset][$item->key] = ($item->value != 0);
   }
 
   /**

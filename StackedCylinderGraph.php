@@ -31,5 +31,13 @@ class StackedCylinderGraph extends CylinderGraph {
     $fixed_settings = array_merge($fixed, $fixed_settings);
     parent::__construct($w, $h, $settings, $fixed_settings);
   }
+
+  /**
+   * Sets whether a bar is visible or not
+   */
+  protected function setBarVisibility($dataset, DataItem $item, $top)
+  {
+    $this->bar_visibility[$dataset][$item->key] = ($top || $item->value != 0);
+  }
 }
 

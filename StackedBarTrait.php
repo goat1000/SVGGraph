@@ -70,8 +70,7 @@ trait StackedBarTrait {
         list($j, $item, $start) = $chunk;
 
         $top = (++$b == $bar_count);
-        // store whether the bar can be seen or not
-        $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
+        $this->setBarVisibility($j, $item, $top);
 
         $legend_entries[$j][$bnum] = $item;
         $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
@@ -86,6 +85,14 @@ trait StackedBarTrait {
         $this->setBarLegendEntry($j, $bnum, $item);
 
     return $bars;
+  }
+
+  /**
+   * Sets whether a bar is visible or not
+   */
+  protected function setBarVisibility($dataset, DataItem $item, $top)
+  {
+    $this->bar_visibility[$dataset][$item->key] = ($item->value != 0);
   }
 
   /**

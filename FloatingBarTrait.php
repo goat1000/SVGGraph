@@ -93,5 +93,16 @@ trait FloatingBarTrait {
     }
     return ($this->min_value = $min);
   }
+
+  /**
+   * Returns TRUE if the item is visible on the graph
+   */
+  public function isVisible($item, $dataset = 0)
+  {
+    if($item->value === null || $item->end === null)
+      return false;
+    return ($item->end - $item->value != 0);
+  }
+
 }
 

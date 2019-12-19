@@ -46,5 +46,13 @@ trait StackedGrouped3DGraphTrait {
     $this->depth = $d;
     return parent::adjustAxes($x_len, $y_len);
   }
+
+  /**
+   * Sets whether a bar is visible or not
+   */
+  protected function setBarVisibility($dataset, DataItem $item, $top)
+  {
+    $this->bar_visibility[$dataset][$item->key] = ($top || $item->value != 0);
+  }
 }
 

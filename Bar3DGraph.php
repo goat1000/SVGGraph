@@ -237,18 +237,5 @@ class Bar3DGraph extends ThreeDGraph {
       $this->bar3D($item, $bar, $top, $index, $dataset, $start, $axis));
     return $this->getLink($item, $item->key, $bar_part);
   }
-
-  /**
-   * Sets the legend entry for a bar
-   */
-  protected function setBarLegendEntry($dataset, $index, DataItem $item)
-  {
-    // override to allow 0 to be shown
-    if($this->legend_show_empty || $this->show_data_labels || $item->value !== null) {
-      $bar = ['fill' => $this->getColour($item, $index, $dataset)];
-      $this->setStroke($bar, $item, $index, $dataset);
-      $this->setLegendEntry($dataset, $index, $item, $bar);
-    }
-  }
 }
 
