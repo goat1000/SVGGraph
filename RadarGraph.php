@@ -59,7 +59,7 @@ class RadarGraph extends LineGraph {
     $first_point = null;
     foreach($this->values[$dataset] as $item) {
       if($line_breaks && $item->value === null && count($points) > 0) {
-        $graph_line .= $this->drawLine($dataset, $points, 0, true);
+        $graph_line .= $this->drawLine($dataset, $points, 0);
         $points = [];
       } else {
         $point_pos = $this->gridPosition($item, $bnum);
@@ -82,7 +82,7 @@ class RadarGraph extends LineGraph {
       $points[] = $first_point;
     }
 
-    $graph_line .= $this->drawLine($dataset, $points, 0, true);
+    $graph_line .= $this->drawLine($dataset, $points, 0);
     $group = [];
     $this->clipGrid($group);
     if($this->semantic_classes)

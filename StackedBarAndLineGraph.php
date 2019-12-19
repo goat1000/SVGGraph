@@ -37,7 +37,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
     // prevent repeated labels
     unset($settings['label']);
-    $this->linegraph = new LineGraph($w, $h, $settings);
+    $this->linegraph = new MultiLineGraph($w, $h, $settings);
 
     // validate secondary axis datasets are only lines
     if(isset($settings['dataset_axis'])) {

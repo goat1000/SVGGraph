@@ -63,7 +63,7 @@ class LineGraph extends PointGraph {
     $points = [];
     foreach($this->values[$dataset] as $item) {
       if($line_breaks && $item->value === null && count($points) > 0) {
-        $graph_line .= $this->drawLine($dataset, $points, $y_bottom, true);
+        $graph_line .= $this->drawLine($dataset, $points, $y_bottom);
         $points = [];
       } else {
         $x = $this->gridPosition($item, $bnum);
@@ -75,7 +75,7 @@ class LineGraph extends PointGraph {
       ++$bnum;
     }
 
-    $graph_line .= $this->drawLine($dataset, $points, $y_bottom, true);
+    $graph_line .= $this->drawLine($dataset, $points, $y_bottom);
     $group = [];
     $this->clipGrid($group);
     if($this->semantic_classes)
@@ -117,7 +117,7 @@ class LineGraph extends PointGraph {
    * $points = array of array($x, $y, $item, $dataset, $index)
    *   use NULL $item for non-data points
    */
-  public function drawLine($dataset, $points, $y_bottom, $colour_stroke = false)
+  public function drawLine($dataset, $points, $y_bottom)
   {
     $graph_line = '';
 
@@ -129,17 +129,17 @@ class LineGraph extends PointGraph {
       $dash = $this->getOption(['line_dash', $dataset]);
       $stroke_width = $this->getOption(['line_stroke_width', $dataset]);
       $attr = ['fill' => 'none'];
+
       $stroke_colour = $this->getColour(null, 0, $dataset, false, false);
-      if($colour_stroke) {
-        $scopt = $this->getOption(['stroke_colour', $dataset]);
-        if($scopt === 'fill')
-          $stroke_colour = $this->getColour(null, 0, $dataset);
-        elseif($scopt !== 'fillColour')
-          $stroke_colour = new Colour($this, $scopt);
-      }
+      $scopt = $this->getOption(['stroke_colour', $dataset]);
+      if($scopt === 'fill')
+        $stroke_colour = $this->getColour(null, 0, $dataset);
+      elseif($scopt !== 'fillColour')
+        $stroke_colour = new Colour($this, $scopt);
       if($stroke_colour->isNone())
         $stroke_colour = new Colour($this, 'black');
       $attr['stroke'] = $stroke_colour;
+
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;

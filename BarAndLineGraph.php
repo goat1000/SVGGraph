@@ -36,7 +36,7 @@ class BarAndLineGraph extends GroupedBarGraph {
 
     // prevent repeated labels
     unset($settings['label']);
-    $this->linegraph = new LineGraph($w, $h, $settings);
+    $this->linegraph = new MultiLineGraph($w, $h, $settings);
   }
 
   /**
