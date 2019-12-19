@@ -225,8 +225,19 @@ abstract class PointGraph extends GridGraph {
       $fill = $this->getColour(null, 0, $set, $gpat, $gpat);
     }
 
-    if($stroke_colour !== null)
-      $stroke_colour = new Colour($this, $stroke_colour);
+    if($stroke_colour !== null) {
+      if($stroke_colour == 'fillColour') {
+        $stroke_colour = new Colour($this, $fill, false, false);
+        if($stroke_colour->isNone())
+          $stroke_colour = new Colour($this, 'black');
+      } elseif($stroke_colour == 'fill') {
+        $stroke_colour = new Colour($this, $fill);
+        if($stroke_colour->isNone())
+          $stroke_colour = new Colour($this, 'black');
+      } else {
+        $stroke_colour = new Colour($this, $stroke_colour);
+      }
+    }
 
     return $this->createMarker($type, $size, $fill, $stroke_width,
       $stroke_colour, $opacity, $angle);
