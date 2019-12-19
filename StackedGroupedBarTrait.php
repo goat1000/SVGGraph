@@ -46,7 +46,7 @@ trait StackedGroupedBarTrait {
       $k = $item->key;
       $bar_pos = $this->gridPosition($item, $bnum);
 
-      if(!is_null($bar_pos)) {
+      if($bar_pos !== null) {
 
         for($l = 0; $l < $group_count; ++$l) {
           $start_bar = $this->groups[$l];
@@ -59,7 +59,7 @@ trait StackedGroupedBarTrait {
             if(!in_array($j, $datasets))
               continue;
             $item = $itemlist[$j];
-            if(!is_null($item->value)) {
+            if($item->value !== null) {
               if($item->value < 0) {
                 array_unshift($stack, [$j, $yneg]);
                 $yneg += $item->value;
@@ -116,7 +116,7 @@ trait StackedGroupedBarTrait {
   protected function barX($item, $index, &$bar, $axis, $dataset)
   {
     $bar_x = $this->gridPosition($item, $index);
-    if(is_null($bar_x))
+    if($bar_x === null)
       return null;
 
     $group = $this->dataset_groups[$dataset];

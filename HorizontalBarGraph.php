@@ -63,11 +63,11 @@ class HorizontalBarGraph extends GridGraph {
     if($start)
       $value += $start;
 
-    $startpos = is_null($start) ? $this->originX() : $this->gridX($start);
-    if(is_null($startpos))
+    $startpos = $start === null ? $this->originX() : $this->gridX($start);
+    if($startpos === null)
       $startpos = $this->originX();
     $pos = $this->gridX($value);
-    if(is_null($pos)) {
+    if($pos === null) {
       $bar['width'] = 0;
     } else {
       $l1 = $this->clampHorizontal($startpos);
@@ -84,7 +84,7 @@ class HorizontalBarGraph extends GridGraph {
   protected function barX($item, $index, &$bar, $axis, $dataset)
   {
     $bar_y = $this->gridPosition($item, $index);
-    if(is_null($bar_y))
+    if($bar_y === null)
       return null;
 
     $bar['y'] = $bar_y - $this->calculated_bar_space - $this->calculated_bar_width;
@@ -128,7 +128,7 @@ class HorizontalBarGraph extends GridGraph {
       $pos = str_replace(['left','centre','right'], 'outside right inside', $pos);
 
     // flip sides for negative values
-    if(!is_null($item) && $item->value < 0) {
+    if($item !== null && $item->value < 0) {
       if(strpos($pos, 'right') !== false)
         $pos = str_replace('right', 'left', $pos);
       elseif(strpos($pos, 'left') !== false)

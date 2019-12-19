@@ -92,7 +92,7 @@ class Legend {
     $text = '';
     $entry = count($this->entry_details);
     $itext = $item->legend_text;
-    if(!is_null($itext))
+    if($itext !== null)
       $text = $itext;
 
     if($text == '') {

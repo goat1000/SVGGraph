@@ -340,7 +340,7 @@ class DisplayAxis {
   public function drawDivisions($x, $y, $g_width, $g_height)
   {
     $path_info = $this->getDivisionPathInfo(false, $g_width, $g_height);
-    if(is_null($path_info))
+    if($path_info === null)
       return '';
 
     $points = $this->axis->getGridPoints(0);
@@ -360,7 +360,7 @@ class DisplayAxis {
   public function drawSubDivisions($x, $y, $g_width, $g_height)
   {
     $path_info = $this->getDivisionPathInfo(true, $g_width, $g_height);
-    if(is_null($path_info))
+    if($path_info === null)
       return '';
 
     $points = $this->axis->getGridSubdivisions($this->minimum_subdivision,

@@ -58,7 +58,7 @@ class Javascript {
    */
   public function addFunction($name, $realname = null)
   {
-    if(is_null($realname))
+    if($realname === null)
       $realname = $name;
 
     if(isset($this->functions[$realname]))
@@ -460,7 +460,7 @@ class Javascript {
   {
     if(!isset($element['id']))
       $element['id'] = $this->graph->newID();
-    if(is_null($target))
+    if($target === null)
       $target = $element['id'];
     $id = $duplicate ? $this->graph->newID() : $element['id'];
 
@@ -567,7 +567,7 @@ class Javascript {
 
             $var .= '={' . implode(',', $vs) . '}';
           }
-        } elseif(!is_null($value)) {
+        } elseif($value !== null) {
           $var .= '=' . $value;
         }
         $vlist[] = $var;

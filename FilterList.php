@@ -97,7 +97,7 @@ class FilterList {
    */
   public function add($type, $params = null)
   {
-    $key = serialize([$type, $params]);
+    $key = md5(serialize([$type, $params]));
     if(isset($this->filters[$key]))
       return $this->filters[$key]['id'];
 

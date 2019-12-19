@@ -78,11 +78,11 @@ class PatternList {
     $back_opacity = '';
     if(array_key_exists('back_colour', $pattern)) {
       $back_colour = $pattern['back_colour'];
-      if(!is_null($back_colour) && strpos($back_colour, ':') !== false)
+      if($back_colour !== null && strpos($back_colour, ':') !== false)
         list($back_colour, $back_opacity) = explode(':', $back_colour);
     }
 
-    if(!is_null($back_colour)) {
+    if($back_colour !== null) {
       $rect = [
         'width' => $pattern['width'],
         'height' => $pattern['height'],

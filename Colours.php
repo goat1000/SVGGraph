@@ -48,7 +48,7 @@ class Colours implements \Countable {
   public function setup($count, $datasets = null)
   {
     if($this->fallback !== false) {
-      if(!is_null($datasets)) {
+      if($datasets !== null) {
         foreach($this->fallback as $colour) {
           // in fallback, each dataset gets one colour
           $this->colours[] = new ColourArray([$colour]);
@@ -69,7 +69,7 @@ class Colours implements \Countable {
   public function getColour($index, $dataset = null)
   {
     // default is for a colour per dataset
-    if(is_null($dataset))
+    if($dataset === null)
       $dataset = 0;
 
     // see if specific dataset exists
@@ -116,7 +116,7 @@ class Colours implements \Countable {
    */
   public function set($dataset, $colours)
   {
-    if(is_null($colours)) {
+    if($colours === null) {
       if(array_key_exists($dataset, $this->colours))
         unset($this->colours[$dataset]);
       return;

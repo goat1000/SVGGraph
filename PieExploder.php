@@ -91,7 +91,7 @@ class PieExploder {
     }
     $amt = $range > 0 ? $diff / $range : 0;
     $iamt = $item->explode;
-    if(!is_null($iamt))
+    if($iamt !== null)
       $amt = $iamt;
     $explode = $this->explode_amount * $amt;
     $explode_direction = $angle_start + ($angle_end - $angle_start) * 0.5;

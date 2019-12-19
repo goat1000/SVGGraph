@@ -927,10 +927,15 @@ abstract class Graph {
     $stroke_width = $this->getItemOption('stroke_width', $dataset, $item);
     if($stroke_width > 0) {
       $stroke_colour = $this->getItemOption('stroke_colour', $dataset, $item);
-      if($stroke_colour == 'fillColour')
+      if($stroke_colour == 'fillColour') {
         $stroke_colour = $this->getColour($item, $key, $dataset, false, false);
-      elseif($stroke_colour == 'fill')
+        if($stroke_colour->isNone())
+          $stroke_colour = new Colour($this, 'black');
+      } elseif($stroke_colour == 'fill') {
         $stroke_colour = $this->getColour($item, $key, $dataset);
+        if($stroke_colour->isNone())
+          $stroke_colour = new Colour($this, 'black');
+      }
 
       $attr['stroke'] = new Colour($this, $stroke_colour);
       if($attr['stroke']->opacity() < 1)

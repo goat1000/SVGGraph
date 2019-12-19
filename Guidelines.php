@@ -112,7 +112,7 @@ class Guidelines {
         $value = Graph::dateConvert($value);
 
         // if the value could not be converted it can't be drawn either
-        if(is_null($value))
+        if($value === null)
           return;
       } else if($this->assoc_keys) {
         // $value is a key - must be converted later when the axis
@@ -167,9 +167,9 @@ class Guidelines {
       $guideline['text'] = $topts;
 
     // update maxima and minima
-    if(is_null($this->max_guide[$axis]) || $value > $this->max_guide[$axis])
+    if($this->max_guide[$axis] === null || $value > $this->max_guide[$axis])
       $this->max_guide[$axis] = $value;
-    if(is_null($this->min_guide[$axis]) || $value < $this->min_guide[$axis])
+    if($this->min_guide[$axis] === null || $value < $this->min_guide[$axis])
       $this->min_guide[$axis] = $value;
 
     // can flip the axes now the min/max are stored
@@ -375,7 +375,7 @@ class Guidelines {
     if($axis == 'x') {
       $y = $this->coords->transform('gt', 'y');
       $x = $this->coords->transform('g' . $strvalue, 'x', null);
-      if(is_null($x))
+      if($x === null)
         return new PathData;
 
       if(is_string($h)) {
@@ -389,7 +389,7 @@ class Guidelines {
     } else {
       $x = $this->coords->transform('gl', 'x');
       $y = $this->coords->transform('g' . $strvalue, 'y', null);
-      if(is_null($y))
+      if($y === null)
         return new PathData;
 
       if(is_string($w)) {

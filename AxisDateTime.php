@@ -186,8 +186,8 @@ class AxisDateTime extends Axis {
       }
     }
 
-    $this->axis_text_format = is_null($text_format) ?
-      AxisDateTime::$formats[$this->grid_units] : $text_format;
+    $this->axis_text_format = $text_format !== null ? $text_format :
+      AxisDateTime::$formats[$this->grid_units];
   }
 
   /**
@@ -241,7 +241,7 @@ class AxisDateTime extends Axis {
         }
       }
     }
-    if(is_null($choice)) {
+    if($choice === null) {
       if($subdivide)
         return null;
       throw new \Exception('Unable to find divisions for DateTime axis');
@@ -404,7 +404,7 @@ class AxisDateTime extends Axis {
    */
   public function position($index, $item = null)
   {
-    if(is_null($item)) {
+    if($item === null) {
       $value = $index;
 
       // support '10 hours' type of position
@@ -475,7 +475,7 @@ class AxisDateTime extends Axis {
    */
   public function getGridPoints($start)
   {
-    if(is_null($start))
+    if($start === null)
       return;
     $c = $pos = 0;
     $dlength = $this->length + 1; // allow 1 pixel overflow
@@ -526,7 +526,7 @@ class AxisDateTime extends Axis {
         $this->length, $min_space, $this->division);
 
       // if no divisions found, stop now
-      if(is_null($div))
+      if($div === null)
         return $subdivs;
       $division = $div[2];
 

@@ -49,9 +49,9 @@ class ScatterGraph extends PointGraph {
     $bnum = 0;
     foreach($this->values[$dataset] as $item) {
       $x = $this->gridPosition($item, $bnum);
-      if(!is_null($item->value) && !is_null($x)) {
+      if($item->value !== null && $x !== null) {
         $y = $this->gridY($item->value);
-        if(!is_null($y)) {
+        if($y !== null) {
           $marker_id = $this->markerLabel($dataset, $bnum, $item, $x, $y);
           $extra = empty($marker_id) ? null : ['id' => $marker_id];
           $this->addMarker($x, $y, $item, $extra, $dataset);

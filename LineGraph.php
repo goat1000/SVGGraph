@@ -62,12 +62,12 @@ class LineGraph extends PointGraph {
     $line_breaks = $this->getOption(['line_breaks', $dataset]);
     $points = [];
     foreach($this->values[$dataset] as $item) {
-      if($line_breaks && is_null($item->value) && count($points) > 0) {
+      if($line_breaks && $item->value === null && count($points) > 0) {
         $graph_line .= $this->drawLine($dataset, $points, $y_bottom, true);
         $points = [];
       } else {
         $x = $this->gridPosition($item, $bnum);
-        if(!is_null($item->value) && !is_null($x)) {
+        if($item->value !== null && $x !== null) {
           $y = $this->gridY($item->value);
           $points[] = [$x, $y, $item, $dataset, $bnum];
         }
@@ -198,7 +198,7 @@ class LineGraph extends PointGraph {
     foreach($points as $point) {
       list($x, $y, $item, $dataset, $index) = $point;
 
-      if(!is_null($item)) {
+      if($item !== null) {
         $marker_id = $this->markerLabel($dataset, $index, $item, $x, $y);
         $extra = empty($marker_id) ? null : ['id' => $marker_id];
         $this->addMarker($x, $y, $item, $extra, $dataset);
@@ -247,7 +247,7 @@ class LineGraph extends PointGraph {
     $line['d'] = new PathData('M', $x, $y, 'l', $w, 0);
     $graph_line = $this->element('path', $line);
 
-    if(!is_null($entry->style['fill_style'])) {
+    if($entry->style['fill_style'] !== null) {
       $fill = $entry->style['fill_style'];
       $fill['d'] = new PathData('M', $x, $y, 'l', $w, 0, 0, $h1, -$w, 0, 'z');
       $graph_line = $this->element('path', $fill) . $graph_line;

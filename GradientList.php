@@ -40,7 +40,7 @@ class GradientList {
    */
   public function addGradient($colours, $key = null, $radial = false)
   {
-    if(is_null($key) || !isset($this->gradients[$key])) {
+    if($key === null || !isset($this->gradients[$key])) {
 
       if($radial) {
         // if this is a radial gradient, it must end with 'r'
@@ -52,12 +52,12 @@ class GradientList {
       }
 
       // find out if this gradient already stored
-      $hash = serialize($colours);
+      $hash = md5(serialize($colours));
       if(isset($this->gradient_map[$hash]))
         return $this->gradient_map[$hash];
 
       $id = $this->graph->newID();
-      if(is_null($key))
+      if($key === null)
         $key = $id;
       $this->gradients[$key] = ['id' => $id, 'colours' => $colours];
       $this->gradient_map[$hash] = $id;

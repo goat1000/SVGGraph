@@ -75,7 +75,7 @@ class Bar3DGraph extends ThreeDGraph {
     $start = null, $axis = null)
   {
     $pos = $this->barY($item->value, $tmp_bar, $start, $axis);
-    if(is_null($pos) || $pos > $this->height - $this->pad_bottom)
+    if($pos === null || $pos > $this->height - $this->pad_bottom)
       return '';
 
     $side_overlay = min(1, max(0, $this->bar_side_overlay_opacity));
@@ -202,7 +202,7 @@ class Bar3DGraph extends ThreeDGraph {
   protected function drawBar(DataItem $item, $index, $start = 0, $axis = null,
     $dataset = 0, $options = [])
   {
-    if(is_null($item->value))
+    if($item->value === null)
       return '';
 
     $bar = $this->barDimensions($item, $index, $start, $axis, $dataset);

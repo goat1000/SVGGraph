@@ -42,6 +42,9 @@ class Colour {
       return;
     }
 
+    if(is_object($colour) && get_class($colour) === 'Goat1000\\SVGGraph\\Colour')
+      $colour = $colour->colour;
+
     if(is_string($colour)) {
       $this->extract($colour);
       return;

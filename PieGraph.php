@@ -79,7 +79,7 @@ class PieGraph extends Graph {
     if($this->aspect_ratio != 'auto' && $this->aspect_ratio <= 0)
       $this->aspect_ratio = 1.0;
 
-    if(is_null($this->end_angle) || !is_numeric($this->end_angle) ||
+    if($this->end_angle === null || !is_numeric($this->end_angle) ||
       $this->end_angle == $this->start_angle ||
       abs($this->end_angle - $this->start_angle) % 360 == 0) {
       $this->full_angle = M_PI * 2.0;
@@ -175,7 +175,7 @@ class PieGraph extends Graph {
     $values = [];
     foreach($this->values[$this->dataset] as $position => $item) {
       $values[] = [$position, $item->value, $item];
-      if(!is_null($item->value))
+      if($item->value !== null)
         ++$vcount;
     }
     if($this->sort) {
@@ -403,7 +403,7 @@ class PieGraph extends Graph {
 
     $sum = 0;
     foreach($this->values[$this->dataset] as $item) {
-      if(!is_null($item->value) && !is_numeric($item->value))
+      if($item->value !== null && !is_numeric($item->value))
         throw new \Exception('Non-numeric value');
       $sum += $item->value;
     }

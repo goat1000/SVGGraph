@@ -150,10 +150,8 @@ class PieSliceEdge {
    */
   public function draw(&$graph, $x_centre, $y_centre, $depth, $attr = null)
   {
-    if(is_null($attr))
-      $attr = $this->slice['attr'];
-    else
-      $attr = array_merge($this->slice['attr'], $attr);
+    $attr = ($attr === null ? $this->slice['attr'] :
+      array_merge($this->slice['attr'], $attr));
     $attr['d'] = $this->getPath($x_centre, $y_centre, $depth);
     return $graph->element('path', $attr);
   }

@@ -164,7 +164,7 @@ abstract class PointGraph extends GridGraph {
   protected function createMarker($type, $size, $fill, $stroke_width,
     $stroke_colour, $opacity, $angle)
   {
-    $m_key = serialize(func_get_args());
+    $m_key = md5(serialize(func_get_args()));
     if(isset($this->marker_types[$m_key]))
       return $this->marker_types[$m_key];
 
@@ -302,11 +302,11 @@ abstract class PointGraph extends GridGraph {
         $start = array_shift($range);
         $end = array_shift($range);
 
-        if(!is_null($start) && !is_numeric($start))
+        if($start !== null && !is_numeric($start))
           throw new \Exception('Best fit range start not numeric or NULL');
-        if(!is_null($end) && !is_numeric($end))
+        if($end !== null && !is_numeric($end))
           throw new \Exception('Best fit range end not numeric or NULL');
-        if(!is_null($start) && !is_null($end) && $end <= $start)
+        if($start !== null && $end !== null && $end <= $start)
           throw new \Exception('Best fit range start >= end');
       }
 
@@ -391,9 +391,9 @@ abstract class PointGraph extends GridGraph {
     $count = 0;
     $assoc = $this->values->associativeKeys();
     foreach($this->markers[$dataset] as $k => $v) {
-      if(!is_null($start) && $start > ($assoc ? $k : $v->key))
+      if($start !== null && $start > ($assoc ? $k : $v->key))
         continue;
-      if(!is_null($end) && $end < ($assoc ? $k : $v->key))
+      if($end !== null && $end < ($assoc ? $k : $v->key))
         continue;
       $x = $v->x - $this->pad_left;
       $y = $this->height - $this->pad_bottom - $v->y;
@@ -412,8 +412,8 @@ abstract class PointGraph extends GridGraph {
     $mean_y = $sum_y / $count;
 
     // initialize min and max points of line
-    $x_min = is_null($start) ? 0 : max($this->unitsX($start), 0);
-    $x_max = is_null($end) ? $this->g_width :
+    $x_min = $start === null ? 0 : max($this->unitsX($start), 0);
+    $x_max = $end === null ? $this->g_width :
       min($this->unitsX($end), $this->g_width);
     $y_min = 0;
     $y_max = $this->g_height;
@@ -434,7 +434,7 @@ abstract class PointGraph extends GridGraph {
       if($project_end) {
         $pcoords = $this->boxLine($coords['x2'], $this->g_width, $y_min, $y_max,
           $slope, $y_int);
-        if(!is_null($pcoords)) {
+        if($pcoords !== null) {
           $x1 = $pcoords['x1'] + $this->pad_left;
           $x2 = $pcoords['x2'] + $this->pad_left;
           $y1 = $this->height - $this->pad_bottom - $pcoords['y1'];
@@ -445,7 +445,7 @@ abstract class PointGraph extends GridGraph {
       if($project_start) {
         $pcoords = $this->boxLine(0, $coords['x1'], $y_min, $y_max,
           $slope, $y_int);
-        if(!is_null($pcoords)) {
+        if($pcoords !== null) {
           $x1 = $pcoords['x1'] + $this->pad_left;
           $x2 = $pcoords['x2'] + $this->pad_left;
           $y1 = $this->height - $this->pad_bottom - $pcoords['y1'];

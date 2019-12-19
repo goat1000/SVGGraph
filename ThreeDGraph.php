@@ -283,7 +283,7 @@ abstract class ThreeDGraph extends GridGraph {
   public function isVisible($item, $dataset = 0)
   {
     // 0 values are visible, NULLs are not
-    return !is_null($item->value);
+    return $item->value !== null;
   }
 }
 
