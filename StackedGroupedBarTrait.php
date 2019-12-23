@@ -25,8 +25,6 @@ trait StackedGroupedBarTrait {
 
   use GroupedBarTrait;
 
-  protected $bar_visibility = [];
-
   // stores the actual group starts
   protected $groups = [];
 
