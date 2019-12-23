@@ -1,3 +1,19 @@
+Version 3.4 (20/12/2019)
+-----------
+- Added SVG filter based shadows and options for adjusting them.
+- Added legend spacing and padding options.
+- Added support for stroking graph, tooltip, legend and label lines using
+  gradients and patterns.
+- Added support for stroking graph lines using fill colour or fill style.
+- Added support for filling markers with gradients and patterns.
+- Added support for displaying gradients in radar graph grid stripes.
+- Added simple Javascript minifier function.
+- Fixed 3D bar graphs having spiky corners at the top.
+- Fixed histogram X-axis being truncated.
+- Fixed 3D pie graph side shading drawing over edges.
+- Fixed lousy axis top end calculation when non-zero bottom end specified.
+- Fixed legend entries not showing for floating graph bars starting at zero.
+
 Version 3.3 (22/11/2019)
 -----------
 - Added ArrayGraph type for simple multiple-graph documents.
