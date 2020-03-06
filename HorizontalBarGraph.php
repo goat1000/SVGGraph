@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2019 Graham Breach
+ * Copyright (C) 2011-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@
 
 namespace Goat1000\SVGGraph;
 
-class HorizontalBarGraph extends GridGraph {
+class HorizontalBarGraph extends HorizontalGridGraph {
 
   use BarGraphTrait;
 
@@ -32,7 +32,6 @@ class HorizontalBarGraph extends GridGraph {
       $settings['show_data_labels'] = $settings['show_bar_labels'];
 
     $fs = [
-      'flip_axes' => true,
       'label_centre' => true,
     ];
     $fs = array_merge($fs, $fixed_settings);

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2019 Graham Breach
+ * Copyright (C) 2009-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -39,14 +39,12 @@ abstract class GridGraph extends Graph {
   protected $min_guide = ['x' => null, 'y' => null];
   protected $max_guide = ['x' => null, 'y' => null];
 
-  private $grid_limit;
+  protected $grid_limit;
   private $grid_clip_id;
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
     $fs = [
-      // Set to true for horizontal graphs
-      'flip_axes' => false,
       // Set to true for block-based labelling
       'label_centre' => false,
       // Set to true for graphs that don't support multiple axes (e.g. stacked)
@@ -54,23 +52,19 @@ abstract class GridGraph extends Graph {
     ];
     $fs = array_merge($fs, $fixed_settings);
 
-    if(is_array($settings)) {
-      // deprecated options need converting
-      if(isset($settings['show_label_h']) &&
-        !isset($settings['show_axis_text_h']))
-        $settings['show_axis_text_h'] = $settings['show_label_h'];
-      if(isset($settings['show_label_v']) &&
-        !isset($settings['show_axis_text_v']))
-        $settings['show_axis_text_v'] = $settings['show_label_v'];
+    // deprecated options need converting
+    if(isset($settings['show_label_h']) &&
+      !isset($settings['show_axis_text_h']))
+      $settings['show_axis_text_h'] = $settings['show_label_h'];
+    if(isset($settings['show_label_v']) &&
+      !isset($settings['show_axis_text_v']))
+      $settings['show_axis_text_v'] = $settings['show_label_v'];
 
-      // convert _x and _y labels to _h and _v
-      $lv = $fs['flip_axes'] ? 'label_x' : 'label_y';
-      $lh = $fs['flip_axes'] ? 'label_y' : 'label_x';
-      if(!empty($settings[$lv]) && empty($settings['label_v']))
-        $settings['label_v'] = $settings[$lv];
-      if(!empty($settings[$lh]) && empty($settings['label_h']))
-        $settings['label_h'] = $settings[$lh];
-    }
+    // convert _x and _y labels to _h and _v
+    if(!empty($settings['label_y']) && empty($settings['label_v']))
+      $settings['label_v'] = $settings['label_y'];
+    if(!empty($settings['label_x']) && empty($settings['label_h']))
+      $settings['label_h'] = $settings['label_x'];
 
     parent::__construct($w, $h, $settings, $fs);
   }
@@ -196,8 +190,7 @@ abstract class GridGraph extends Graph {
     $max_x = [0];
     $max_y = [0];
 
-    $display_axis = $this->getDisplayAxis($x_axes[0], 0, 'h',
-      $this->getOption('flip_axes') ? 'y' : 'x');
+    $display_axis = $this->getDisplayAxis($x_axes[0], 0, 'h', 'x');
     $m = $display_axis->measure();
     $min_x[] = $m['x'];
     $min_y[] = $m['y'] + $length_y;
@@ -241,8 +234,7 @@ abstract class GridGraph extends Graph {
    */
   protected function yAxisBBox($axis, $length, $axis_no)
   {
-    $display_axis = $this->getDisplayAxis($axis, $axis_no, 'v',
-      $this->getOption('flip_axes') ? 'x' : 'y');
+    $display_axis = $this->getDisplayAxis($axis, $axis_no, 'v', 'y');
     $measurement = $display_axis->measure();
 
     $results = [
@@ -394,6 +386,17 @@ abstract class GridGraph extends Graph {
   }
 
   /**
+   * Returns fixed min and max option for an axis
+   */
+  protected function getFixedAxisOptions($axis, $index)
+  {
+    $a = $axis == 'y' ? 'v' : 'h';
+    $min = $this->getOption(['axis_min_' . $a, $index]);
+    $max = $this->getOption(['axis_max_' . $a, $index]);
+    return [$min, $max];
+  }
+
+  /**
    * Returns an array containing the value and key axis min and max
    */
   protected function getAxisEnds()
@@ -410,21 +413,9 @@ abstract class GridGraph extends Graph {
     }
     $y_axis_count = $this->yAxisCount();
     $x_axis_count = $this->xAxisCount();
-    if($this->getOption('flip_axes')) {
-      $x_min_fixed = 'axis_min_v';
-      $x_max_fixed = 'axis_max_v';
-      $y_min_fixed = 'axis_min_h';
-      $y_max_fixed = 'axis_max_h';
-    } else {
-      $y_min_fixed = 'axis_min_v';
-      $y_max_fixed = 'axis_max_v';
-      $x_min_fixed = 'axis_min_h';
-      $x_max_fixed = 'axis_max_h';
-    }
 
     for($i = 0; $i < $y_axis_count; ++$i) {
-      $fixed_max = $this->getOption([$y_max_fixed, $i]);
-      $fixed_min = $this->getOption([$y_min_fixed, $i]);
+      list($fixed_min, $fixed_max) = $this->getFixedAxisOptions('y', $i);
 
       // validate
       if(is_numeric($fixed_min) && is_numeric($fixed_max) &&
@@ -463,8 +454,7 @@ abstract class GridGraph extends Graph {
     }
 
     for($i = 0; $i < $x_axis_count; ++$i) {
-      $fixed_max = $this->getOption([$x_max_fixed, $i]);
-      $fixed_min = $this->getOption([$x_min_fixed, $i]);
+      list($fixed_min, $fixed_max) = $this->getFixedAxisOptions('x', $i);
 
       if($this->datetime_keys) {
         // 0 is 1970-01-01, not a useful minimum
@@ -530,7 +520,6 @@ abstract class GridGraph extends Graph {
 
     $x_axes = [];
     $x_axis_count = $this->xAxisCount();
-    $flip_axes = $this->getOption('flip_axes');
     for($i = 0; $i < $x_axis_count; ++$i) {
 
       $x_min_space = $this->getOption(['minimum_grid_spacing_h', $i],
@@ -543,53 +532,24 @@ abstract class GridGraph extends Graph {
         $this->minimum_grid_spacing_h = $x_min_space = 1;
       }
 
-      if($flip_axes) {
-        $max_h = $ends['v_max'][$i];
-        $min_h = $ends['v_min'][$i];
-        $x_min_unit = $this->getOption(['minimum_units_y', $i]);
-        $x_fit = false;
-        $x_units_after = (string)$this->getOption(['units_y', $i]);
-        $x_units_before = (string)$this->getOption(['units_before_y', $i]);
-        $x_decimal_digits = $this->getOption(['decimal_digits_y', $i],
-          'decimal_digits');
-        $x_text_callback = $this->getOption(['axis_text_callback_y', $i],
-          'axis_text_callback');
-        $x_values = false;
-      } else {
-        $max_h = $ends['k_max'][$i];
-        $min_h = $ends['k_min'][$i];
-        $x_min_unit = 1;
-        $x_fit = true;
-        $x_units_after = (string)$this->getOption(['units_x', $i]);
-        $x_units_before = (string)$this->getOption(['units_before_x', $i]);
-        $x_decimal_digits = $this->getOption(['decimal_digits_x', $i],
-          'decimal_digits');
-        $x_text_callback = $this->getOption(['axis_text_callback_x', $i],
-          'axis_text_callback');
-        $x_values = $this->multi_graph ? $this->multi_graph : $this->values;
-      }
+      $max_h = $ends['k_max'][$i];
+      $min_h = $ends['k_min'][$i];
+      $x_min_unit = 1;
+      $x_fit = true;
+      $x_units_after = (string)$this->getOption(['units_x', $i]);
+      $x_units_before = (string)$this->getOption(['units_before_x', $i]);
+      $x_decimal_digits = $this->getOption(['decimal_digits_x', $i],
+        'decimal_digits');
+      $x_text_callback = $this->getOption(['axis_text_callback_x', $i],
+        'axis_text_callback');
+      $x_values = $this->multi_graph ? $this->multi_graph : $this->values;
 
       if(!is_numeric($max_h) || !is_numeric($min_h))
         throw new \Exception('Non-numeric min/max');
 
-      if($min_h == $max_h && $flip_axes) {
-        if($x_min_unit > 0) {
-          $inc = $x_min_unit;
-        } else {
-          $fallback = $this->getOption('axis_fallback_max');
-          $inc = $fallback > 0 ? $fallback : 1;
-        }
-        $max_h += $inc;
-      }
-
-      if($this->datetime_keys && !$flip_axes) {
+      if($this->datetime_keys) {
         $x_axis = new AxisDateTime($x_len, $max_h, $min_h, $x_min_space,
           $grid_division, $this->settings);
-      } elseif($this->getOption(['log_axis_y', $i]) && $flip_axes) {
-        $x_axis = new AxisLog($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
-          $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
-          $this->getOption(['log_axis_y_base', $i]),
-          $grid_division, $x_text_callback);
       } elseif(!is_numeric($grid_division)) {
         $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
           $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
@@ -599,7 +559,7 @@ abstract class GridGraph extends Graph {
           $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
           $x_values);
       }
-      if($this->getOption('label_centre') && !$flip_axes)
+      if($this->getOption('label_centre'))
         $x_axis->bar();
       $x_axes[] = $x_axis;
     }
@@ -625,32 +585,23 @@ abstract class GridGraph extends Graph {
         $this->setOption('minimum_grid_spacing_v', $y_min_space, $i);
       }
 
-      if($flip_axes) {
-        $yx = 'x';
-        $max_v = $ends['k_max'][$i];
-        $min_v = $ends['k_min'][$i];
-        $y_min_unit = 1;
-        $y_fit = true;
-        $y_values = $this->multi_graph ? $this->multi_graph : $this->values;
-      } else {
-        $yx = 'y';
-        $max_v = $ends['v_max'][$i];
-        $min_v = $ends['v_min'][$i];
-        $y_min_unit = $this->getOption(['minimum_units_y', $i]);
-        $y_fit = false;
-        $y_values = false;
-      }
-      $y_text_callback = $this->getOption(['axis_text_callback_' . $yx, $i],
+      $max_v = $ends['v_max'][$i];
+      $min_v = $ends['v_min'][$i];
+      $y_min_unit = $this->getOption(['minimum_units_y', $i]);
+      $y_fit = false;
+      $y_values = false;
+
+      $y_text_callback = $this->getOption(['axis_text_callback_y', $i],
         'axis_text_callback');
-      $y_decimal_digits = $this->getOption(['decimal_digits_' . $yx, $i],
+      $y_decimal_digits = $this->getOption(['decimal_digits_y', $i],
         'decimal_digits');
-      $y_units_after = (string)$this->getOption(['units_' . $yx, $i]);
-      $y_units_before = (string)$this->getOption(['units_before_' . $yx, $i]);
+      $y_units_after = (string)$this->getOption(['units_y', $i]);
+      $y_units_before = (string)$this->getOption(['units_before_y', $i]);
 
       if(!is_numeric($max_v) || !is_numeric($min_v))
         throw new \Exception('Non-numeric min/max');
 
-      if($min_v == $max_v && !$flip_axes) {
+      if($min_v == $max_v) {
         if($y_min_unit > 0) {
           $inc = $y_min_unit;
         } else {
@@ -660,10 +611,7 @@ abstract class GridGraph extends Graph {
         $max_v += $inc;
       }
 
-      if($this->datetime_keys && $flip_axes) {
-        $y_axis = new AxisDateTime($y_len, $max_v, $min_v, $y_min_space,
-          $grid_division, $this->settings);
-      } elseif($this->getOption(['log_axis_y', $i]) && !$flip_axes) {
+      if($this->getOption(['log_axis_y', $i])) {
         $y_axis = new AxisLog($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
           $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
           $this->getOption(['log_axis_y_base', $i]),
@@ -677,8 +625,6 @@ abstract class GridGraph extends Graph {
           $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
           $y_values);
       }
-      if($this->getOption('label_centre') && $flip_axes)
-        $y_axis->bar();
       $y_axis->reverse(); // because axis starts at bottom
 
       $y_axes[] = $y_axis;
@@ -731,15 +677,9 @@ abstract class GridGraph extends Graph {
     $y_axis->getGridPoints(null);
     $x_axis->getGridPoints(null);
 
-    $label_centre = $this->getOption('label_centre');
-    if($this->getOption('flip_axes')) {
-      $this->grid_limit = $label_centre ?
-        $this->g_height - ($y_axis->unit() / 2) : $this->g_height;
-    } else {
-      $this->grid_limit = $label_centre ?
-        $this->g_width - ($x_axis->unit() / 2) : $this->g_width;
-    }
-    $this->grid_limit += 0.01; // allow for floating-point inaccuracy
+    $this->grid_limit = 0.01 + $this->g_width;
+    if($this->getOption('label_centre'))
+      $this->grid_limit -= $x_axis->unit() / 2;
     $this->grid_calc_done = true;
   }
 
@@ -764,9 +704,9 @@ abstract class GridGraph extends Graph {
    */
   protected function getSubDivsY($axis)
   {
-    return $this->y_axes[$axis]->getGridSubdivisions(
-      $this->minimum_subdivision,
-      $this->getOption('flip_axes') ? 1 : $this->getOption(['minimum_units_y', $axis]),
+    $a = $this->y_axes[$axis];
+    return $a->getGridSubdivisions($this->getOption('minimum_subdivision'),
+      $this->getOption(['minimum_units_y', $axis]),
       $this->height - $this->pad_bottom,
       $this->getOption(['subdivision_v', $axis]));
   }
@@ -776,11 +716,9 @@ abstract class GridGraph extends Graph {
    */
   protected function getSubDivsX($axis)
   {
-    return $this->x_axes[$axis]->getGridSubdivisions(
-      $this->minimum_subdivision,
-      $this->getOption('flip_axes') ? $this->getOption(['minimum_units_y', $axis]) : 1,
-      $this->pad_left,
-      $this->getOption(['subdivision_h', $axis]));
+    $a = $this->x_axes[$axis];
+    return $a->getGridSubdivisions($this->getOption('minimum_subdivision'), 1,
+      $this->pad_left, $this->getOption(['subdivision_h', $axis]));
   }
 
   /**
@@ -825,11 +763,10 @@ abstract class GridGraph extends Graph {
   {
     $this->calcGrid();
     $axes = $label_group = $axis_text = '';
-    $type = $this->getOption('flip_axes') ? ['h'=>'y','v'=>'x'] : ['h'=>'x','v'=>'y'];
 
     foreach($this->x_axes as $axis_no => $axis) {
       if($axis !== null) {
-        $display_axis = $this->getDisplayAxis($axis, $axis_no, 'h', $type['h']);
+        $display_axis = $this->getDisplayAxis($axis, $axis_no, 'h', 'x');
         list($x, $y) = $this->getAxisLocation('h', $axis_no);
         $axes .= $display_axis->draw($x, $y, $this->pad_left, $this->pad_top,
           $this->g_width, $this->g_height);
@@ -837,7 +774,7 @@ abstract class GridGraph extends Graph {
     }
     foreach($this->y_axes as $axis_no => $axis) {
       if($axis !== null) {
-        $display_axis = $this->getDisplayAxis($axis, $axis_no, 'v', $type['v']);
+        $display_axis = $this->getDisplayAxis($axis, $axis_no, 'v', 'y');
         list($x, $y) = $this->getAxisLocation('v', $axis_no);
         $axes .= $display_axis->draw($x, $y, $this->pad_left, $this->pad_top,
           $this->g_width, $this->g_height);
@@ -854,12 +791,70 @@ abstract class GridGraph extends Graph {
   {
     if($path->isEmpty() || $colour == 'none')
       return '';
-    $opts = ['d' => $path, 'stroke' => $colour];
+    $opts = ['d' => $path, 'stroke' => new Colour($this, $colour)];
     if(!empty($dash))
       $opts['stroke-dasharray'] = $dash;
     if(!empty($fill))
       $opts['fill'] = $fill;
     return $this->element('path', $opts);
+  }
+
+  /**
+   * Returns the SVG fragment for grid background stripes
+   */
+  protected function getGridStripes()
+  {
+    if(!$this->getOption('grid_back_stripe'))
+      return '';
+
+    // use array of colours if available, otherwise stripe a single colour
+    $colours = $this->getOption('grid_back_stripe_colour');
+    if(!is_array($colours))
+      $colours = [null, $colours];
+    $opacity = $this->getOption('grid_back_stripe_opacity');
+
+    $bars = '';
+    $c = 0;
+    $num_colours = count($colours);
+    $rect = [
+      'x' => new Number($this->pad_left),
+      'width' => new Number($this->g_width),
+    ];
+    if($opacity != 1)
+      $rect['fill-opacity'] = $opacity;
+    $points = $this->getGridPointsY($this->main_y_axis);
+    $first = array_shift($points);
+    $last_pos = $first->position;
+    foreach($points as $grid_point) {
+      $cc = $colours[$c % $num_colours];
+      if($cc !== null) {
+        $rect['y'] = $grid_point->position;
+        $rect['height'] = $last_pos - $grid_point->position;
+        $rect['fill'] = new Colour($this, $cc);
+        $bars .= $this->element('rect', $rect);
+      }
+      $last_pos = $grid_point->position;
+      ++$c;
+    }
+    return $this->element('g', [], null, $bars);
+  }
+
+  /**
+   * Returns the crosshairs code
+   */
+  protected function getCrossHairs()
+  {
+    if(!$this->getOption('crosshairs'))
+      return '';
+
+    $ch = new CrossHairs($this, $this->pad_left, $this->pad_top,
+      $this->g_width, $this->g_height, $this->x_axes[$this->main_x_axis],
+      $this->y_axes[$this->main_y_axis], $this->values->associativeKeys(),
+      false, $this->encoding);
+
+    if($ch->enabled())
+      return $ch->getCrossHairs();
+    return '';
   }
 
   /**
@@ -876,17 +871,9 @@ abstract class GridGraph extends Graph {
     $width_num = new Number($this->g_width);
     $height_num = new Number($this->g_height);
 
-    $back = $subpath = $crosshairs = '';
+    $back = $subpath = '';
     $grid_group = ['class' => 'grid'];
-    if($this->getOption('crosshairs')) {
-      $ch = new CrossHairs($this, $this->pad_left, $this->pad_top,
-        $this->g_width, $this->g_height, $this->x_axes[$this->main_x_axis],
-        $this->y_axes[$this->main_y_axis], $this->values->associativeKeys(),
-        $this->encoding);
-
-      if($ch->enabled())
-        $crosshairs = $ch->getCrossHairs();
-    }
+    $crosshairs = $this->getCrossHairs();
 
     // if the grid is not displayed, stop now
     if(!$this->show_grid || (!$this->show_grid_h && !$this->show_grid_v))
@@ -904,54 +891,8 @@ abstract class GridGraph extends Graph {
         $rect['fill-opacity'] = $this->grid_back_opacity;
       $back = $this->element('rect', $rect);
     }
-    if($this->grid_back_stripe) {
-      // use array of colours if available, otherwise stripe a single colour
-      $colours = is_array($this->grid_back_stripe_colour) ?
-        $this->grid_back_stripe_colour :
-        [null, $this->grid_back_stripe_colour];
-      $grp = [];
-      $bars = '';
-      $c = 0;
-      $num_colours = count($colours);
-      if($this->getOption('flip_axes')) {
-        $rect = ['y' => $top_num, 'height' => $height_num];
-        if($this->grid_back_stripe_opacity != 1)
-          $rect['fill-opacity'] = $this->grid_back_stripe_opacity;
-        $points = $this->getGridPointsX($this->main_x_axis);
-        $first = array_shift($points);
-        $last_pos = $first->position;
-        foreach($points as $grid_point) {
-          $cc = $colours[$c % $num_colours];
-          if($cc !== null) {
-            $rect['x'] = $last_pos;
-            $rect['width'] = $grid_point->position - $last_pos;
-            $rect['fill'] = new Colour($this, $cc);
-            $bars .= $this->element('rect', $rect);
-          }
-          $last_pos = $grid_point->position;
-          ++$c;
-        }
-      } else {
-        $rect = ['x' => $left_num, 'width' => $width_num];
-        if($this->grid_back_stripe_opacity != 1)
-          $rect['fill-opacity'] = $this->grid_back_stripe_opacity;
-        $points = $this->getGridPointsY($this->main_y_axis);
-        $first = array_shift($points);
-        $last_pos = $first->position;
-        foreach($points as $grid_point) {
-          $cc = $colours[$c % $num_colours];
-          if($cc !== null) {
-            $rect['y'] = $grid_point->position;
-            $rect['height'] = $last_pos - $grid_point->position;
-            $rect['fill'] = new Colour($this, $cc);
-            $bars .= $this->element('rect', $rect);
-          }
-          $last_pos = $grid_point->position;
-          ++$c;
-        }
-      }
-      $back .= $this->element('g', $grp, null, $bars);
-    }
+    $back .= $this->getGridStripes();
+
     if($this->show_grid_subdivisions) {
       $subpath_h = new PathData();
       $subpath_v = new PathData();
@@ -1064,19 +1005,12 @@ abstract class GridGraph extends Graph {
    */
   protected function gridPosition($item, $index)
   {
-    $position = null;
-    $flip_axes = $this->getOption('flip_axes');
-    $axis = $flip_axes ? $this->y_axes[$this->main_y_axis] :
-      $this->x_axes[$this->main_x_axis];
-    $offset = $axis->position($index, $item);
+    $offset = $this->x_axes[$this->main_x_axis]->position($index, $item);
     $zero = -0.01; // catch values close to 0
-    if($offset >= $zero && floor($offset) <= $this->grid_limit) {
-      if($flip_axes)
-        $position = $this->height - $this->pad_bottom - $offset;
-      else
-        $position = $this->pad_left + $offset;
-    }
-    return $position;
+
+    if($offset >= $zero && floor($offset) <= $this->grid_limit)
+      return $this->pad_left + $offset;
+    return null;
   }
 
   /**
@@ -1163,7 +1097,7 @@ abstract class GridGraph extends Graph {
     if(empty($guidelines) && $guidelines !== 0)
       return;
 
-    $this->guidelines = new Guidelines($this, $this->getOption('flip_axes'),
+    $this->guidelines = new Guidelines($this, false,
       $this->values->associativeKeys(), $this->datetime_keys);
   }
 
