@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,7 +37,7 @@ class Colour {
   public function __construct(Graph &$graph, $colour, $allow_gradient = true,
     $allow_pattern = true, $radial_gradient = false)
   {
-    if($colour === null) {
+    if($colour === null || $colour === 'none') {
       $this->colour = $this->as_string = 'none';
       return;
     }
@@ -50,8 +50,24 @@ class Colour {
       return;
     }
 
-    // if not a string, must be an array with a string at index 0
-    if(!is_array($colour) || !is_string($colour[0]))
+    // if not a string, must be an array with a colour at index 0
+    $valid = false;
+    if(is_array($colour)) {
+      if(is_string($colour[0])) {
+        $valid = true;
+      } elseif(isset($colour['pattern'])) {
+        // allow gradients as first colour of pattern
+        if(is_array($colour[0]) && count($colour[0]) > 1) {
+          $valid = true;
+          foreach($colour[0] as $i) {
+            if(!is_string($i))
+              $valid = false;
+          }
+        }
+      }
+    }
+
+    if(!$valid)
       throw new \InvalidArgumentException('Malformed colour value: ' .
         serialize($colour));
 
@@ -89,9 +105,21 @@ class Colour {
    */
   private function extract($colour)
   {
-    $co = $this->extractOpacity($colour);
-    $this->colour = $this->as_string = $co[0];
-    $this->opacity = $co[1];
+    $filters = '';
+    $fpos = strpos($colour, '/');
+    if($fpos !== false) {
+      $filters = substr($colour, $fpos + 1);
+      $colour = substr($colour, 0, $fpos);
+    }
+    list($colour, $opacity) = $this->extractOpacity($colour);
+    $this->colour = $this->as_string = $colour;
+    $this->opacity = $opacity;
+
+    // filters don't work on 'none' and 'transparent', so don't try
+    if($filters !== '' && $colour !== 'none' && $colour !== 'transparent') {
+      $cf = new ColourFilter($colour, $filters);
+      $this->colour = $this->as_string = (string)$cf;
+    }
   }
 
   /**

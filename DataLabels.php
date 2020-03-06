@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2019 Graham Breach
+ * Copyright (C) 2015-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -480,7 +480,7 @@ class DataLabels {
     $text = [
       'font-family' => $style['font'],
       'font-size' => $font_size,
-      'fill' => $colour,
+      'fill' => new Colour($this->graph, $colour),
     ];
 
     $label_markup = '';
@@ -576,7 +576,7 @@ class DataLabels {
     if(!empty($back_colour)) {
       $outline = [
         'stroke-width' => '3px',
-        'stroke' => $back_colour,
+        'stroke' => new Colour($this->graph, $back_colour),
         'stroke-linejoin' => 'round',
       ];
       $t1 = array_merge($outline, $text);

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -103,7 +103,7 @@ class GradientList {
   /**
    * Breaks gradient array down into components
    */
-  static public function decompose($colours)
+  public function decompose($colours)
   {
     $col_mul = 100 / (count($colours) - 1);
     $offset = 0;
@@ -117,8 +117,14 @@ class GradientList {
         if(is_numeric($parts[0]) || count($parts) == 3) {
           $poffset = array_shift($parts);
         }
-        $colour = array_shift($parts);
-        $opacity = array_shift($parts); // NULL if not set
+        // stick the other parts back together and let the Colour class
+        // figure it out
+        $colour = new Colour($this->graph, implode(':', $parts));
+        $opacity = $colour->opacity();
+        if($opacity == 1)
+          $opacity = null;
+      } else {
+        $colour = new Colour($this->graph, $colour);
       }
       // set the offset to the most meaningful number
       $offset = min(100, max(0, $offset, $poffset));

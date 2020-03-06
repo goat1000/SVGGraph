@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2019 Graham Breach
+ * Copyright (C) 2009-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,9 +78,9 @@ class Bar3DGraph extends ThreeDGraph {
     if($pos === null || $pos > $this->height - $this->pad_bottom)
       return '';
 
-    $side_overlay = min(1, max(0, $this->bar_side_overlay_opacity));
-    $top_overlay = min(1, max(0, $this->bar_top_overlay_opacity));
-    $front_overlay = min(1, max(0, $this->bar_front_overlay_opacity));
+    $side_overlay = min(1, max(0, $this->getOption('bar_side_overlay_opacity')));
+    $top_overlay = min(1, max(0, $this->getOption('bar_top_overlay_opacity')));
+    $front_overlay = min(1, max(0, $this->getOption('bar_front_overlay_opacity')));
 
     $bar_side = $bar_top = '';
     $bw = $this->calculated_bar_width;
@@ -110,7 +110,7 @@ class Bar3DGraph extends ThreeDGraph {
 
     if($side_overlay) {
       $side['fill-opacity'] = $side_overlay;
-      $side['fill'] = $this->bar_side_overlay_colour;
+      $side['fill'] = new Colour($this, $this->getOption('bar_side_overlay_colour'));
       $bar_side .= $this->element('path', $side);
     }
 
@@ -124,7 +124,7 @@ class Bar3DGraph extends ThreeDGraph {
 
       if($top_overlay) {
         $top['fill-opacity'] = $top_overlay;
-        $top['fill'] = $this->bar_top_overlay_colour;
+        $top['fill'] = new Colour($this, $this->getOption('bar_top_overlay_colour'));
         $bar_top .= $this->defs->useSymbol($this->top_id, $top);
       }
     }
@@ -135,7 +135,7 @@ class Bar3DGraph extends ThreeDGraph {
     if($front_overlay) {
       $obar = $bar;
       $obar['fill-opacity'] = $front_overlay;
-      $obar['fill'] = $this->bar_front_overlay_colour;
+      $obar['fill'] = new Colour($this, $this->getOption('bar_front_overlay_colour'));
       $rect .= $this->element('rect', $obar);
     }
 

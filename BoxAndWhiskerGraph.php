@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,6 +45,11 @@ class BoxAndWhiskerGraph extends PointGraph {
     $x_axis = $this->x_axes[$this->main_x_axis];
 
     $bspace = max(0, ($this->x_axes[$this->main_x_axis]->unit() - $bar_width) / 2);
+    $whisker_width = $this->getOption('whisker_width');
+    $whisker_dash = $this->getOption('whisker_dash');
+    $median_width = $this->getOption('median_stroke_width');
+    $median_dash = $this->getOption('median_dash');
+    $median_colour = $this->getOption('median_colour');
     $bnum = 0;
     $this->colourSetup($this->values->itemsCount($dataset));
     $series = '';
@@ -60,8 +65,14 @@ class BoxAndWhiskerGraph extends PointGraph {
         $top = $item->top;
         $bottom = $item->bottom;
         $round = max($this->getItemOption('bar_round', $dataset, $item), 0);
+        $m_colour = null;
+        if(!empty($median_colour)) {
+          $cg = new ColourGroup($this, $item, $bnum, $dataset, 'median_colour');
+          $m_colour = $cg->stroke();
+        }
         $shape = $this->whiskerBox($bspace + $bar_pos, $bar_width, $item->value,
-          $top, $bottom, $item->wtop, $item->wbottom, $round);
+          $top, $bottom, $item->wtop, $item->wbottom, $round, $whisker_width,
+          $whisker_dash, $median_width, $median_dash, $m_colour);
 
         // wrap the whisker box in a group
         $g = [];
@@ -120,7 +131,8 @@ class BoxAndWhiskerGraph extends PointGraph {
    * Returns the code for a box with whiskers
    */
   protected function whiskerBox($x, $w, $median, $top, $bottom,
-    $wtop, $wbottom, $round)
+    $wtop, $wbottom, $round, $whisker_width, $whisker_dash,
+    $median_width, $median_dash, Colour $median_colour = null)
   {
     $t = $this->gridY($top);
     $b = $this->gridY($bottom);
@@ -135,7 +147,7 @@ class BoxAndWhiskerGraph extends PointGraph {
     $rect = $this->element('rect', $box);
 
     // whisker lines
-    $lg = $w * (1 - $this->getOption('whisker_width')) * 0.5;
+    $lg = $w * (1 - $whisker_width) * 0.5;
     $ll = $x + $lg;
     $lr = $x + $w - $lg;
     $l = ['x1' => $ll, 'x2' => $lr];
@@ -148,17 +160,15 @@ class BoxAndWhiskerGraph extends PointGraph {
     $l['x1'] = $x;
     $l['x2'] = $x + $w;
     $l['y1'] = $l['y2'] = $this->gridY($median);
-    $style = [ 'stroke-width' => $this->getOption('median_stroke_width') ];
-    $m_colour = $this->getOption('median_colour');
-    $m_dash = $this->getOption('median_dash');
-    if(!empty($m_colour))
-      $style['stroke'] = $m_colour;
-    if(!empty($m_dash))
-      $style['stroke-dasharray'] = $m_dash;
+    $style = [ 'stroke-width' => $median_width ];
+    if($median_colour !== null)
+      $style['stroke'] = $median_colour;
+    if(!empty($median_dash))
+      $style['stroke-dasharray'] = $median_dash;
     $l3 = $this->element('line', array_merge($l, $style));
 
     // whisker dashed lines
-    $style = [ 'stroke-dasharray' => $this->getOption('whisker_dash') ];
+    $style = [ 'stroke-dasharray' => $whisker_dash ];
     $l['x1'] = $l['x2'] = $x + $w / 2;
     $l['y1'] = $wt;
     $l['y2'] = $t;

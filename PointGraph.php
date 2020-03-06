@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2019 Graham Breach
+ * Copyright (C) 2010-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,22 +30,6 @@ abstract class PointGraph extends GridGraph {
   protected $marker_ids = [];
   protected $marker_link_ids = [];
   protected $marker_types = [];
-
-  /**
-   * Changes to crosshair cursor by overlaying a transparent rectangle
-   */
-  protected function crossHairs()
-  {
-    return '';
-    /* disabled for now - prevents linked shapes working
-    $rect = [
-      'width' => $this->width, 'height' => $this->height,
-      'opacity' => 0.0, 'cursor' => 'crosshair'
-    ];
-    return $this->element('rect', $rect);
-    */
-  }
-
 
   /**
    * Adds a marker to the list
@@ -166,7 +150,7 @@ abstract class PointGraph extends GridGraph {
   protected function createMarker($type, $size, $fill, $stroke_width,
     $stroke_colour, $opacity, $angle)
   {
-    $m_key = md5(serialize(func_get_args()));
+    $m_key = md5(implode('|', func_get_args()));
     if(isset($this->marker_types[$m_key]))
       return $this->marker_types[$m_key];
 
@@ -213,33 +197,29 @@ abstract class PointGraph extends GridGraph {
     $size = $this->getItemOption('marker_size', $set, $item);
     $angle = $this->getItemOption('marker_angle', $set, $item);
     $opacity = $this->getItemOption('marker_opacity', $set, $item);
-    $stroke_colour = $this->getItemOption('marker_stroke_colour', $set, $item);
-    $stroke_width = '';
-    if(!empty($stroke_colour) && $stroke_colour != 'none')
-      $stroke_width = $this->getItemOption('marker_stroke_width', $set, $item);
 
     // support gradients/patterns?
     $gpat = !($this->getOption('marker_solid', true));
     $mcolour = $this->getItemOption('marker_colour', $set, $item, 'colour');
-    if(!empty($mcolour)) {
-      $fill = new Colour($this, $mcolour, $gpat, $gpat);
-    } else {
+    if(empty($mcolour)) {
       $fill = $this->getColour(null, 0, $set, $gpat, $gpat);
+    } else {
+      // support fill and fillColour
+      $cg = new ColourGroup($this, $item, 0, $set, 'marker_colour', null, 'colour');
+      $fill = $cg->stroke();
+
+      // impose marker_solid option
+      if(!$gpat)
+        $fill = new Colour($this, $fill, false, false);
     }
 
-    if($stroke_colour !== null) {
-      if($stroke_colour == 'fillColour') {
-        $stroke_colour = new Colour($this, $fill, false, false);
-        if($stroke_colour->isNone())
-          $stroke_colour = new Colour($this, 'black');
-      } elseif($stroke_colour == 'fill') {
-        $stroke_colour = new Colour($this, $fill);
-        if($stroke_colour->isNone())
-          $stroke_colour = new Colour($this, 'black');
-      } else {
-        $stroke_colour = new Colour($this, $stroke_colour);
-      }
-    }
+    // stroke colour is related to the marker fill colour unless it is 'none'
+    $cg = new ColourGroup($this, $item, 0, $set, 'marker_stroke_colour',
+      $fill->isNone() ? null : $fill);
+    $stroke_colour = $cg->stroke();
+
+    $stroke_width = $stroke_colour === null || $stroke_colour->isNone() ? '' :
+      $this->getItemOption('marker_stroke_width', $set, $item);
 
     return $this->createMarker($type, $size, $fill, $stroke_width,
       $stroke_colour, $opacity, $angle);
@@ -331,14 +311,16 @@ abstract class PointGraph extends GridGraph {
         $end, $project_start, $project_end);
 
       if(!$best_fit->isEmpty()) {
-        $colour = $this->getOption(['best_fit_colour', $dataset]);
+        // support fill and fillColour
+        $cg = new ColourGroup($this, null, 0, $dataset, 'best_fit_colour');
+        $colour = $cg->stroke();
         $stroke_width = $this->getOption(['best_fit_width', $dataset]);
         $dash = $this->getOption(['best_fit_dash', $dataset]);
         $opacity = $this->getOption(['best_fit_opacity', $dataset]);
         $above = $this->getOption(['best_fit_above', $dataset]);
         $path = [
           'd' => $best_fit,
-          'stroke' => empty($colour) ? '#000' : $colour,
+          'stroke' => $colour->isNone() ? '#000' : $colour,
         ];
         if($stroke_width != 1 && $stroke_width > 0)
           $path['stroke-width'] = $stroke_width;
@@ -351,12 +333,14 @@ abstract class PointGraph extends GridGraph {
 
         if(!$projection->isEmpty()) {
           $path['d'] = $projection;
-          $p_colour = $this->getOption(['best_fit_project_colour', $dataset]);
+          // support fill and fillColour here too
+          $cg = new ColourGroup($this, null, 0, $dataset, 'best_fit_project_colour');
+          $p_colour = $cg->stroke();
           $p_stroke_width = $this->getOption(['best_fit_project_width', $dataset]);
           $p_dash = $this->getOption(['best_fit_project_dash', $dataset]);
           $p_opacity = $this->getOption(['best_fit_project_opacity', $dataset]);
 
-          if(!empty($p_colour))
+          if(!$p_colour->isNone())
             $path['stroke'] = $p_colour;
           if($p_stroke_width > 0)
             $path['stroke-width'] = $p_stroke_width;

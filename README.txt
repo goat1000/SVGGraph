@@ -1,4 +1,4 @@
-SVGGraph Library version 3.4
+SVGGraph Library version 3.5
 ============================
 
 This library provides PHP classes and functions for easily creating SVG
@@ -306,4 +306,4 @@ For more information about this software please contact the author,
 graham(at)goat1000.com or visit the website: http://www.goat1000.com/
 
 
-Copyright (C) 2009-2019 Graham Breach
+Copyright (C) 2009-2020 Graham Breach

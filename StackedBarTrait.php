@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -184,8 +184,8 @@ trait StackedBarTrait {
 
       // total settings can override label settings
       $simple = [
-        'font', 'font_size', 'font_weight', 'colour', 'space', 'type', 'fill',
-        'font_adjust', 'back_colour', 'angle', 'round', 'shadow_opacity',
+        'font', 'font_size', 'font_weight', 'space', 'type', 'fill',
+        'font_adjust', 'angle', 'round', 'shadow_opacity',
         'tail_width', 'tail_length',
       ];
       foreach($simple as $opt) {
@@ -194,6 +194,12 @@ trait StackedBarTrait {
           $style[$opt] = $val;
       }
 
+      $colour = new Colour($this, $this->getOption('bar_total_colour'));
+      $back_colour = new Colour($this, $this->getOption('bar_total_back_colour'));
+      if(!$colour->isNone())
+        $style['colour'] = $colour;
+      if(!$back_colour->isNone())
+        $style['back_colour'] = $back_colour;
       $stroke = $this->getOption('bar_total_outline_colour');
       $stroke_width = $this->getOption('bar_total_outline_thickness');
       $pad_x = $this->getOption('bar_total_padding_x', 'bar_total_padding');

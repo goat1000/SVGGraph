@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2019 Graham Breach
+ * Copyright (C) 2012-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -99,7 +99,6 @@ class RadarGraph extends LineGraph {
     $body .= $graph_line;
     $body .= $this->overShapes();
     $body .= $this->axes();
-    $body .= $this->crossHairs();
     $body .= $this->drawMarkers();
     return $body;
   }
@@ -483,7 +482,8 @@ class RadarGraph extends LineGraph {
    */
   protected function remapGradient($g, $points)
   {
-    $d = GradientList::decompose($g);
+    $gl = new GradientList($this);
+    $d = $gl->decompose($g);
 
     $p1 = $points[0]->position;
     $p2 = $points[1]->position;

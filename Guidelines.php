@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2019 Graham Breach
+ * Copyright (C) 2017-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,15 +67,16 @@ class Guidelines {
     $this->guidelines = [];
 
     // set up options
-    $opts = ['above', 'colour', 'dash', 'font', 'font_adjust', 'font_size',
+    $opts = ['above', 'dash', 'font', 'font_adjust', 'font_size',
       'font_weight', 'length', 'length_units', 'opacity', 'stroke_width',
       'text_align', 'text_angle', 'text_padding', 'text_position'];
     foreach($opts as $opt)
       $this->{$opt} = $graph->getOption('guideline_' . $opt);
 
-    // options with fallbacks
-    $this->text_colour = $graph->getOption('guideline_text_colour',
-      'guideline_colour');
+    // more complicated options
+    $this->colour = new Colour($graph, $graph->getOption('guideline_colour'));
+    $this->text_colour = new Colour($graph,
+      $graph->getOption('guideline_text_colour', 'guideline_colour'));
     $this->text_opacity = $graph->getOption('guideline_text_opacity',
       'guideline_opacity');
 
@@ -129,7 +130,6 @@ class Guidelines {
     ];
     $lopts = $topts = [];
     $line_opts = [
-      'colour' => 'stroke',
       'dash' => 'stroke-dasharray',
       'stroke_width' => 'stroke-width',
       'opacity' => 'opacity',
@@ -139,12 +139,10 @@ class Guidelines {
       'length_units' => 'length_units',
     ];
     $text_opts = [
-      'colour' => 'fill',
       'opacity' => 'opacity',
       'font' => 'font-family',
       'font_size' => 'font-size',
       'font_weight' => 'font-weight',
-      'text_colour' => 'fill', // overrides 'colour' option from line
       'text_opacity' => 'opacity', // overrides line opacity
 
       // these options do not map to SVG attributes
@@ -154,6 +152,18 @@ class Guidelines {
       'text_angle' => 'text_angle',
       'text_align' => 'text_align',
     ];
+
+    // handle colours first
+    if(isset($g['colour'])) {
+      $lopts['stroke'] = new Colour($this->graph, $g['colour']);
+      $topts['fill'] = new Colour($this->graph, $g['colour']);
+    }
+    if(isset($g['text_colour'])) {
+      // text colour overrides line colour
+      $topts['fill'] = new Colour($this->graph, $g['text_colour']);
+    }
+
+    // copy other options to line or text array
     foreach($line_opts as $okey => $opt)
       if(isset($g[$okey]))
         $lopts[$opt] = $g[$okey];

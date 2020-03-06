@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2019 Graham Breach
+ * Copyright (C) 2009-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -95,7 +95,6 @@ class LineGraph extends PointGraph {
     $body .= $graph_line;
     $body .= $this->overShapes();
     $body .= $this->axes();
-    $body .= $this->crossHairs();
     $body .= $this->drawMarkers();
     $body .= $best_fit_above;
     return $body;
@@ -130,15 +129,8 @@ class LineGraph extends PointGraph {
       $stroke_width = $this->getOption(['line_stroke_width', $dataset]);
       $attr = ['fill' => 'none'];
 
-      $stroke_colour = $this->getColour(null, 0, $dataset, false, false);
-      $scopt = $this->getOption(['stroke_colour', $dataset]);
-      if($scopt === 'fill')
-        $stroke_colour = $this->getColour(null, 0, $dataset);
-      elseif($scopt !== 'fillColour')
-        $stroke_colour = new Colour($this, $scopt);
-      if($stroke_colour->isNone())
-        $stroke_colour = new Colour($this, 'black');
-      $attr['stroke'] = $stroke_colour;
+      $cg = new ColourGroup($this, null, 0, $dataset);
+      $attr['stroke'] = $cg->stroke();
 
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;

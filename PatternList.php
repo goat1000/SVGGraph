@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,6 +41,7 @@ class PatternList {
     if(isset($this->pattern_map[$hash]))
       return $this->pattern_map[$hash];
 
+    $pattern['colour'] = $pattern[0];
     if(method_exists($this, $pattern['pattern'])) {
       if(!isset($pattern['size']))
         $pattern['size'] = 10;
@@ -48,14 +49,14 @@ class PatternList {
         $pattern['width'] = $pattern['size'];
       if(empty($pattern['height']))
         $pattern['height'] = $pattern['size'];
-      $opacity = null;
-      if(strpos($pattern[0], ':') !== false)
-        list($colour, $opacity) = explode(':', $pattern[0]);
-      else
-        $colour = $pattern[0];
-      $pattern['colour'] = $colour;
-      if(is_numeric($opacity))
-        $pattern['opacity'] = $opacity;
+
+      // use the Colour class unless this is a figure pattern
+      if($pattern['pattern'] !== 'figure') {
+        $pattern['colour'] = new Colour($this->graph, $pattern[0]);
+        $opacity = $pattern['colour']->opacity();
+        if($opacity < 1)
+          $pattern['opacity'] = $opacity;
+      }
       $pattern = call_user_func([$this, $pattern['pattern']], $pattern);
     }
 
@@ -74,15 +75,16 @@ class PatternList {
     $id = $this->graph->newID();
 
     // check background colour
-    $back_colour = '#fff';
+    $back_colour = new Colour($this->graph, '#fff');
     $back_opacity = '';
     if(array_key_exists('back_colour', $pattern)) {
-      $back_colour = $pattern['back_colour'];
-      if($back_colour !== null && strpos($back_colour, ':') !== false)
-        list($back_colour, $back_opacity) = explode(':', $back_colour);
+      $back_colour = new Colour($this->graph, $pattern['back_colour']);
+      $o = $back_colour->opacity();
+      if($o < 1)
+        $back_opacity = $o;
     }
 
-    if($back_colour !== null) {
+    if(!$back_colour->isNone()) {
       $rect = [
         'width' => $pattern['width'],
         'height' => $pattern['height'],
@@ -187,15 +189,16 @@ class PatternList {
   private function line($pattern, $thickness = 0.8)
   {
     $w = $pattern['size'];
-    $y = $w / 2;
-    $line = [
-      'd' => new PathData('M', 0,  $y, 'h', $w),
-      'stroke' => $pattern['colour'],
-      'stroke-width' => $pattern['size'] * $thickness
+    $rect = [
+      'x' => 0,
+      'y' => $w * (1 - $thickness) / 2,
+      'width' => $w,
+      'height' => $w * $thickness,
+      'fill' => $pattern['colour'],
     ];
     if(isset($pattern['opacity']))
-      $line['opacity'] = $pattern['opacity'];
-    $pattern['pattern'] = $this->graph->element('path', $line);
+      $rect['opacity'] = $pattern['opacity'];
+    $pattern['pattern'] = $this->graph->element('rect', $rect);
     return $pattern;
   }
 
@@ -218,7 +221,7 @@ class PatternList {
   }
 
   /**
-   * Fill using a pattern
+   * Fill using a figure as a pattern
    */
   private function figure($pattern)
   {

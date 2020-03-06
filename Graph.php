@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -540,7 +540,7 @@ abstract class Graph {
       'font-family' => $this->graph_title_font,
       'font-weight' => $this->graph_title_font_weight,
       'text-anchor' => 'middle',
-      'fill' => $this->graph_title_colour
+      'fill' => new Colour($this, $this->getOption('graph_title_colour')),
     ];
 
     // ensure outside padding is at least the title space
@@ -611,7 +611,7 @@ abstract class Graph {
       ];
       // tiled image becomes a pattern to replace background colour
       $this->defs->add($this->element('pattern', $pattern, null, $im));
-      $this->back_colour = 'url(#' . $pattern['id'] . ')';
+      $this->setOption('back_colour', 'url(#' . $pattern['id'] . ')');
     } else {
       $im = $this->element('image', $image, $style);
       $contents .= $im;
@@ -625,7 +625,7 @@ abstract class Graph {
   protected function canvas($id)
   {
     $bg = $this->backgroundImage();
-    $colour = new Colour($this, $this->back_colour);
+    $colour = new Colour($this, $this->getOption('back_colour'));
     $canvas = [
       'width' => '100%', 'height' => '100%',
       'fill' => $colour,
@@ -634,24 +634,26 @@ abstract class Graph {
     if($colour->opacity() < 1)
       $canvas['opacity'] = $colour->opacity(true);
 
-    if($this->back_round)
-      $canvas['rx'] = $canvas['ry'] = $this->back_round;
-    if($bg == '' && $this->back_stroke_width) {
-      $canvas['stroke-width'] = $this->back_stroke_width;
-      $canvas['stroke'] = $this->back_stroke_colour;
+    $round = $this->getOption('back_round');
+    $stroke_width = $this->getOption('back_stroke_width');
+    if($round)
+      $canvas['rx'] = $canvas['ry'] = new Number($round);
+    if($bg == '' && $stroke_width) {
+      $canvas['stroke-width'] = $stroke_width;
+      $canvas['stroke'] = new Colour($this, $this->getOption('back_stroke_colour'));
     }
     $c_el = $this->element('rect', $canvas);
 
     // create a clip path for rounded rectangle
-    if($this->back_round)
+    if($round)
       $this->defs->add($this->element('clipPath', ['id' => $id], null, $c_el));
     // if the background image is an element, insert it between the background
     // colour and border rect
     if($bg != '') {
       $c_el .= $bg;
-      if($this->back_stroke_width) {
-        $canvas['stroke-width'] = $this->back_stroke_width;
-        $canvas['stroke'] = $this->back_stroke_colour;
+      if($stroke_width) {
+        $canvas['stroke-width'] = $stroke_width;
+        $canvas['stroke'] = new Colour($this, $this->getOption('back_stroke_colour'));
         $canvas['fill'] = 'none';
         $c_el .= $this->element('rect', $canvas);
       }
@@ -781,7 +783,7 @@ abstract class Graph {
   /**
    * Returns a Colour
    */
-  protected function getColour($item, $key, $dataset, $allow_gradient = true,
+  public function getColour($item, $key, $dataset, $allow_gradient = true,
     $allow_pattern = true)
   {
     if($item !== null && $item->colour !== null)
@@ -926,18 +928,9 @@ abstract class Graph {
 
     $stroke_width = $this->getItemOption('stroke_width', $dataset, $item);
     if($stroke_width > 0) {
-      $stroke_colour = $this->getItemOption('stroke_colour', $dataset, $item);
-      if($stroke_colour == 'fillColour') {
-        $stroke_colour = $this->getColour($item, $key, $dataset, false, false);
-        if($stroke_colour->isNone())
-          $stroke_colour = new Colour($this, 'black');
-      } elseif($stroke_colour == 'fill') {
-        $stroke_colour = $this->getColour($item, $key, $dataset);
-        if($stroke_colour->isNone())
-          $stroke_colour = new Colour($this, 'black');
-      }
+      $cg = new ColourGroup($this, $item, $key, $dataset);
+      $attr['stroke'] = $cg->stroke();
 
-      $attr['stroke'] = new Colour($this, $stroke_colour);
       if($attr['stroke']->opacity() < 1)
         $attr['stroke-opacity'] = $attr['stroke']->opacity(true);
       $attr['stroke-width'] = $stroke_width;

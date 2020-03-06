@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2019 Graham Breach
+ * Copyright (C) 2010-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -64,7 +64,6 @@ class ScatterGraph extends PointGraph {
     $body .= $best_fit_below;
     $body .= $this->overShapes();
     $body .= $this->axes();
-    $body .= $this->crossHairs();
     $body .= $this->drawMarkers();
     $body .= $best_fit_above;
     return $body;

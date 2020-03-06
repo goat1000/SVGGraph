@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2019 Graham Breach
+ * Copyright (C) 2018-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,8 +84,8 @@ class DisplayAxis {
     $this->show_label = ($this->label != '');
 
     // axis and text both need colour
-    $styles['colour'] = $graph->getOption(['axis_colour_' . $o, $axis_no],
-      'axis_colour');
+    $styles['colour'] = new Colour($graph,
+      $graph->getOption(['axis_colour_' . $o, $axis_no], 'axis_colour'));
     if($this->show_axis) {
       $styles['overlap'] = $graph->getOption('axis_overlap');
       $styles['stroke_width'] = $graph->getOption(
@@ -97,10 +97,9 @@ class DisplayAxis {
           ['division_style_' . $o, $axis_no], 'division_style');
         $styles['d_size'] = $graph->getOption(
           ['division_size_' . $o, $axis_no], 'division_size');
-        $styles['d_colour'] = $graph->getOption(
+        $styles['d_colour'] = new Colour($graph, $graph->getOption(
           ['division_colour_' . $o, $axis_no], 'division_colour',
-          ['@', $styles['colour']]
-        );
+          ['@', $styles['colour']]));
 
         if($graph->getOption('show_subdivisions')) {
           $this->show_subdivisions = true;
@@ -108,11 +107,10 @@ class DisplayAxis {
             ['subdivision_style_' . $o, $axis_no], 'subdivision_style');
           $styles['s_size'] = $graph->getOption(
             ['subdivision_size_' . $o, $axis_no], 'subdivision_size');
-          $styles['s_colour'] = $graph->getOption(
+          $styles['s_colour'] = new Colour($graph, $graph->getOption(
             ['subdivision_colour_' . $o, $axis_no], 'subdivision_colour',
             ['division_colour_' . $o, $axis_no], 'division_colour',
-            ['@', $styles['colour']]
-          );
+            ['@', $styles['colour']]));
           $this->minimum_subdivision = $graph->getOption('minimum_subdivision');
           $this->minimum_units = ($type == 'x' ? 1 :
             $graph->getOption(['minimum_units_y', $axis_no]));
@@ -137,9 +135,9 @@ class DisplayAxis {
         ['axis_font_adjust_' . $o, $axis_no], 'axis_font_adjust');
       $styles['t_space'] = $graph->getOption(
         ['axis_text_space_' . $o, $axis_no], 'axis_text_space');
-      $styles['t_colour'] = $graph->getOption(
+      $styles['t_colour'] = new Colour($graph, $graph->getOption(
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
-        ['@', $styles['colour']]);
+        ['@', $styles['colour']]));
 
       // text is boxed only if it is outside and block labelling
       if($this->block_label && $this->show_divisions &&
@@ -160,10 +158,10 @@ class DisplayAxis {
         ['axis_font_size_' . $o, $axis_no], 'axis_font_size');
       $styles['l_font_weight'] = $graph->getOption(
         ['label_font_weight_' . $o, $axis_no], 'label_font_weight');
-      $styles['l_colour'] = $graph->getOption(
+      $styles['l_colour'] = new Colour($graph, $graph->getOption(
         ['label_colour_' . $o, $axis_no], 'label_colour',
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
-        ['@', $styles['colour']]);
+        ['@', $styles['colour']]));
       $styles['l_space'] = $graph->getOption('label_space');
       $styles['l_pos'] = $graph->getOption(
         ['axis_label_position_' . $o, $axis_no], 'axis_label_position');

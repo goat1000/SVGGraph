@@ -1,3 +1,12 @@
+Version 3.5 (07/03/2020)
+-----------
+- Added support for saturation, brightness and hue colour filters.
+- Added support for using fill colour or style in best-fit lines.
+- Added support for using fill colour or style in box and whisker median line.
+- Added support for using gradients in patterns.
+- Added legend_unique_fields option for preventing duplicate legend text.
+- Added legend_entries option callback for more control over legend entries.
+
 Version 3.4 (20/12/2019)
 -----------
 - Added SVG filter based shadows and options for adjusting them.

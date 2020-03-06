@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2019 Graham Breach
+ * Copyright (C) 2018-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,13 +77,15 @@ class ContextMenu {
       'svgNode', 'setattr', 'getData', 'svgCursorCoords');
     $this->js->addInitFunction('contextMenuInit');
 
-    $opts = ['colour', 'link_colour', 'link_hover_colour', 'link_target',
-      'link_underline', 'stroke_width', 'round', 'font', 'font_size',
-      'font_weight', 'document_menu', 'spacing', 'min_width',
-      'shadow_opacity', 'mouseleave', 'back_colour'];
+    $opts = ['link_target', 'link_underline', 'stroke_width', 'round', 'font',
+      'font_size', 'font_weight', 'document_menu', 'spacing', 'min_width',
+      'shadow_opacity', 'mouseleave'];
+    $colours = ['colour', 'link_colour', 'link_hover_colour', 'back_colour'];
     $vars = [];
     foreach($opts as $opt)
       $vars[$opt] = $this->graph->getOption('context_' . $opt);
+    foreach($colours as $opt)
+      $vars[$opt] = new Colour($this->graph, $this->graph->getOption('context_' . $opt));
 
     $svg_text = new Text($this->graph, $vars['font']);
     list(, $text_height) = $svg_text->measure('Test', $vars['font_size']);
@@ -91,7 +93,6 @@ class ContextMenu {
 
     $vars['pad_x'] = $this->graph->getOption('context_padding_x', 'context_padding');
     $vars['pad_y'] = $this->graph->getOption('context_padding_y', 'context_padding');
-    $vars['back_colour'] = new Colour($this->graph, $vars['back_colour']);
     $vars['text_start'] = $vars['pad_y'] + $text_baseline;
     $vars['rect_start'] = $vars['pad_y'] - $vars['spacing'] / 2;
     $vars['spacing'] += $text_height;
