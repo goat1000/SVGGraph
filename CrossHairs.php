@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,10 +30,11 @@ class CrossHairs {
   private $left, $top, $width, $height;
   private $x_axis, $y_axis;
   private $assoc;
+  private $flip_axes;
   private $encoding;
 
   public function __construct(&$graph, $left, $top, $w, $h, $x_axis, $y_axis,
-    $assoc, $encoding)
+    $assoc, $flip_axes, $encoding)
   {
     if($graph->getOption('crosshairs')) {
       $this->show_h = $graph->getOption('crosshairs_show_h');
@@ -50,6 +51,7 @@ class CrossHairs {
     $this->x_axis = $x_axis;
     $this->y_axis = $y_axis;
     $this->assoc = $assoc;
+    $this->flip_axes = $flip_axes;
     $this->encoding = $encoding;
     $this->graph =& $graph;
   }
@@ -136,7 +138,7 @@ class CrossHairs {
       'x' => 0, 'y' => $font_size,
       'font-family' => $t_opt['font'],
       'font-size' => $font_size,
-      'fill' => $t_opt['colour'],
+      'fill' => new Colour($this->graph, $t_opt['colour']),
     ];
     $weight = $t_opt['font_weight'];
     if($weight && $weight != 'normal')
@@ -192,10 +194,9 @@ class CrossHairs {
     if(!empty($u))
       $chtextitem_attrs['unitsby'] = $u;
 
-    $flip_axes = $this->graph->getOption('flip_axes');
     if($this->graph->getOption('log_axis_y')) {
       $base = $this->graph->getOption('log_axis_y_base');
-      if($flip_axes) {
+      if($this->flip_axes) {
         $gridx_attrs['base'] = $base;
         $gridx_attrs['zero'] = $this->x_axis->value(0);
         $gridx_attrs['scale'] = $this->x_axis->value($this->width);
@@ -213,7 +214,7 @@ class CrossHairs {
     if($this->graph->getOption('datetime_keys') &&
       (method_exists($this->x_axis, 'GetFormat') ||
       method_exists($this->y_axis, 'GetFormat'))) {
-      if($flip_axes) {
+      if($this->flip_axes) {
         $this->graph->javascript->addFunction('dateStrValueY');
         $zy = (int)$this->y_axis->value(0);
         $ey = (int)$this->y_axis->value($this->width);
@@ -252,7 +253,7 @@ class CrossHairs {
       $this->graph->javascript->addFunction($round_function);
 
       // set the string function
-      if($flip_axes) {
+      if($this->flip_axes) {
         $this->graph->javascript->addFunction('keyStrValueY');
         $gridy_attrs['function'] = 'keyStrValueY';
         $gridy_attrs['round'] = $round_function;
