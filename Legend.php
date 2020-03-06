@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2019 Graham Breach
+ * Copyright (C) 2016-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,6 +54,7 @@ class Legend {
   protected $title_font_size;
   protected $title_font_weight;
   protected $type;
+  protected $unique_fields;
 
   public function __construct(&$graph)
   {
@@ -64,7 +65,7 @@ class Legend {
       'entries', 'entry_height', 'entry_width', 'font', 'font_adjust',
       'font_size', 'font_weight', 'position', 'round',
       'shadow_opacity', 'show_empty', 'stroke_colour', 'stroke_width',
-      'text_side', 'title', 'title_font_weight', 'type'];
+      'text_side', 'title', 'title_font_weight', 'type', 'unique_fields'];
     foreach($opts as $opt) {
       $this->{$opt} = $graph->getOption('legend_' . $opt);
     }
@@ -110,6 +111,14 @@ class Legend {
         // one entry per data item
         if(isset($this->entries[$index]))
           $text = $this->entries[$index];
+      }
+    }
+
+    if($this->unique_fields) {
+      // prevent adding multiple entries with the same text
+      foreach($this->entry_details as $e) {
+        if($e->text == $text)
+          return;
       }
     }
 
@@ -281,7 +290,7 @@ class Legend {
       if($this->title_font_weight != $this->font_weight)
         $text['font-weight'] = $this->title_font_weight;
       if($this->title_colour != $this->colour)
-        $text['fill'] = $this->title_colour;
+        $text['fill'] = new Colour($this->graph, $this->title_colour);
       $title = $svg_text_title->text($this->title, $title_font_size, $text);
     }
 
@@ -294,7 +303,7 @@ class Legend {
     $group = [
       'font-family' => $this->font,
       'font-size' => $font_size,
-      'fill' => $this->colour,
+      'fill' => new Colour($this->graph, $this->colour),
       'transform' => $xform,
     ];
     if($this->font_weight != 'normal')
@@ -317,6 +326,31 @@ class Legend {
   }
 
   /**
+   * Filters the entry list
+   */
+  protected function filterEntries($entries)
+  {
+    $callback = $this->graph->getOption('legend_entries_callback');
+    if(!is_callable($callback))
+      return $entries;
+
+    $filtered = call_user_func($callback, $entries);
+    $valid = false;
+    if(is_array($filtered)) {
+      $valid = true;
+      foreach($filtered as $e) {
+        if(!is_object($e) || get_class($e) !== 'Goat1000\\SVGGraph\\LegendEntry')
+          $valid = false;
+      }
+    }
+
+    if(!$valid)
+      throw new \Exception('Callback did not return array of LegendEntry values.');
+
+    return $filtered;
+  }
+
+  /**
    * Returns the list of entries in the correct order
    */
   protected function getEntries()
@@ -331,7 +365,7 @@ class Legend {
         if(isset($this->entry_details[$e]))
           $entries[] = $this->entry_details[$e];
       }
-      return $entries;
+      return $this->filterEntries($entries);
     }
 
     $entries = $this->entry_details;
@@ -346,7 +380,7 @@ class Legend {
     if(strpos($entry_order, 'reverse') !== false)
       $entries = array_reverse($entries, true);
 
-    return $entries;
+    return $this->filterEntries($entries);
   }
 }
 
