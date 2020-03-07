@@ -58,7 +58,7 @@ class ColourFilter {
   /**
    * Increase or decrease brightness
    */
-  public function brightness($amount = 1.2)
+  public function brightness($amount = '1.2')
   {
     list ($operator, $value) = $this->expression($amount);
     if($value === null)
@@ -72,7 +72,7 @@ class ColourFilter {
   /**
    * Increase or decrease saturation
    */
-  public function saturation($amount = 0.0)
+  public function saturation($amount = '0.0')
   {
     list ($operator, $value) = $this->expression($amount);
     if($value === null)
@@ -86,7 +86,7 @@ class ColourFilter {
   /**
    * Modify the hue
    */
-  public function hue($amount = 60)
+  public function hue($amount = '60')
   {
     if(!is_numeric($amount))
       throw new \InvalidArgumentException('Invalid hue [' . $amount . ']');
