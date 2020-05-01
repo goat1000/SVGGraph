@@ -609,8 +609,7 @@ class AxisDateTime extends Axis {
    */
   public function dateText($f)
   {
-    $dt = new \DateTime('@' . $f);
-    return $dt->format($this->axis_text_format);
+    return date($this->axis_text_format, $f);
   }
 
   /**
