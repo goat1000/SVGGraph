@@ -610,7 +610,8 @@ class AxisDateTime extends Axis {
   public function dateText($f)
   {
     $dt = new \DateTime('@' . $f);
-    return $dt->format($this->axis_text_format);
+    return $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()))
+      ->format($this->axis_text_format);
   }
 
   /**
