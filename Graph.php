@@ -74,6 +74,8 @@ abstract class Graph {
     $this->settings = array_merge($this->settings, $ini_settings, $settings,
       $fixed_setting_defaults, $fixed_settings);
     $this->namespace = $this->getOption('namespace');
+    $this->link_base = $this->getOption('link_base');
+    $this->link_target = $this->getOption('link_target');
   }
 
   /**
@@ -759,7 +761,9 @@ abstract class Graph {
     if($link === null)
       return $content;
 
-    $link_attr = ['xlink:href' => $link, 'target' => $this->link_target];
+    $link_attr = ['xlink:href' => $link];
+    if(!empty($this->link_target))
+      $link_attr['target'] = $this->link_target;
     return $this->element('a', $link_attr, null, $content);
   }
 
