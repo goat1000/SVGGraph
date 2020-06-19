@@ -133,11 +133,25 @@ class DisplayAxis {
         ['axis_font_size_' . $o, $axis_no], 'axis_font_size');
       $styles['t_font_adjust'] = $graph->getOption(
         ['axis_font_adjust_' . $o, $axis_no], 'axis_font_adjust');
+      $styles['t_font_weight'] = $graph->getOption(
+        ['axis_font_weight_' . $o, $axis_no], 'axis_font_weight');
       $styles['t_space'] = $graph->getOption(
         ['axis_text_space_' . $o, $axis_no], 'axis_text_space');
       $styles['t_colour'] = new Colour($graph, $graph->getOption(
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]));
+      $styles['t_back_colour'] = null;
+
+      // fill in background colour array, if required
+      $back_colour = $graph->getOption(
+        ['axis_text_back_colour_' . $o, $axis_no], 'axis_text_back_colour');
+      if(!empty($back_colour)) {
+        $styles['t_back_colour'] = [
+          'stroke-width' => '3px',
+          'stroke' => new Colour($graph, $back_colour),
+          'stroke-linejoin' => 'round',
+        ];
+      }
 
       // text is boxed only if it is outside and block labelling
       if($this->block_label && $this->show_divisions &&
@@ -174,50 +188,42 @@ class DisplayAxis {
 
   /**
    * Returns the extents of the axis, relative to where it will be drawn from
-   *  returns array('x', 'y', 'width', 'height')
+   *  returns BoundingBox
    */
   public function measure($with_label = true)
   {
-    $x = $y = $max_x = $max_y = 0;
+    $bbox = new BoundingBox(0, 0, 0, 0);
     if($this->show_axis) {
-      list($x, $y, $max_x, $max_y) = $this->getDivisionsBBox();
-      if($this->orientation == 'h') {
-        // need to flip direction
-        $tmp = $y;
-        $y = -$max_y;
-        $max_y = -$tmp;
-      }
+      $dbox = $this->getDivisionsBBox(0);
+      if($this->orientation == 'h')
+        $dbox->flipY();
+      $bbox->growBox($dbox);
     }
 
     if($this->show_text) {
-      list($tx, $ty, $tmax_x, $tmax_y) = $this->getTextBBox();
-      $x = min($x, $tx);
-      $y = min($y, $ty);
-      $max_x = max($max_x, $tmax_x);
-      $max_y = max($max_y, $tmax_y);
+      $tbox = $this->getTextBBox(0);
+      $bbox->growBox($tbox);
     }
 
     if($with_label && $this->show_label) {
       $lpos = $this->getLabelPosition();
-      $x = min($x, $lpos['x']);
-      $y = min($y, $lpos['y']);
-      $max_x = max($max_x, $lpos['x'] + $lpos['width']);
-      $max_y = max($max_y, $lpos['y'] + $lpos['height']);
+      $bbox->grow($lpos['x'], $lpos['y'], $lpos['x'] + $lpos['width'],
+        $lpos['y'] + $lpos['height']);
     }
 
-    $width = $max_x - $x;
-    $height = $max_y - $y;
-    return compact('x', 'y', 'width', 'height');
+    return $bbox;
   }
 
   /**
    * Measures the space taken up by axis and divisions
-   * returns array(min_x, min_y, max_x, max_y)
+   *  returns BoundingBox
    */
-  protected function getDivisionsBBox()
+  protected function getDivisionsBBox($level)
   {
+    $bbox = new BoundingBox(0, 0, 0, 0);
     if(!$this->show_axis)
-      return [0, 0, 0, 0];
+      return $bbox;
+
     // orientation more important than type
     $x = 'x';
     $y = 'y';
@@ -230,13 +236,18 @@ class DisplayAxis {
     $length = $this->axis->getLength();
     $d_info = $s_info = ['pos' => 0, 'sz' => 0];
     if($this->show_divisions) {
-      $d_info = $this->getDivisionPathInfo(false, 100, 100);
-      if($this->show_subdivisions)
-        $s_info = $this->getDivisionPathInfo(true, 100, 100);
+      $di = $this->getDivisionPathInfo(false, 100, 100, $level);
+      if($di !== null)
+        $d_info = $di;
+      if($this->show_subdivisions) {
+        $si = $this->getDivisionPathInfo(true, 100, 100, $level);
+        if($si !== null)
+          $s_info = $si;
+      }
     }
 
     $points = $this->axis->getGridPoints(0);
-    $p1 = array_pop($points);
+    $p1 = end($points);
     if($p1->position < 0) {
       $min[$y] = $p1->position;
       $max[$y] = 0;
@@ -248,16 +259,17 @@ class DisplayAxis {
     $min[$x] = min($d_info['pos'], $s_info['pos']);
     $max[$x] = max($d_info['pos'] + $d_info['sz'], $s_info['pos'] + $s_info['sz']);
 
-    return [$min['x'], $min['y'], $max['x'], $max['y']];
+    $bbox->grow($min['x'], $min['y'], $max['x'], $max['y']);
+    return $bbox;
   }
 
   /**
    * Returns the bounding box of the text
    */
-  protected function getTextBBox()
+  protected function getTextBBox($level)
   {
-    $x = $y = $max_x = $max_y = 0;
-    list($x_off, $y_off, $opp) = $this->getTextOffset(0, 0, 0, 0, 0, 0);
+    $bbox = new BoundingBox(0, 0, 0, 0);
+    list($x_off, $y_off, $opp) = $this->getTextOffset(0, 0, 0, 0, 0, 0, $level);
 
     $points = $this->axis->getGridPoints(0);
     $count = count($points);
@@ -265,22 +277,14 @@ class DisplayAxis {
       --$count;
     for($p = 0; $p < $count; ++$p) {
 
-      if($points[$p]->text == '')
+      if($points[$p]->blank())
         continue;
 
-      $lbl = $this->getText($x_off, $y_off, $points[$p], $opp, true);
-      $lbl_max_x = $lbl['x'] + $lbl['width'];
-      $lbl_max_y = $lbl['y'] + $lbl['height'];
-      if($lbl['x'] < $x)
-        $x = $lbl['x'];
-      if($lbl['y'] < $y)
-        $y = $lbl['y'];
-      if($lbl_max_x > $max_x)
-        $max_x = $lbl_max_x;
-      if($lbl_max_y > $max_y)
-        $max_y = $lbl_max_y;
+      $lbl = $this->measureText($x_off, $y_off, $points[$p], $opp, $level);
+      $bbox->grow($lbl['x'], $lbl['y'], $lbl['x'] + $lbl['width'],
+        $lbl['y'] + $lbl['height']);
     }
-    return [$x, $y, $max_x, $max_y];
+    return $bbox;
   }
 
   /**
@@ -322,8 +326,29 @@ class DisplayAxis {
       $y = $y - $overlap - $len;
     }
 
+    $colour = $this->styles['colour'];
+    if($colour->isGradient()) {
+      // gradients don't work on stroked horizontal or vertical lines
+      $sw = $this->styles['stroke_width'];
+      $attr = [
+        'fill' => $colour,
+        'x' => $x,
+        'y' => $y,
+      ];
+      if($this->orientation == 'h') {
+        $attr['y'] -= $sw / 2;
+        $attr['width'] = $length;
+        $attr['height'] = $sw;
+      } else {
+        $attr['x'] -= $sw / 2;
+        $attr['width'] = $sw;
+        $attr['height'] = $length;
+      }
+      return $this->graph->element('rect', $attr);
+    }
+
     $attr = [
-      'stroke' => $this->styles['colour'],
+      'stroke' => $colour,
       'd' => new PathData('M', $x, $y, $line, $length),
     ];
 
@@ -337,12 +362,12 @@ class DisplayAxis {
    */
   public function drawDivisions($x, $y, $g_width, $g_height)
   {
-    $path_info = $this->getDivisionPathInfo(false, $g_width, $g_height);
+    $path_info = $this->getDivisionPathInfo(false, $g_width, $g_height, 0);
     if($path_info === null)
       return '';
 
     $points = $this->axis->getGridPoints(0);
-    $d = $this->getDivisionPath($x, $y, $points, $path_info);
+    $d = $this->getDivisionPath($x, $y, $points, $path_info, 0);
 
     $attr = [
       'd' => $d,
@@ -357,13 +382,13 @@ class DisplayAxis {
    */
   public function drawSubDivisions($x, $y, $g_width, $g_height)
   {
-    $path_info = $this->getDivisionPathInfo(true, $g_width, $g_height);
+    $path_info = $this->getDivisionPathInfo(true, $g_width, $g_height, 0);
     if($path_info === null)
       return '';
 
     $points = $this->axis->getGridSubdivisions($this->minimum_subdivision,
       $this->minimum_units, 0, $this->subdivisions_fixed);
-    $d = $this->getDivisionPath($x, $y, $points, $path_info);
+    $d = $this->getDivisionPath($x, $y, $points, $path_info, 0);
     $attr = [
       'd' => $d,
       'stroke' => $this->styles['s_colour'],
@@ -380,7 +405,7 @@ class DisplayAxis {
     $labels = '';
     if($this->show_text) {
       list($x_offset, $y_offset, $opposite) = $this->getTextOffset($x, $y,
-        $gx, $gy, $g_width, $g_height);
+        $gx, $gy, $g_width, $g_height, 0);
 
       $points = $this->axis->getGridPoints(0);
       $count = count($points);
@@ -389,11 +414,11 @@ class DisplayAxis {
       for($p = 0; $p < $count; ++$p) {
 
         $point = $points[$p];
-        if($point->text == '')
+        if($point->blank())
           continue;
 
         $labels .= $this->getText($x + $x_offset, $y + $y_offset, $point,
-          $opposite);
+          $opposite, 0);
       }
       if($labels != '') {
         $group = [
@@ -401,6 +426,10 @@ class DisplayAxis {
           'font-size' => $this->styles['t_font_size'],
           'fill' => $this->styles['t_colour'],
         ];
+        $weight = $this->styles['t_font_weight'];
+        if($weight != 'normal' && $weight !== null)
+          $group['font-weight'] = $weight;
+
         $labels = $this->graph->element('g', $group, null, $labels);
       }
     }
@@ -458,7 +487,7 @@ class DisplayAxis {
     if($this->orientation == 'h') {
       $width = $tsize[0];
       $height = $tsize[1];
-      $y = $bbox['y'] + $bbox['height'] + $space;
+      $y = $bbox->y2 + $space;
       $tx = $a_length  * $this->styles['l_pos'];
       $ty = $y + $baseline;
       $x = $tx - $width / 2;
@@ -469,10 +498,10 @@ class DisplayAxis {
       $width = $tsize[1];
       $height = $tsize[0];
       if($this->axis_no > 0) {
-        $x = $bbox['x'] + $bbox['width'] + $space;
+        $x = $bbox->x2 + $space;
         $tx = $x + $width - $baseline;
       } else {
-        $x = $bbox['x'] - $space - $width;
+        $x = $bbox->x1 - $space - $width;
         $tx = $x + $baseline;
         $x -= $space;
       }
@@ -488,21 +517,26 @@ class DisplayAxis {
   /**
    * Returns the distance from the axis to draw the text
    */
-  protected function getTextOffset($ax, $ay, $gx, $gy, $g_width, $g_height)
+  protected function getTextOffset($ax, $ay, $gx, $gy, $g_width, $g_height,
+    $level)
   {
     $d1 = $d2 = 0;
-    if($this->show_divisions) {
+    if($this->show_divisions && $level == 0) {
       if(!$this->boxed_text) {
-        $d_info = $this->getDivisionPathInfo(false, 100, 100);
-        $d1 = $d_info['pos'];
-        $d2 = $d1 + $d_info['sz'];
+        $d_info = $this->getDivisionPathInfo(false, 100, 100, 0);
+        if($d_info !== null) {
+          $d1 = $d_info['pos'];
+          $d2 = $d1 + $d_info['sz'];
+        }
       }
       if($this->show_subdivisions) {
-        $s_info = $this->getDivisionPathInfo(true, 100, 100);
-        $s1 = $s_info['pos'];
-        $s2 = $s1 + $s_info['sz'];
-        $d1 = min($d1, $s1);
-        $d2 = max($d2, $s2);
+        $s_info = $this->getDivisionPathInfo(true, 100, 100, 0);
+        if($s_info !== null) {
+          $s1 = $s_info['pos'];
+          $s2 = $s1 + $s_info['sz'];
+          $d1 = min($d1, $s1);
+          $d2 = max($d2, $s2);
+        }
       }
     }
     $space = $this->styles['t_space'];
@@ -531,23 +565,58 @@ class DisplayAxis {
   }
 
   /**
+   * Returns the bounding box for a single axis label
+   */
+  protected function measureText($x, $y, &$point, $opposite, $level)
+  {
+    list($svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $angle) =
+      $this->getTextInfo($x, $y, $point, $opposite, $level);
+
+    // find (rotated) size and position now
+    list($x, $y, $w, $h) = $svg_text->measurePosition($point->getText($level),
+      $font_size, $font_size, $attr['x'], $attr['y'], $anchor, $angle,
+      $rcx, $rcy);
+    return ['x' => $x, 'y' => $y, 'width' => $w, 'height' => $h];
+  }
+
+  /**
    * Returns the SVG fragment for a single axis label
    */
-  protected function getText($x, $y, &$point, $opposite, $measure = false)
+  protected function getText($x, $y, &$point, $opposite, $level)
   {
     // skip 0 on axis when it would sit on top of other axis
-    if(!$measure && !$this->block_label && $point->value == 0) {
+    if(!$this->block_label && $point->value == 0) {
       if($this->axis_no == 0 && $opposite)
         return '';
       if($this->axis_no == 1 && !$opposite)
         return '';
     }
 
+    $string = $point->getText($level);
+    $text_out = '';
+    list($svg_text, $font_size, $attr) = $this->getTextInfo($x, $y, $point,
+      $opposite, $level);
+
+    if(!empty($this->styles['t_back_colour'])) {
+      $b_attr = array_merge($this->styles['t_back_colour'], $attr);
+      $text_out .= $svg_text->text($string, $font_size, $b_attr);
+    }
+    $text_out .= $svg_text->text($string, $font_size, $attr);
+    return $text_out;
+  }
+
+  /**
+   * Returns text information:
+   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle]
+   */
+  protected function getTextInfo($x, $y, &$point, $opposite, $level)
+  {
     $font_size = $this->styles['t_font_size'];
     $svg_text = new Text($this->graph, $this->styles['t_font'],
       $this->styles['t_font_adjust']);
     $baseline = $svg_text->baseline($font_size);
-    list($w, $h) = $svg_text->measure($point->text, $font_size, 0, $font_size);
+    list($w, $h) = $svg_text->measure($point->getText($level), $font_size, 0,
+      $font_size);
     if($this->orientation == 'h') {
       $attr['x'] = $x + $point->position;
       $attr['y'] = $y + $baseline - ($opposite ? $h : 0);
@@ -583,20 +652,13 @@ class DisplayAxis {
     }
     $attr['text-anchor'] = $anchor;
 
-    // if measuring the text, find (rotated) size and position now
-    if($measure) {
-      list($x, $y, $width, $height) = $svg_text->measurePosition($point->text,
-        $font_size, $font_size, $attr['x'], $attr['y'], $anchor, $angle,
-        $rcx, $rcy);
-      return compact('x', 'y', 'width', 'height');
-    }
-    return $svg_text->text($point->text, $font_size, $attr);
+    return [$svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $angle];
   }
 
   /**
    * Returns the path for divisions or subdivisions
    */
-  protected function getDivisionPath($x, $y, $points, $path_info)
+  protected function getDivisionPath($x, $y, $points, $path_info, $level)
   {
     $y0 = $y;
     $x0 = $x;
@@ -635,7 +697,7 @@ class DisplayAxis {
   /**
    * Returns the details of the path segment
    */
-  protected function getDivisionPathInfo($subdiv, $g_width, $g_height)
+  protected function getDivisionPathInfo($subdiv, $g_width, $g_height, $level)
   {
     if($this->orientation == 'h') {
       $line = 'v';
@@ -656,9 +718,9 @@ class DisplayAxis {
       $style = $this->styles['d_style'];
       $sz = $size = $this->styles['d_size'];
       if($this->boxed_text) {
-        list($x, $y, $max_x, $max_y) = $this->getTextBBox();
-        $sx = $max_x - $x;
-        $sy = $max_y - $y;
+        $bbox = $this->getTextBBox($level);
+        $sx = $bbox->width();
+        $sy = $bbox->height();
         $sz = $size = ($this->orientation == 'h' ? $sy : $sx) +
           $this->styles['t_space'];
       }

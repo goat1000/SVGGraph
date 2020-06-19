@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,14 +27,37 @@ namespace Goat1000\SVGGraph;
 class GridPoint {
 
   public $position;
-  public $text;
   public $value;
+  protected $text = [];
 
   public function __construct($position, $text, $value)
   {
     $this->position = $position;
-    $this->text = $text;
     $this->value = $value;
+
+    if(!is_array($text)) {
+      $this->text[0] = (string)$text;
+      return;
+    }
+
+    foreach($text as $t)
+      $this->text[] = (string)$t;
+  }
+
+  /**
+   * Returns the grid point text for an axis level
+   */
+  public function getText($level = 0)
+  {
+    return isset($this->text[$level]) ? $this->text[$level] : '';
+  }
+
+  /**
+   * Returns true when the text is empty
+   */
+  public function blank($level = 0)
+  {
+    return !isset($this->text[$level]) || $this->text[$level] == '';
   }
 }
 

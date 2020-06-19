@@ -146,8 +146,9 @@ abstract class HorizontalGridGraph extends GridGraph {
       $y_units_before = (string)$this->getOption(['units_before_x', $i]);
 
       if($this->datetime_keys) {
+        $levels = $this->getOption(['axis_levels_v', $i]);
         $y_axis = new AxisDateTime($y_len, $max_v, $min_v, $y_min_space,
-          $grid_division, $this->settings);
+          $grid_division, $levels, $this->settings);
       } elseif(!is_numeric($grid_division)) {
         $y_axis = new Axis($y_len, $max_v, $min_v, 1, $y_min_space,
           true, $y_units_before, $y_units_after, $y_decimal_digits,

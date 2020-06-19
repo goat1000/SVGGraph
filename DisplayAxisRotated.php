@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2019 Graham Breach
+ * Copyright (C) 2018-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -75,7 +75,7 @@ class DisplayAxisRotated extends DisplayAxis {
   /**
    * Returns the path for divisions or subdivisions
    */
-  protected function getDivisionPath($x, $y, $points, $path_info)
+  protected function getDivisionPath($x, $y, $points, $path_info, $level)
   {
     $a = $this->arad + ($this->arad <= M_PI_2 ? - M_PI_2 : M_PI_2);
     $path = new PathData;
@@ -110,10 +110,10 @@ class DisplayAxisRotated extends DisplayAxis {
   /**
    * Calculates the rotated offset
    */
-  protected function getTextOffset($ax, $ay, $gx, $gy, $g_width, $g_height)
+  protected function getTextOffset($ax, $ay, $gx, $gy, $g_width, $g_height, $level)
   {
     list($x, $y, $opposite) = parent::getTextOffset($ax, $ay, $gx, $gy,
-      $g_width, $g_height);
+      $g_width, $g_height, $level);
 
     $tau = 2 * M_PI;
     $a = $this->arad + M_PI_2;
@@ -146,9 +146,10 @@ class DisplayAxisRotated extends DisplayAxis {
   }
 
   /**
-   * Returns the SVG fragment for a single axis label
+   * Returns text information:
+   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle]
    */
-  protected function getText($x, $y, &$point, $opposite, $measure = false)
+  protected function getTextInfo($x, $y, &$point, $opposite, $level)
   {
     $direction = $this->type == 'y' ? -1 : 1;
     $x_add = $point->position * $direction * sin($this->arad);
@@ -158,7 +159,7 @@ class DisplayAxisRotated extends DisplayAxis {
     $svg_text = new Text($this->graph, $this->styles['t_font'],
       $this->styles['t_font_adjust']);
     $baseline = $svg_text->baseline($font_size);
-    list($w, $h) = $svg_text->measure($point->text, $font_size, 0, $font_size);
+    list($w, $h) = $svg_text->measure($point->getText(), $font_size, 0, $font_size);
     $attr = [
       'x' => $x + $x_add,
       'text-anchor' => $this->anchor,
@@ -178,13 +179,7 @@ class DisplayAxisRotated extends DisplayAxis {
       $xform->rotate($angle, $rcx, $rcy);
       $attr['transform'] = $xform;
     }
-    if($measure) {
-      list($x, $y, $width, $height) = $svg_text->measurePosition($point->text,
-        $font_size, $font_size, $attr['x'], $attr['y'], $this->anchor, $angle,
-        $rcx, $rcy);
-      return compact('x', 'y', 'width', 'height');
-    }
-    return $svg_text->text($point->text, $font_size, $attr);
+    return [$svg_text, $font_size, $attr, $this->anchor, $rcx, $rcy, $angle];
   }
 
   /**
@@ -206,10 +201,10 @@ class DisplayAxisRotated extends DisplayAxis {
     $space = $this->styles['l_space'];
 
     if($s < 0) {
-      $offset = $bbox['width'] + $bbox['x'] + $space + $tsize[1] - $baseline;
+      $offset = $bbox->x2 + $space + $tsize[1] - $baseline;
       $angle = 180 - (rad2deg($this->arad) - 90);
     } else {
-      $offset = -$bbox['x'] + $space + $tsize[1] - $baseline;
+      $offset = -$bbox->x1 + $space + $tsize[1] - $baseline;
       $angle = - (rad2deg($this->arad) - 90);
     }
 

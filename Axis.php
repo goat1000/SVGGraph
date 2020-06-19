@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2019 Graham Breach
+ * Copyright (C) 2011-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -356,32 +356,36 @@ class Axis {
   }
 
   /**
-   * Returns the text for a grid point
+   * Returns a single GridPoint
    */
-  protected function getText($value)
+  protected function getGridPoint($position, $value)
   {
-    $text = $value;
+    $key = $text = $value;
 
-    // try structured data first
-    if($this->values && $this->values->getData($value, 'axis_text', $text))
-      return (string)$text;
+    if($this->values) {
+      // try structured data first
+      if($this->values->getData($value, 'axis_text', $text))
+        return new GridPoint($position, $text, $value);
 
-    // use the key if it is not the same as the value
-    $key = $this->values ? $this->values->getKey($value) : $value;
+      // use the key if it is not the same as the value
+      $key = $this->values->getKey($value);
+    }
 
     // if there is a callback, use it
     if(is_callable($this->label_callback)) {
       // assoc keys should have integer indices
       if($this->values && $this->values->associativeKeys())
         $value = (int)round($value);
-      return (string)call_user_func($this->label_callback, $value, $key);
+      $text = call_user_func($this->label_callback, $value, $key);
+      return new GridPoint($position, $text, $value);
     }
 
     if($key !== $value)
-      return (string)$key;
+      return new GridPoint($position, $key, $value);
 
     $n = new Number($value, $this->units_after, $this->units_before);
-    return $n->format($this->decimal_digits);
+    $text = $n->format($this->decimal_digits);
+    return new GridPoint($position, $text, $value);
   }
 
   /**
@@ -404,18 +408,16 @@ class Axis {
     $points = [];
     while($pos < $dlength) {
       $value = ($pos - $this->zero) / $this->unit_size;
-      $text = $this->getText($value);
       $position = $start + ($this->direction * $pos);
-      $points[] = new GridPoint($position, $text, $value);
+      $points[] = $this->getGridPoint($position, $value);
       $pos = ++$c * $spacing;
     }
     // uneven means the divisions don't fit exactly, so add the last one in
     if($this->uneven) {
       $pos = $this->length - $this->zero;
       $value = $pos / $this->unit_size;
-      $text = $this->getText($value);
       $position = $start + ($this->direction * $this->length);
-      $points[] = new GridPoint($position, $text, $value);
+      $points[] = $this->getGridPoint($position, $value);
     }
 
     if($this->direction < 0) {

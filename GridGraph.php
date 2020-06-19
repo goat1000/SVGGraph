@@ -192,10 +192,10 @@ abstract class GridGraph extends Graph {
 
     $display_axis = $this->getDisplayAxis($x_axes[0], 0, 'h', 'x');
     $m = $display_axis->measure();
-    $min_x[] = $m['x'];
-    $min_y[] = $m['y'] + $length_y;
-    $max_x[] = $m['x'] + $m['width'];
-    $max_y[] = $m['y'] + $m['height'] + $length_y;
+    $min_x[] = $m->x1;
+    $min_y[] = $m->y1 + $length_y;
+    $max_x[] = $m->x2;
+    $max_y[] = $m->y2 + $length_y;
 
     $axis_no = -1;
     $right_pos = $length_x;
@@ -235,13 +235,13 @@ abstract class GridGraph extends Graph {
   protected function yAxisBBox($axis, $length, $axis_no)
   {
     $display_axis = $this->getDisplayAxis($axis, $axis_no, 'v', 'y');
-    $measurement = $display_axis->measure();
+    $bbox = $display_axis->measure();
 
     $results = [
-      'min_x' => $measurement['x'],
-      'min_y' => $measurement['y'] + $length,
-      'max_x' => $measurement['x'] + $measurement['width'],
-      'max_y' => $measurement['y'] + $measurement['height'] + $length,
+      'min_x' => $bbox->x1,
+      'min_y' => $bbox->y1 + $length,
+      'max_x' => $bbox->x2,
+      'max_y' => $bbox->y2 + $length,
     ];
     return $results;
   }
@@ -548,8 +548,9 @@ abstract class GridGraph extends Graph {
         throw new \Exception('Non-numeric min/max');
 
       if($this->datetime_keys) {
+        $levels = $this->getOption(['axis_levels_h', $i]);
         $x_axis = new AxisDateTime($x_len, $max_h, $min_h, $x_min_space,
-          $grid_division, $this->settings);
+          $grid_division, $levels, $this->settings);
       } elseif(!is_numeric($grid_division)) {
         $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
           $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
@@ -729,7 +730,12 @@ abstract class GridGraph extends Graph {
   {
     $var = 'main_' . $type . '_axis';
     $main = ($axis_no == $this->{$var});
-    return new DisplayAxis($this, $axis, $axis_no, $orientation, $type, $main,
+    $levels = $this->getOption(['axis_levels_' . $orientation, $axis_no]);
+    $class = 'Goat1000\SVGGraph\DisplayAxis';
+    if(is_numeric($levels) && $levels > 1)
+      $class = 'Goat1000\SVGGraph\DisplayAxisLevels';
+
+    return new $class($this, $axis, $axis_no, $orientation, $type, $main,
       $this->getOption('label_centre'));
   }
 

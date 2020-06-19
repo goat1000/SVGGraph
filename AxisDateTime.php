@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2019 Graham Breach
+ * Copyright (C) 2016-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,6 +34,7 @@ class AxisDateTime extends Axis {
   protected $axis_text_format = 'Y-m-d';
   protected $div = null;
   protected $division = null;
+  protected $levels = null;
 
   protected static $week_start = 'monday';
   protected static $weekdays = [
@@ -120,8 +121,20 @@ class AxisDateTime extends Axis {
     'year' => 'Y'
   ];
 
+  /**
+   * Multi-level format strings
+   */
+  protected static $formats_level = [
+    'second' => ['H:i:s', 'd', 'F', 'Y'],
+    'minute' => ['H:i', 'd', 'F', 'Y'],
+    'hour' => ['H:i', 'd', 'F', 'Y'],
+    'day' => ['d', 'M', 'Y'],
+    'month' => ['M', 'Y'],
+    'year' => ['Y'],
+  ];
+
   public function __construct($length, $max_val, $min_val, $min_space,
-    $fixed_division, $options)
+    $fixed_division, $levels, $options)
   {
     if($max_val < $min_val)
       throw new \Exception('Zero length axis (min >= max)');
@@ -172,22 +185,27 @@ class AxisDateTime extends Axis {
       $this->grid_units = AxisDateTime::$divisions[$this->division][0];
       $this->grid_unit_count = AxisDateTime::$divisions[$this->division][1];
     }
-    $this->label_callback = [$this, 'DateText'];
+    $this->label_callback = [$this, 'dateText'];
 
-    // get the axis text format from the options, or use default
+    // get the axis text format from the options, or use defaults
+    $this->axis_text_format = AxisDateTime::$formats[$this->grid_units];
+    if(is_integer($levels) && $levels > 1) {
+      $this->levels = $levels;
+      $this->axis_text_format = AxisDateTime::$formats_level[$this->grid_units];
+    }
+
     $text_format = null;
     if(isset($options['datetime_text_format'])) {
-      if(is_array($options['datetime_text_format'])) {
-        if(isset($options['datetime_text_format'][$this->grid_units])) {
-          $text_format = $options['datetime_text_format'][$this->grid_units];
-        }
-      } elseif(!empty($options['datetime_text_format'])) {
-        $text_format = $options['datetime_text_format'];
+      $fmt = $options['datetime_text_format'];
+      if(is_array($fmt) && isset($fmt[$this->grid_units])) {
+        $text_format = $fmt[$this->grid_units];
+      } elseif(!empty($fmt)) {
+        $text_format = $fmt;
       }
     }
 
-    $this->axis_text_format = $text_format !== null ? $text_format :
-      AxisDateTime::$formats[$this->grid_units];
+    if($text_format !== null)
+      $this->axis_text_format = $text_format;
   }
 
   /**
@@ -490,9 +508,8 @@ class AxisDateTime extends Axis {
     $points = [];
     while(floor($pos) < $dlength && ++$c < $limit) {
 
-      $text = $this->getText($value);
       $position = $start + ($pos * $this->direction);
-      $points[] = new GridPoint($position, $text, $value);
+      $points[] = $this->getGridPoint($position, $value);
 
       $datetime = new \DateTime('@' . $this->start);
       $offset = new Number($c * $unit_count);
@@ -610,15 +627,24 @@ class AxisDateTime extends Axis {
   public function dateText($f)
   {
     $dt = new \DateTime('@' . $f);
-    return $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()))
-      ->format($this->axis_text_format);
+    $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+
+    if(!is_array($this->axis_text_format))
+      return $dt->format($this->axis_text_format);
+
+    $strings = [];
+    foreach($this->axis_text_format as $fmt)
+      $strings[] = $dt->format($fmt);
+    return $strings;
   }
 
   /**
    * Returns the format in use
    */
-  public function getFormat()
+  public function getFormat($level = 0)
   {
+    if(is_array($this->axis_text_format))
+      return $this->axis_text_format[$level];
     return $this->axis_text_format;
   }
 }

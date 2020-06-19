@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,9 +65,9 @@ class AxisDoubleEnded extends Axis {
     $new_points = [];
     $z = $this->zero();
     foreach($points as $p) {
-      $new_points[] = new GridPoint($p->position + $z, $p->text, $p->value);
+      $new_points[] = new GridPoint($p->position + $z, $p->getText(), $p->value);
       if($p->value != 0)
-        $new_points[] = new GridPoint((2 * $start) + $z - $p->position, $p->text, $p->value);
+        $new_points[] = new GridPoint((2 * $start) + $z - $p->position, $p->getText(), $p->value);
     }
 
     if($this->direction < 0) {

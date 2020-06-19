@@ -223,32 +223,22 @@ class RadarGraph extends LineGraph {
     foreach($y_axes as $a)
       $a->setLength($length_y);
 
-    $min_x = [$this->width];
-    $min_y = [$this->height];
-    $max_x = [0];
-    $max_y = [0];
+    $bb = new BoundingBox($this->width, $this->height, 0, 0);
 
     $display_axis = $this->getDisplayAxis($x_axes[0], 0, 'h', 'x');
     $axis_m = $display_axis->measure();
-    $min_x[] = $axis_m['x'];
-    $max_x[] = $axis_m['x'] + $axis_m['width'];
-    $min_y[] = $axis_m['y'];
-    $max_y[] = $axis_m['y'] + $axis_m['height'];
+    $bb->grow($axis_m->x1, $axis_m->y1, $axis_m->x2, $axis_m->y2);
+
     $display_axis = $this->getDisplayAxis($y_axes[0], 0, 'v', 'y');
     $axis_m = $display_axis->measure();
-    $min_x[] = $axis_m['x'] + $this->xc;
-    $max_x[] = $axis_m['x'] + $axis_m['width'] + $this->xc;
-    $min_y[] = $axis_m['y'] + $this->yc;
-    $max_y[] = $axis_m['y'] + $axis_m['height'] + $this->yc;
+    $bb->grow($axis_m->x1 + $this->xc, $axis_m->y1 + $this->yc,
+      $axis_m->x2 + $this->xc, $axis_m->y2 + $this->yc);
 
-    $min_x = min($min_x);
-    $min_y = min($min_y);
-    $max_x = max($max_x);
-    $max_y = max($max_y);
-
-    $bbox = compact('min_x', 'min_y', 'max_x', 'max_y');
     $this->radius = null;
-    return $bbox;
+    return [
+      'min_x' => $bb->x1, 'min_y' => $bb->y1,
+      'max_x' => $bb->x2, 'max_y' => $bb->y2
+    ];
   }
 
   /**

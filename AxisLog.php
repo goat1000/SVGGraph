@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -104,19 +104,17 @@ class AxisLog extends Axis {
     $points = [];
     while($l <= $this->lgmax) {
       $val = pow($this->base, $l) * ($this->negative ? -1 : 1);
-      $text = $this->getText($val);
       $pos = $this->position($val);
       $position = $start + ($this->direction * $pos);
-      $points[] = new GridPoint($position, $text, $val);
+      $points[] = $this->getGridPoint($position, $val);
 
       // add in divisions between powers
       if($l < $this->lgmax) {
         foreach($spoints as $l1) {
           $val = pow($this->base, $l + $l1) * ($this->negative ? -1 : 1);
-          $text = $this->getText($val);
           $pos = $this->position($val);
           $position = $start + ($this->direction * $pos);
-          $points[] = new GridPoint($position, $text, $val);
+          $points[] = $this->getGridPoint($position, $val);
         }
       }
       ++$l;
