@@ -20,9 +20,9 @@ function crosshairs(e) {
   x = pos[0];
   y = pos[1];
   on = (x >= bb.x && x <= bb.x + bb.width && y >= bb.y && y <= bb.y + bb.height);
+  xc = de.querySelector('.chX');
+  yc = de.querySelector('.chY');
   if(on) {
-    xc = de.querySelector('.chX');
-    yc = de.querySelector('.chY');
     setattr(xc,'y1',setattr(xc,'y2', y));
     setattr(yc,'x1',setattr(yc,'x2', x));
   }
