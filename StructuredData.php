@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -480,16 +480,40 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
    */
   public function getData($index, $name, &$value)
   {
-    if(!isset($this->structure[$name]))
+    $index = (int)round($index);
+    if(!isset($this->structure[$name]) || !isset($this->data[$index]))
       return false;
 
-    $index = (int)round($index);
-    $item = isset($this->data[$index]) ? $this->data[$index] : null;
-    $field = $this->structure[$name];
-    if($item === null || !isset($item[$field]))
+    $item = $this->data[$index];
+    if($item === null)
       return false;
-    $value = $item[$field];
-    return true;
+
+    $field = $this->structure[$name];
+    if(!is_array($field)) {
+      if(!isset($item[$field]))
+        return false;
+      $value = $item[$field];
+      return true;
+    }
+
+    // handle array fields
+    $vals = [];
+    $count = 0;
+    foreach($field as $f) {
+      $v = null;
+      if(isset($item[$f])) {
+        $v = $item[$f];
+        ++$count;
+      }
+      $vals[] = $v;
+    }
+
+    // return true if any fields are set
+    if($count > 0) {
+      $value = $vals;
+      return true;
+    }
+    return false;
   }
 
   /**
