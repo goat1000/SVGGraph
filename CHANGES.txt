@@ -1,3 +1,12 @@
+Version 3.6 (19/06/2020)
+-----------
+- Added support for multi-level axis division labels.
+- Added axis_font_weight option and its horizontal and vertical options.
+- Added axis_text_back_colour option and horizontal, vertical options.
+- Fixed display of axis lines when using a gradient.
+- Fixed crosshairs not hiding when cursor leaves grid.
+- Fixed link_target and link_base options not working.
+
 Version 3.5 (07/03/2020)
 -----------
 - Added support for saturation, brightness and hue colour filters.
