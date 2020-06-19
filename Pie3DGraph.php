@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2019 Graham Breach
+ * Copyright (C) 2010-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,8 +28,6 @@ class Pie3DGraph extends PieGraph {
     $fs = [
       // for 100% pie the flat sides are all hidden
       'draw_flat_sides' => false,
-      // whether the gradient overlay is done in pieces or not
-      'separate_slices' => false,
     ];
     $fs = array_merge($fs, $fixed_settings);
     parent::__construct($w, $h, $settings, $fs);
@@ -59,9 +57,6 @@ class Pie3DGraph extends PieGraph {
           $end < M_PI * 0.5 || $end > M_PI * 1.5)
           $this->setOption('draw_flat_sides', true);
       }
-
-      // might not be necessary, but it doesn't hurt
-      $this->setOption('separate_slices', true);
     }
     return PieGraph::draw();
   }

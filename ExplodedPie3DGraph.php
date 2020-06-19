@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2019 Graham Breach
+ * Copyright (C) 2017-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,10 +27,7 @@ class ExplodedPie3DGraph extends Pie3DGraph {
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
-    $fs = [
-      'draw_flat_sides' => true,
-      'separate_slices' => true,
-    ];
+    $fs = [ 'draw_flat_sides' => true, ];
     $fs = array_merge($fs, $fixed_settings);
     parent::__construct($w, $h, $settings, $fs);
   }

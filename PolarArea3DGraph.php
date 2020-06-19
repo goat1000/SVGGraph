@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2019 Graham Breach
+ * Copyright (C) 2017-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,7 +30,6 @@ class PolarArea3DGraph extends Pie3DGraph {
     $fs = [
       'repeated_keys' => 'error',
       'draw_flat_sides' => true,
-      'separate_slices' => true,
 
       // no sorting, no percentage, no slice fit
       'sort' => false,
