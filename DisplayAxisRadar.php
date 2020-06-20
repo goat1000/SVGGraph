@@ -32,6 +32,7 @@ class DisplayAxisRadar extends DisplayAxis {
   protected $arad;
   protected $text_offset;
   protected $no_axis;
+  protected $direction = 1;
 
   /**
    * $orientation = 'h' or 'v'
@@ -58,6 +59,9 @@ class DisplayAxisRadar extends DisplayAxis {
 
     // no boxed text because this isn't really a block-labelled axis
     $this->boxed_text = false;
+
+    if($graph->getOption('reverse'))
+      $this->direction = -1;
 
     // keep text next to axis
     $this->styles['t_location'] = 'axis';
@@ -147,7 +151,7 @@ class DisplayAxisRadar extends DisplayAxis {
     $len = -$path_info['sz'];
     $r1 = $this->radius - $path_info['pos'];
     foreach($points as $p) {
-      $a = $this->arad + $p->position / $this->radius;
+      $a = $this->arad + $this->direction * $p->position / $this->radius;
       $x1 = $x + $r1 * sin($a);
       $y1 = $y + $r1 * cos($a);
       $x2 = $len * sin($a);
@@ -178,7 +182,7 @@ class DisplayAxisRadar extends DisplayAxis {
    */
   protected function getTextInfo($x, $y, &$point, $opposite, $level)
   {
-    $a = $this->arad + $point->position / $this->radius;
+    $a = $this->arad + $this->direction * $point->position / $this->radius;
     $r1 = $this->radius + $this->text_offset;
     $x1 = $this->xc + $r1 * sin($a);
     $y1 = $this->yc + $r1 * cos($a);
