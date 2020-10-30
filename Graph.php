@@ -646,19 +646,35 @@ abstract class Graph {
   /**
    * Displays the background image
    */
-  protected function backgroundImage()
+  protected function backgroundImage($shadow, $clip_path)
   {
-    if(!$this->back_image)
+    $image_src = $this->getOption('back_image');
+    if(!$image_src)
       return '';
+
+    $width = $this->getOption('back_image_width');
+    $height = $this->getOption('back_image_height');
+    $left = $this->getOption('back_image_left');
+    $top = $this->getOption('back_image_top');
+
+    if($shadow) {
+      if($width === '100%')
+        $width = new Number($this->width - $shadow);
+      if($height === '100%')
+        $height = new Number($this->height - $shadow);
+    }
+
     $image = [
-      'width' => $this->back_image_width,
-      'height' => $this->back_image_height,
-      'x' => $this->back_image_left,
-      'y' => $this->back_image_top,
-      'xlink:href' => $this->back_image,
+      'width' => $width, 'height' => $height,
+      'x' => $left, 'y' => $top,
+      'xlink:href' => $image_src,
       'preserveAspectRatio' =>
         ($this->back_image_mode == 'stretch' ? 'none' : 'xMinYMin')
     ];
+
+    if($clip_path !== null)
+      $image['clip-path'] = 'url(#' . $clip_path . ')';
+
     $style = [];
     if($this->back_image_opacity)
       $style['opacity'] = $this->back_image_opacity;
@@ -669,10 +685,8 @@ abstract class Graph {
       $im = $this->element('image', $image, $style);
       $pattern = [
         'id' => $this->newID(),
-        'width' => $this->back_image_width,
-        'height' => $this->back_image_height,
-        'x' => $this->back_image_left,
-        'y' => $this->back_image_top,
+        'width' => $width, 'height' => $height,
+        'x' => $left, 'y' => $top,
         'patternUnits' => 'userSpaceOnUse'
       ];
       // tiled image becomes a pattern to replace background colour
@@ -690,36 +704,97 @@ abstract class Graph {
    */
   protected function canvas($id)
   {
-    $bg = $this->backgroundImage();
+    $round = $this->getOption('back_round');
+    $stroke_width = $this->getOption('back_stroke_width');
+    $stroke_colour = new Colour($this, $this->getOption('back_stroke_colour'));
+    $shadow_opacity = $this->getOption('back_shadow_opacity');
+    $shadow_blur = $this->getOption('back_shadow_blur');
+    $shadow = $this->getOption('back_shadow');
+    if($shadow === true)
+      $shadow = 2;
+
+    // background image can replace the back_colour option
+    $bg = $this->backgroundImage($shadow, $round ? $id : null);
     $colour = new Colour($this, $this->getOption('back_colour'));
+
     $canvas = [
       'width' => '100%', 'height' => '100%',
       'fill' => $colour,
       'stroke-width' => 0,
     ];
+    $c_el = '';
+
+    if($shadow) {
+      // shadow means canvas cannot be 100% of document
+      $canvas['x'] = $canvas['y'] = new Number($stroke_width / 2);
+
+      // blurring means using a filter and a larger offset
+      if($shadow_blur) {
+        $filter_opts = [
+          'offset_x' => $shadow,
+          'offset_y' => $shadow,
+          'blur' => $shadow_blur,
+          'opacity' => $shadow_opacity,
+          'shadow_only' => true,
+        ];
+
+        $shadow += $shadow_blur;
+        $filter = $this->defs->addFilter('shadow', $filter_opts);
+      }
+      $canvas['width'] = new Number($this->width - $shadow - $stroke_width);
+      $canvas['height'] = new Number($this->height - $shadow - $stroke_width);
+
+      $filled = [
+        //'x' => $shadow, 'y' => $shadow,
+        'width' => new Number($this->width - $shadow),
+        'height' => new Number($this->height - $shadow),
+        'fill' => '#000',
+        'stroke-width' => 0,
+        //'opacity' => $shadow_opacity,
+      ];
+
+      if($shadow_blur) {
+        $filled['filter'] = 'url(#' . $filter . ')';
+      } else {
+        $filled['x'] = $shadow;
+        $filled['y'] = $shadow;
+        $filled['opacity'] = $shadow_opacity;
+      }
+
+      if($round)
+        $filled['rx'] = $filled['ry'] = new Number($round);
+
+      $c_el .= $this->element('rect', $filled);
+
+      // increase padding to clear shadow
+      $this->pad_right += $shadow;
+      $this->pad_bottom += $shadow;
+    }
+
     if($colour->opacity() < 1)
       $canvas['opacity'] = $colour->opacity(true);
 
-    $round = $this->getOption('back_round');
-    $stroke_width = $this->getOption('back_stroke_width');
     if($round)
       $canvas['rx'] = $canvas['ry'] = new Number($round);
     if($bg == '' && $stroke_width) {
       $canvas['stroke-width'] = $stroke_width;
-      $canvas['stroke'] = new Colour($this, $this->getOption('back_stroke_colour'));
+      $canvas['stroke'] = $stroke_colour;
     }
-    $c_el = $this->element('rect', $canvas);
+    $c_el .= $this->element('rect', $canvas);
 
     // create a clip path for rounded rectangle
-    if($round)
-      $this->defs->add($this->element('clipPath', ['id' => $id], null, $c_el));
+    if($round) {
+      $this->defs->add($this->element('clipPath', ['id' => $id], null,
+        $this->element('rect', $canvas)));
+    }
+
     // if the background image is an element, insert it between the background
     // colour and border rect
     if($bg != '') {
       $c_el .= $bg;
       if($stroke_width) {
         $canvas['stroke-width'] = $stroke_width;
-        $canvas['stroke'] = new Colour($this, $this->getOption('back_stroke_colour'));
+        $canvas['stroke'] = $stroke_colour;
         $canvas['fill'] = 'none';
         $c_el .= $this->element('rect', $canvas);
       }

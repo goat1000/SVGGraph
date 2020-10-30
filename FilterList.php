@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,6 +38,7 @@ class FilterList {
     $opts = [
       'offset_x' => 10, 'offset_y' => 10,
       'opacity' => 0.5, 'blur' => 3,
+      'shadow_only' => false,
     ];
     if(is_array($params))
       $opts = array_merge($opts, $params);
@@ -76,10 +77,12 @@ class FilterList {
     if($blur === '' && $offset === '')
       return null;
 
-    $merged = $this->graph->element('feMergeNode', ['in' => 'res']) .
-      $this->graph->element('feMergeNode', ['in' => 'SourceGraphic']);
-    $content = $matrix . $offset . $blur .
-      $this->graph->element('feMerge', null, null, $merged);
+    $content = $matrix . $offset . $blur;
+    if(!$opts['shadow_only']) {
+      $merged = $this->graph->element('feMergeNode', ['in' => 'res']) .
+        $this->graph->element('feMergeNode', ['in' => 'SourceGraphic']);
+      $content .= $this->graph->element('feMerge', null, null, $merged);
+    }
 
     $filter = [
       'id' => $this->graph->newID(),

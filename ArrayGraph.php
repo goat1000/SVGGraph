@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -57,6 +57,7 @@ class ArrayGraph extends Graph {
       'keep_colour_order' => true,
       'back_stroke_width' => 0,
       'back_colour' => 'none',
+      'back_shadow' => 0,
       'title' => null,
     ];
     $opt = array_merge($this->raw_settings, $opt);
