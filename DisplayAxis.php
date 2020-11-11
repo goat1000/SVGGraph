@@ -483,12 +483,27 @@ class DisplayAxis {
     $baseline = $svg_text->baseline($font_size);
     $a_length = $this->axis->getLength();
     $space = $this->styles['l_space'];
+    $align = $this->styles['l_pos'];
 
     if($this->orientation == 'h') {
       $width = $tsize[0];
       $height = $tsize[1];
       $y = $bbox->y2 + $space;
-      $tx = $a_length  * $this->styles['l_pos'];
+      if(is_numeric($align)) {
+        $tx = $a_length * $align;
+      } else {
+        switch($align) {
+        case 'left' :
+          $tx = $width / 2;
+          break;
+        case 'right':
+          $tx = $a_length - ($width / 2);
+          break;
+        default:
+          $tx = $a_length / 2;
+          break;
+        }
+      }
       $ty = $y + $baseline;
       $x = $tx - $width / 2;
 
@@ -505,7 +520,21 @@ class DisplayAxis {
         $tx = $x + $baseline;
         $x -= $space;
       }
-      $ty = -$a_length  * $this->styles['l_pos'];;
+      if(is_numeric($align)) {
+        $ty = -$a_length * $align;
+      } else {
+        switch($align) {
+        case 'top' :
+          $ty = -$a_length + $height / 2;
+          break;
+        case 'bottom':
+          $ty = -$height / 2;
+          break;
+        default:
+          $ty = -$a_length / 2;
+          break;
+        }
+      }
       $y = $ty - $height / 2;
       $width += $space;
       $angle = $this->axis_no > 0 ? 90 : 270;
