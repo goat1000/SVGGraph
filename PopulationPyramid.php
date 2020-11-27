@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,7 +40,6 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $b_start = $this->height - $this->pad_bottom - ($this->bar_space / 2);
     $chunk_count = count($this->multi_graph);
     $bars_shown = array_fill(0, $chunk_count, 0);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $bars = '';
     $datasets = $this->multi_graph->getEnabledDatasets();
 
@@ -319,5 +318,14 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $y_axis->reverse(); // because axis starts at bottom
     return [ [$x_axis], [$y_axis] ];
   }
+
+  /**
+   * Override the function to pass in the class to use
+   */
+  protected function calcAverages($cls = 'Goat1000\SVGGraph\PopulationPyramidAverage')
+  {
+    return parent::calcAverages('Goat1000\SVGGraph\PopulationPyramidAverage');
+  }
+
 }
 

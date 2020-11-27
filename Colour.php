@@ -33,8 +33,8 @@ class Colour {
   private $pattern = false;
   private $radial = false;
   private $key = null;
-  
-  public function __construct(Graph &$graph, $colour, $allow_gradient = true,
+
+  public function __construct(&$graph, $colour, $allow_gradient = true,
     $allow_pattern = true, $radial_gradient = false)
   {
     if($colour === null || $colour === 'none') {
@@ -193,6 +193,15 @@ class Colour {
 
     list($solid) = $this->extractOpacity($this->colour[0]);
     return $solid;
+  }
+
+  /**
+   * Returns the R,G,B for the colour
+   */
+  public function rgb()
+  {
+    $rgb = new RGBColour($this->solid());
+    return $rgb->getRGB();
   }
 
   /**

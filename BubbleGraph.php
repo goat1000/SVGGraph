@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,7 +41,6 @@ class BubbleGraph extends PointGraph {
   {
     $body = $this->grid() . $this->underShapes();
     $dataset = $this->getOption(['dataset', 0], 0);
-    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bnum = 0;
     $y_axis = $this->y_axes[$this->main_y_axis];

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2019 Graham Breach
+ * Copyright (C) 2015-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -76,7 +76,6 @@ class BarAndLineGraph extends GroupedBarGraph {
     $y_bottom = min($y_axis_pos, $this->height - $this->pad_bottom);
 
     $this->barSetup();
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $marker_offset = $this->x_axes[$this->main_x_axis]->unit() / 2;
 
     // draw bars, store line points

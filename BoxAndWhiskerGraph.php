@@ -51,7 +51,6 @@ class BoxAndWhiskerGraph extends PointGraph {
     $median_dash = $this->getOption('median_dash');
     $median_colour = $this->getOption('median_colour');
     $bnum = 0;
-    $this->colourSetup($this->values->itemsCount($dataset));
     $series = '';
     foreach($this->values[$dataset] as $item) {
       $bar_pos = $this->gridPosition($item, $bnum);

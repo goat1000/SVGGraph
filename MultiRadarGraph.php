@@ -31,8 +31,6 @@ class MultiRadarGraph extends RadarGraph {
   protected function draw()
   {
     $body = $this->grid() . $this->underShapes();
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $plots = '';
 
     $datasets = $this->multi_graph->getEnabledDatasets();

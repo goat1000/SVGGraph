@@ -44,7 +44,6 @@ class ScatterGraph extends PointGraph {
     if($this->marker_size == 0)
       $this->marker_size = 1;
     $dataset = $this->getOption(['dataset', 0], 0);
-    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bnum = 0;
     foreach($this->values[$dataset] as $item) {

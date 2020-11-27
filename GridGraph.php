@@ -627,6 +627,7 @@ abstract class GridGraph extends Graph {
           $y_values);
       }
       $y_axis->reverse(); // because axis starts at bottom
+      $y_axis->setTightness($this->getOption(['axis_tightness_y', $i]));
 
       $y_axes[] = $y_axis;
     }
@@ -1094,11 +1095,27 @@ abstract class GridGraph extends Graph {
   }
 
   /**
-   * Converts guideline options to more useful member variables
+   * Calculates the averages, storing them as guidelines
+   */
+  protected function calcAverages($cls = 'Goat1000\SVGGraph\Average')
+  {
+    $show = $this->getOption('show_average');
+    if(empty($show))
+      return;
+
+    $datasets = empty($this->multi_graph) ? [0] :
+      $this->multi_graph->getEnabledDatasets();
+
+    $average = new $cls($this, $this->values, $datasets);
+    $average->getGuidelines();
+  }
+
+  /**
+   * Loads the guidelines from options
    */
   protected function calcGuidelines()
   {
-    // no guidelines?
+    $this->calcAverages();
     $guidelines = $this->getOption('guideline');
     if(empty($guidelines) && $guidelines !== 0)
       return;

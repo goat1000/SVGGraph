@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,13 +32,15 @@ trait BarGraphTrait {
    */
   protected function draw()
   {
+    $this->setup();
+
     $body = $this->grid();
-    $body .= $this->underShapes();
     $bars = $this->drawBars();
     $bar_group = $this->barGroup();
     if(!empty($bar_group))
       $bars = $this->element('g', $bar_group, null, $bars);
 
+    $body .= $this->underShapes();
     $body .= $bars;
     $body .= $this->overShapes();
     $body .= $this->axes();
@@ -52,7 +54,6 @@ trait BarGraphTrait {
   {
     $dataset = $this->getOption(['dataset', 0], 0);
     $this->barSetup();
-    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bars = '';
     foreach($this->values[$dataset] as $bnum => $item) {

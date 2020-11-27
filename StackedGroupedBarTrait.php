@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,7 +36,6 @@ trait StackedGroupedBarTrait {
     $this->barSetup();
     $group_count = count($this->groups);
     $bar_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $bar_count);
 
     $bars = '';
     $legend_entries = [];

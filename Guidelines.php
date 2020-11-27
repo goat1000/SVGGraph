@@ -80,21 +80,32 @@ class Guidelines {
     $this->text_opacity = $graph->getOption('guideline_text_opacity',
       'guideline_opacity');
 
+    $lines = $this->normalize($lines);
+    foreach($lines as $line)
+      $this->calculate($line);
+
+    if(!empty($this->guidelines))
+      $this->coords = new Coords($graph);
+  }
+
+  /**
+   * Simplifies the supported option formats
+   */
+  public static function normalize($lines)
+  {
+    // no lines at all
+    if(empty($lines) && $lines !== 0)
+      return [];
+
     if(is_array($lines) &&
       (is_array($lines[0]) || (count($lines) > 1 && !is_string($lines[1])))) {
 
-      // array of guidelines
-      foreach($lines as $line)
-        $this->calculate($line);
-    } else {
-
-      // single guideline
-      $this->calculate($lines);
+      // array of guidelines, corrent format
+      return $lines;
     }
 
-    if(!empty($this->guidelines)) {
-      $this->coords = new Coords($graph);
-    }
+    // single guideline
+    return [$lines];
   }
 
   /**
@@ -177,10 +188,12 @@ class Guidelines {
       $guideline['text'] = $topts;
 
     // update maxima and minima
-    if($this->max_guide[$axis] === null || $value > $this->max_guide[$axis])
-      $this->max_guide[$axis] = $value;
-    if($this->min_guide[$axis] === null || $value < $this->min_guide[$axis])
-      $this->min_guide[$axis] = $value;
+    if(!isset($g['no_min_max']) || $g['no_min_max'] === false) {
+      if($this->max_guide[$axis] === null || $value > $this->max_guide[$axis])
+        $this->max_guide[$axis] = $value;
+      if($this->min_guide[$axis] === null || $value < $this->min_guide[$axis])
+        $this->min_guide[$axis] = $value;
+    }
 
     // can flip the axes now the min/max are stored
     if($this->flip_axes)

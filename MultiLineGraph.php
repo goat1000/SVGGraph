@@ -36,9 +36,6 @@ class MultiLineGraph extends LineGraph {
     $y_axis_pos = $this->height - $this->pad_bottom -
       $this->y_axes[$this->main_y_axis]->zero();
     $y_bottom = min($y_axis_pos, $this->height - $this->pad_bottom);
-
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $datasets = $this->multi_graph->getEnabledDatasets();
 
     foreach($datasets as $i) {

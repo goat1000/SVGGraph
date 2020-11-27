@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,36 +21,31 @@
 
 namespace Goat1000\SVGGraph;
 
-class EmptyGraph extends Graph {
+/**
+ * Deal with the strange way population pyramids work
+ */
+class PopulationPyramidAverage extends Average {
+
+  private $graph;
+  private $lines = [];
 
   /**
-   * Does nothing, no colours to set up
+   * Calculates the mean average for a dataset
    */
-  protected function setup()
+  protected function calculate(&$values, $dataset)
   {
+    $val = parent::calculate($values, $dataset);
+    if($val === null)
+      return $val;
+
+    return $dataset % 2 ? $val : -$val;
   }
 
   /**
-   * Draws an empty graph
+   * Need to sign-correct the average value for display
    */
-  protected function draw()
+  protected function getTitle(&$graph, $avg, $dataset)
   {
-    // maybe not completely empty
-    return $this->underShapes() . $this->overShapes();
-  }
-
-  /**
-   * Ignore values, not used on empty graph
-   */
-  public function values($values)
-  {
-  }
-
-  /**
-   * Drawing nothing, so check nothing
-   */
-  protected function checkValues()
-  {
+    return parent::getTitle($graph, $dataset % 2 ? $avg : -$avg, $dataset);
   }
 }
-

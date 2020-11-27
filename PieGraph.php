@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2019 Graham Breach
+ * Copyright (C) 2009-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -139,7 +139,6 @@ class PieGraph extends Graph {
 
     $this->calc_done = true;
     $this->sub_total = 0;
-    $this->colourSetup($this->values->itemsCount());
   }
 
   /**

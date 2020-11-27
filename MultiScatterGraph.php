@@ -46,10 +46,7 @@ class MultiScatterGraph extends PointGraph {
     if($this->marker_size == 0)
       $this->marker_size = 1;
 
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $datasets = $this->multi_graph->getEnabledDatasets();
-
     foreach($datasets as $i) {
       $bnum = 0;
       $axis = $this->datasetYAxis($i);

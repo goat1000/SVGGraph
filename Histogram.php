@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2019 Graham Breach
+ * Copyright (C) 2015-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -213,5 +213,14 @@ class Histogram extends BarGraph {
       return;
     parent::setLegendEntry($dataset, $index, $item, $style_info);
   }
+
+  /**
+   * Override to pass in the modified Average class to use
+   */
+  protected function calcAverages($cls = 'Goat1000\SVGGraph\HistogramAverage')
+  {
+    return parent::calcAverages('Goat1000\SVGGraph\HistogramAverage');
+  }
+
 }
 

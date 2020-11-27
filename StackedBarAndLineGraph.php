@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2019 Graham Breach
+ * Copyright (C) 2017-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -98,8 +98,6 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $y_bottom = min($y_axis_pos, $this->height - $this->pad_bottom);
 
     $this->barSetup();
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $marker_offset = $this->x_axes[$this->main_x_axis]->unit() / 2;
     $datasets = $this->multi_graph->getEnabledDatasets();
 

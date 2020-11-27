@@ -37,9 +37,8 @@ trait StackedBarTrait {
   protected function drawBars()
   {
     $this->barSetup();
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
 
+    $chunk_count = count($this->multi_graph);
     $datasets = $this->multi_graph->getEnabledDatasets();
     $bars = '';
     $legend_entries = [];

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2019 Graham Breach
+ * Copyright (C) 2014-2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -182,16 +182,10 @@ class Colours implements \Countable {
    */
   public static function hexRGB($c)
   {
-    $r = $g = $b = 0;
-    if(strlen($c) == 7) {
-      sscanf($c, '#%2x%2x%2x', $r, $g, $b);
-    } elseif(strlen($c) == 4) {
-      sscanf($c, '#%1x%1x%1x', $r, $g, $b);
-      $r += 16 * $r;
-      $g += 16 * $g;
-      $b += 16 * $b;
-    }
-    return [$r, $g, $b];
+    // support filters, other colour formats by using Colour class
+    $graph = null;
+    $cc = new Colour($graph, $c, false, false, false);
+    return $cc->rgb();
   }
 }
 

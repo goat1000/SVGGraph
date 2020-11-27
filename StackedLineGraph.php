@@ -39,10 +39,7 @@ class StackedLineGraph extends MultiLineGraph {
       throw new \Exception('log_axis_y not supported by StackedLineGraph');
 
     $body = $this->grid() . $this->underShapes();
-
     $plots = [];
-    $chunk_count = count($this->multi_graph);
-    $this->colourSetup($this->multi_graph->itemsCount(-1), $chunk_count);
     $stack = [];
 
     $datasets = $this->multi_graph->getEnabledDatasets();

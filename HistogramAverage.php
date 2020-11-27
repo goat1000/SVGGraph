@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2020 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,36 +21,28 @@
 
 namespace Goat1000\SVGGraph;
 
-class EmptyGraph extends Graph {
+/**
+ * Class for making averages work on Histograms
+ */
+class HistogramAverage extends Average {
 
   /**
-   * Does nothing, no colours to set up
+   * Calculates the mean average for a dataset
    */
-  protected function setup()
+  protected function calculate(&$values, $dataset)
   {
-  }
+    $sum = 0;
+    $count = 0;
+    foreach($values[$dataset] as $p) {
+      if($p->value === null)
+        continue;
+      $sum += $p->value;
+      ++$count;
+    }
 
-  /**
-   * Draws an empty graph
-   */
-  protected function draw()
-  {
-    // maybe not completely empty
-    return $this->underShapes() . $this->overShapes();
-  }
+    // histogram data ends with a 0 to pad the axis out
+    --$count;
 
-  /**
-   * Ignore values, not used on empty graph
-   */
-  public function values($values)
-  {
-  }
-
-  /**
-   * Drawing nothing, so check nothing
-   */
-  protected function checkValues()
-  {
+    return $count > 0 ? $sum / $count : null;
   }
 }
-

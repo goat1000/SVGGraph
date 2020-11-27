@@ -106,6 +106,7 @@ abstract class HorizontalGridGraph extends GridGraph {
           $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
           false);
       }
+      $x_axis->setTightness($this->getOption(['axis_tightness_y', $i]));
       $x_axes[] = $x_axis;
     }
 
@@ -300,7 +301,7 @@ abstract class HorizontalGridGraph extends GridGraph {
    */
   protected function calcGuidelines()
   {
-    // no guidelines?
+    $this->calcAverages();
     $guidelines = $this->getOption('guideline');
     if(empty($guidelines) && $guidelines !== 0)
       return;

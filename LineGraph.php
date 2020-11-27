@@ -50,7 +50,6 @@ class LineGraph extends PointGraph {
   {
     $body = $this->grid() . $this->underShapes();
     $dataset = $this->getOption(['dataset', 0], 0);
-    $this->colourSetup($this->values->itemsCount($dataset));
 
     $bnum = 0;
     $cmd = 'M';

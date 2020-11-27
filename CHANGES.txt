@@ -1,3 +1,12 @@
+Version 3.7 (27/11/2020)
+-----------
+- Added options for displaying mean average lines.
+- Added background shadow support.
+- Added graph subtitle options.
+- Added alternative Y-axis fitting algorithm with axis_tightness_y option.
+- Updated axis_label_position options to support aligning text with axis ends.
+- Updated colourRangeHex functions to support more colour options.
+
 Version 3.6 (19/06/2020)
 -----------
 - Added support for multi-level axis division labels.

@@ -282,12 +282,22 @@ abstract class Graph {
   }
 
   /**
+   * Sets up the colours used for the graph
+   */
+  protected function setup()
+  {
+    $dataset = $this->getOption(['dataset', 0], 0);
+    $this->colourSetup($this->values->itemsCount($dataset));
+  }
+
+  /**
    * Draws the selected graph
    */
   public function drawGraph()
   {
     $canvas_id = $this->newID();
     $this->initLegend();
+    $this->setup();
 
     $contents = $this->canvas($canvas_id);
     $contents .= $this->drawTitle();

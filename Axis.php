@@ -42,6 +42,7 @@ class Axis {
   protected $direction = 1;
   protected $label_callback = false;
   protected $values = false;
+  protected $tightness = 1;
 
   public function __construct($length, $max_val, $min_val, $min_unit, $min_space,
     $fit, $units_before, $units_after, $decimal_digits, $label_callback, $values)
@@ -78,29 +79,61 @@ class Axis {
   }
 
   /**
-   * Returns TRUE if the number $n is 'nice'
+   * Sets the tightness option
+   */
+  public function setTightness($t)
+  {
+    $this->tightness = $t;
+  }
+
+  /**
+   * Returns a score for "niceness"
    */
   private function nice($n)
   {
-    if(is_integer($n) && ($n % 100 == 0 || $n % 10 == 0 || $n % 5 == 0))
-      return true;
-
     if($this->min_unit) {
       $d = $n / $this->min_unit;
       if($d != floor($d))
-        return false;
+        return 0;
     }
+
+    // convert to string
     $nn = new Number($n);
-    $nn->precision = 4;
+    $nn->precision = 5;
     $s = (string)$nn;
 
-    // regex is overkill for this
-    if(strpos($s, '.') === false)
-      return true;
-    $good = ['0.1', '0.2', '0.3', '0.4', '0.5', '1.5', '2.5'];
-    if(in_array($s, $good, true))
-      return true;
-    return false;
+    $niceness = [
+      '0.1' => 50,
+      '0.5' => 40,
+      '0.2' => 25,
+      '2.5' => 25,
+      '1.5' => 20,
+      '0.3' => 10,
+      '0.4' => 10,
+      '1' => 100,
+      '5' => 95,
+      '2' => 95,
+      '3' => 45,
+      '4' => 40,
+      '6' => 30,
+      '8' => 20,
+      '7' => 10,
+      '9' => 5,
+      '25' => 95,
+      '15' => 40,
+      '75' => 30,
+    ];
+
+    $digits = $s;
+    if(preg_match('/^([1-9]{1,2})(0*)$/', $s, $parts)) {
+      // integer with one or two non-zero digit
+      $digits = $parts[1];
+    } elseif(preg_match('/^0\.(0+)([1-9]{1,2})$/', $s, $parts)) {
+      // float with leading zeroes
+      $digits = $parts[2];
+    }
+
+    return isset($niceness[$digits]) ? $niceness[$digits] : 0;
   }
 
   /**
@@ -108,20 +141,29 @@ class Axis {
    */
   private function findDivision($length, $min, &$count, &$neg_count, &$magnitude)
   {
-    if($length / $count >= $min)
+    if($this->tightness && $length / $count >= $min) {
       return;
+    }
 
     $c = $count - 1;
     $inc = 0;
-    $max_inc = $this->fit ? 0 : floor($count / 5);
+
+    // $max_inc is how many extra steps the axis can grow by
+    if($this->fit)
+      $max_inc = 0;
+    else
+      $max_inc = $count / ($this->tightness ? 5 : 2);
+
     $candidates = [];
     while($c > 1) {
       $m = ($count + $inc) / $c;
+      $new_magnitude = $m * $magnitude;
       $l = $length / $c;
       $nc = $neg_count;
 
       $accept = false;
-      if($this->nice($m) && $l >= $min) {
+      $niceness = $this->nice($new_magnitude);
+      if($niceness > 0 && $l >= $min) {
         $accept = true;
 
         // negative values mean an extra check
@@ -152,13 +194,57 @@ class Axis {
       }
 
       if($accept) {
-        // this division is acceptable, store it
-        $candidates[] = [
-          'cost' => ($inc * 1.5) + $m ,
-          'magnitude' => $magnitude * $m,
-          'c' => $c,
-          'neg_count' => $nc,
-        ];
+        $pos = ($c - $nc) * $new_magnitude;
+        $neg = $nc * $new_magnitude;
+        $pos_niceness = $this->nice($pos);
+        $neg_niceness = $this->nice($neg);
+
+        if($this->tightness || $neg_niceness || $pos_niceness) {
+          // this division is acceptable, cost and store it
+          $cost = $m;
+          if($this->tightness) {
+            $cost += $inc * 1.5;
+          } else {
+            // increasing the length is not as costly
+            $cost += $inc * 0.5;
+
+            // reduce cost for nicer divisions
+            $cost -= $niceness / 50;
+
+            // adjust cost for axis ends
+            if($nc) {
+              if($neg_niceness) {
+                $cost -= $neg_niceness / 100;
+                if($pos_niceness)
+                  $cost -= $pos_niceness / 100;
+              } else {
+                // poor choice
+                $cost += 3;
+              }
+            } elseif($pos_niceness) {
+              $cost -= $pos_niceness / 100;
+            }
+          }
+
+          $candidate = [
+            // usort requires ints to work properly
+            'cost' => intval(1e5 * $cost),
+            'magnitude' => $new_magnitude,
+            'count' => $c,
+            'neg_count' => $nc,
+
+            // these are only used for tuning / debugging
+            'm' => $m,
+            'real_cost' => $cost,
+            'max_pos' => $pos,
+            'max_neg' => $neg,
+            'nice_mag' => $niceness,
+            'nice_pos' => $pos_niceness,
+            'nice_neg' => $neg_niceness,
+          ];
+
+          $candidates[] = $candidate;
+        }
       }
 
       if($inc < $max_inc) {
@@ -177,7 +263,7 @@ class Axis {
     usort($candidates, function($a, $b) { return $a['cost'] - $b['cost']; });
     $winner = $candidates[0];
     $magnitude = $winner['magnitude'];
-    $count = $winner['c'];
+    $count = $winner['count'];
     $neg_count = $winner['neg_count'];
   }
 

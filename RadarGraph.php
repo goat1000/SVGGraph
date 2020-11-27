@@ -46,7 +46,6 @@ class RadarGraph extends LineGraph {
   protected function draw()
   {
     $body = $this->grid() . $this->underShapes();
-    $this->colourSetup($this->values->itemsCount());
 
     $bnum = 0;
     $cmd = 'M';
@@ -460,11 +459,105 @@ class RadarGraph extends LineGraph {
   }
 
   /**
-   * Calculates guidelines
+   * Both of these functions need to exist, just call one from the other
    */
-  protected function calcGuidelines($g = null)
+  public function guidelinePathAbove($axis, $value, &$x, &$y, &$w, &$h,
+    $reverse_length)
   {
-    // in the case of radar graphs, prevents junk guidelines being drawn
+    return $this->guidelinePathBelow($axis, $value, $x, $y, $w, $h, $reverse_length);
+  }
+
+  /**
+   * Draws the path for a guideline
+   */
+  public function guidelinePathBelow($axis, $value, &$x, &$y, &$w, &$h,
+    $reverse_length)
+  {
+    $coords = new Coords($this);
+    $path = new PathData;
+
+    $grid_value = 'g' . (is_numeric($value) ? new Number($value) : $value);
+    if($axis == 'x') {
+
+      // radial line
+      $x = $coords->transform($grid_value, 'x', null);
+      if($x === null)
+        return $path;
+
+      if(is_string($h) || $h > 0) {
+        $h = $coords->transform($h, 'y');
+      } else {
+        $h = $this->radius;
+      }
+
+      if($reverse_length) {
+        list($p1x, $p1y) = $this->transformCoords($x, $this->radius - $h);
+        $h = $this->radius;
+      } else {
+        $p1x = $this->xc;
+        $p1y = $this->yc;
+      }
+
+      list($p2x, $p2y) = $this->transformCoords($x, $h);
+      $path->add('M', $p1x, $p1y, 'L', $p2x, $p2y);
+
+      // text position values - not very useful though
+      $x = min($p1x, $p2x);
+      $y = min($p1y, $p2y);
+      $w = abs($p2x - $p1x);
+      $h = abs($p2y - $p1y);
+
+    } else {
+      $x = $coords->transform('gl', 'x');
+      $y = $coords->transform($grid_value, 'y', null);
+      if($y === null)
+        return $path;
+
+      if(is_string($w) || $w > 0) {
+        $w = $coords->transform($w, 'x');
+      } else {
+        $w = $coords->transform('gw', 'x');
+      }
+      if($reverse_length)
+        $x = $coords->transform('gr', 'x') - $w;
+      $h = 0;
+
+      // round or segmented line
+      if($this->grid_straight) {
+        $grid_angles = [];
+        $points = array_merge($this->getGridPointsX(0), $this->getSubDivsX(0));
+        foreach($points as $point) {
+          $new_x = $point->position - $this->pad_left;
+          $grid_angles[] = $this->arad + $new_x / $this->radius;
+        }
+        // put the grid angles in order
+        sort($grid_angles);
+        $x1 = $this->xc + $y * sin($this->arad);
+        $y1 = $this->yc + $y * cos($this->arad);
+        $path->add('M', $x1, $y1, 'L');
+        foreach($grid_angles as $a) {
+          $x1 = $this->xc + $y * sin($a);
+          $y1 = $this->yc + $y * cos($a);
+          $path->add($x1, $y1);
+        }
+        $path->add('z');
+
+      } else {
+        $yc_num = new Number($this->yc);
+        $p1 = new Number($this->xc - $y);
+        $p2 = new Number($this->xc + $y);
+        $path->add('M', $p1, $yc_num, 'A', $y, $y, 0, 1, 1, $p2, $yc_num);
+        $path->add('M', $p2, $yc_num, 'A', $y, $y, 0, 1, 1, $p1, $yc_num);
+      }
+
+      // update values for text position
+      $x = $this->xc;
+      $y = $this->yc - $y;
+      $w = 0;
+      $h = 0;
+    }
+
+    return $path;
   }
 
   /**
