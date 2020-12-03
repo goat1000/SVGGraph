@@ -183,6 +183,15 @@ class DisplayAxisRotated extends DisplayAxis {
   }
 
   /**
+   * Override position correction
+   */
+  protected function getLabelOffset($x, $y, $gx, $gy, $g_width, $g_height)
+  {
+    // no need for correction
+    return ['x' => $x, 'y' => $y];
+  }
+
+  /**
    * Returns the dimensions of the label
    */
   protected function getLabelPosition()

@@ -444,9 +444,10 @@ class DisplayAxis {
    */
   protected function getLabel($x, $y, $gx, $gy, $g_width, $g_height)
   {
-    $pos = $this->getLabelPosition($x, $y, $g_width, $g_height);
-    $tx = $x + $pos['tx'];
-    $ty = $y + $pos['ty'];
+    $pos = $this->getLabelPosition();
+    $offset = $this->getLabelOffset($x, $y, $gx, $gy, $g_width, $g_height);
+    $tx = $offset['x'] + $pos['tx'];
+    $ty = $offset['y'] + $pos['ty'];
     $label = [
       'text-anchor' => 'middle',
       'font-family' => $this->styles['l_font'],
@@ -466,6 +467,25 @@ class DisplayAxis {
 
     $svg_text = new Text($this->graph, $this->styles['l_font']);
     return $svg_text->text($this->label, $this->styles['l_font_size'], $label);
+  }
+
+  /**
+   * Returns the corrected offset for the label
+   */
+  protected function getLabelOffset($x, $y, $gx, $gy, $g_width, $g_height)
+  {
+    if($this->orientation == 'h') {
+
+      // label always at bottom of grid
+      $y = $gy + $g_height;
+
+    } else {
+
+      // leftmost axis label must be outside grid
+      if($this->axis_no == 0)
+        $x = $gx;
+    }
+    return ['x' => $x, 'y' => $y];
   }
 
   /**
