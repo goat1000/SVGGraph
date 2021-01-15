@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2020 Graham Breach
+ * Copyright (C) 2017-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -116,15 +116,16 @@ class Guidelines {
     if(!is_array($g))
       $g = [$g];
 
-    $value = $g[0];
+    // $mmvalue is for min/max
+    $value = $mmvalue = $g[0];
     $axis = (isset($g[2]) && ($g[2] == 'x' || $g[2] == 'y')) ? $g[2] : 'y';
     if($axis == 'x') {
       if($this->datetime_keys) {
-        // $value is a datetime string, so convert it
-        $value = Graph::dateConvert($value);
+        // $value is a datetime string, try to convert it
+        $mmvalue = Graph::dateConvert($value);
 
         // if the value could not be converted it can't be drawn either
-        if($value === null)
+        if($mmvalue === null)
           return;
       } else if($this->assoc_keys) {
         // $value is a key - must be converted later when the axis
@@ -189,10 +190,10 @@ class Guidelines {
 
     // update maxima and minima
     if(!isset($g['no_min_max']) || $g['no_min_max'] === false) {
-      if($this->max_guide[$axis] === null || $value > $this->max_guide[$axis])
-        $this->max_guide[$axis] = $value;
-      if($this->min_guide[$axis] === null || $value < $this->min_guide[$axis])
-        $this->min_guide[$axis] = $value;
+      if($this->max_guide[$axis] === null || $mmvalue > $this->max_guide[$axis])
+        $this->max_guide[$axis] = $mmvalue;
+      if($this->min_guide[$axis] === null || $mmvalue < $this->min_guide[$axis])
+        $this->min_guide[$axis] = $mmvalue;
     }
 
     // can flip the axes now the min/max are stored
