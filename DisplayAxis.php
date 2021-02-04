@@ -58,7 +58,8 @@ class DisplayAxis {
     $this->orientation = $orientation;
     $this->type = $type;
     $this->main = $main;
-    $this->block_label = ($label_centre && $type == 'x');
+    $this->block_label = ($type == 'x' && ($label_centre ||
+      $graph->getOption('force_block_label_x')));
     $this->boxed_text = false;
     $styles = [];
 
