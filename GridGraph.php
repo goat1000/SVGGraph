@@ -423,30 +423,26 @@ abstract class GridGraph extends Graph {
         throw new \Exception('Invalid Y axis options: min > max (' .
           $fixed_min . ' > ' . $fixed_max . ')');
 
-      if(is_numeric($fixed_min)) {
+      if(is_numeric($fixed_min) && is_numeric($fixed_max)) {
         $v_min[] = $fixed_min;
-      } else {
-        $minv_list = [$this->getAxisMinValue($i)];
-        if($g_min_y !== null)
-          $minv_list[] = (float)$g_min_y;
-
-        // if not a log axis, start at 0
-        if(!$this->getOption(['log_axis_y', $i]))
-          $minv_list[] = 0;
-        $v_min[] = min($minv_list);
-      }
-
-      if(is_numeric($fixed_max)) {
         $v_max[] = $fixed_max;
       } else {
-        $maxv_list = [$this->getAxisMaxValue($i)];
-        if($g_max_y !== null)
-          $maxv_list[] = (float)$g_max_y;
+        $allow_zero = !$this->getOption(['log_axis_y', $i], false);
+        $prefer_zero = $this->getOption(['axis_zero_y', $i], true);
+        $axis_min_value = $this->getAxisMinValue($i);
+        $axis_max_value = $this->getAxisMaxValue($i);
+        if($g_min_y !== null && $g_min_y < $axis_min_value)
+          $axis_min_value = $g_min_y;
+        if($g_max_y !== null && $g_max_y > $axis_max_value)
+          $axis_max_value = $g_max_y;
 
-        // if not a log axis, start at 0
-        if(!$this->getOption(['log_axis_y', $i]))
-          $maxv_list[] = 0;
-        $v_max[] = max($maxv_list);
+        $v_min[] = is_numeric($fixed_min) ? $fixed_min :
+          Axis::calcMinimum($axis_min_value, $axis_max_value,
+            $allow_zero, $prefer_zero);
+
+        $v_max[] = is_numeric($fixed_max) ? $fixed_max :
+          Axis::calcMaximum($axis_min_value, $axis_max_value,
+            $allow_zero, $prefer_zero);
       }
       if($v_max[$i] < $v_min[$i])
         throw new \Exception('Invalid Y axis: min > max (' .

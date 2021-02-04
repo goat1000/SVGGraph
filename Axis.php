@@ -63,6 +63,49 @@ class Axis {
   }
 
   /**
+   * Returns min for an axis based on its min and max values
+   */
+  public static function calcMinimum($min_value, $max_value, $allow_zero,
+    $prefer_zero)
+  {
+    if($allow_zero && $prefer_zero) {
+      if($min_value > 0)
+        return 0;
+      if($max_value < 0)
+        $max_value = 0;
+    }
+
+    if($min_value > 0) {
+      $mag = floor(log10($min_value));
+      if($allow_zero) {
+        $mag1 = floor(log10($max_value));
+        if($mag1 > $mag)
+          return 0;
+      }
+      $d = pow(10, $mag);
+      $min_value = floor($min_value / $d) * $d;
+    }
+    return $min_value;
+  }
+
+  /**
+   * Returns max for an axis based on its min and max values
+   */
+  public static function calcMaximum($min_value, $max_value, $allow_zero,
+    $prefer_zero)
+  {
+    if($max_value >= 0)
+      return $max_value;
+
+    // instead of duplicating code, negate values and pass to calcMinimum()
+    $neg_max = Axis::calcMinimum(-$max_value, -$min_value, $allow_zero,
+      $prefer_zero);
+    if($neg_max > 0)
+      return -$neg_max;
+    return 0;
+  }
+
+  /**
    * Allow length adjustment
    */
   public function setLength($l)
