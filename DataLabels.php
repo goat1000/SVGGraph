@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2020 Graham Breach
+ * Copyright (C) 2015-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -87,6 +87,7 @@ class DataLabels {
     'tail_end_angle' => 'data_label_tail_end_angle',
     'tail_end_width' => 'data_label_tail_end_width',
     'shadow_opacity' => 'data_label_shadow_opacity',
+    'opacity' => 'data_label_opacity',
   ];
 
   function __construct(&$graph)
@@ -588,9 +589,10 @@ class DataLabels {
     if(isset($gobject['id']) && $gobject['id'] !== null)
       $group['id'] = $gobject['id'];
 
-    // start off hidden?
-    if($gobject['click'] == 'show')
-      $group['opacity'] = 1; // set opacity explicitly for calculations
+    // opacity is required when set or using click-show-hide
+    $opacity = max(0, min(1, $style['opacity']));
+    if($opacity < 1 || $gobject['click'] == 'show')
+      $group['opacity'] = $opacity;
     elseif($gobject['click'] == 'hide' || $gobject['fade'])
       $group['opacity'] = 0;
 
