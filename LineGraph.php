@@ -234,15 +234,20 @@ class LineGraph extends PointGraph {
    */
   public function drawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!isset($entry->style['line_style']))
+    if(!isset($entry->style['line_style'], $entry->style['fill_style'])) {
+      // No legend entry if no line or fill style is specified.
       return '';
+    }
     $marker = parent::drawLegendEntry($x, $y, $w, $h, $entry);
-    $h1 = $h/2;
-    $y += $h1;
-    $line = $entry->style['line_style'];
-    $line['d'] = new PathData('M', $x, $y, 'l', $w, 0);
-    $graph_line = $this->element('path', $line);
+    $graph_line = '';
 
+    if(isset($entry->style['line_style'])) {
+      $h1 = $h/2;
+      $y += $h1;
+      $line = $entry->style['line_style'];
+      $line['d'] = new PathData('M', $x, $y, 'l', $w, 0);
+      $graph_line = $this->element('path', $line);
+    }
     if($entry->style['fill_style'] !== null) {
       $fill = $entry->style['fill_style'];
       $fill['d'] = new PathData('M', $x, $y, 'l', $w, 0, 0, $h1, -$w, 0, 'z');
