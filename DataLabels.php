@@ -88,6 +88,7 @@ class DataLabels {
     'tail_end_width' => 'data_label_tail_end_width',
     'shadow_opacity' => 'data_label_shadow_opacity',
     'opacity' => 'data_label_opacity',
+    'line_spacing' => 'data_label_line_spacing',
   ];
 
   function __construct(&$graph)
@@ -383,6 +384,17 @@ class DataLabels {
   }
 
   /**
+   * Returns the font size and line spacing for a style as an array
+   */
+  protected function getFontSize($style)
+  {
+    $font_size = $line_spacing = max(4, (float)$style['font_size']);
+    if($style['line_spacing'] !== null)
+      $line_spacing = max(1, (float)$style['line_spacing']);
+    return [$font_size, $line_spacing];
+  }
+
+  /**
    * Returns size of a label as array (w, h)
    */
   protected function measureLabel($content, $dataset, $index, &$gobject)
@@ -390,10 +402,10 @@ class DataLabels {
     $style = $this->getStyle($dataset, $index, $gobject);
 
     // get size of text
-    $font_size = max(4, (float)$style['font_size']);
+    list($font_size, $line_spacing) = $this->getFontSize($style);
     $svg_text = new Text($this->graph, $style['font'], $style['font_adjust']);
     list($w, $h) = $svg_text->measure($content, $font_size, $style['angle'],
-      $font_size);
+      $line_spacing);
 
     // if this label type uses padding, add it in
     if($this->getTypeInfo($style['type'], 'pad')) {
@@ -476,8 +488,7 @@ class DataLabels {
       $label_w, $label_h, $space, true);
 
     list($colour, $back_colour) = $this->getColours($hpos, $vpos, $style);
-
-    $font_size = max(4, (float)$style['font_size']);
+    list($font_size, $line_spacing) = $this->getFontSize($style);
     $text = [
       'font-family' => $style['font'],
       'font-size' => $font_size,
@@ -494,7 +505,7 @@ class DataLabels {
 
     // need text size without padding, rotation, etc.
     $svg_text = new Text($this->graph, $style['font'], $style['font_adjust']);
-    list($tbw, $tbh) = $svg_text->measure($content, $font_size, 0, $font_size);
+    list($tbw, $tbh) = $svg_text->measure($content, $font_size, 0, $line_spacing);
     $text_baseline = $svg_text->baseline($font_size);
 
     $text['y'] = $y + ($label_h - $tbh) / 2 + $text_baseline;
@@ -581,9 +592,9 @@ class DataLabels {
         'stroke-linejoin' => 'round',
       ];
       $t1 = array_merge($outline, $text);
-      $label_markup .= $svg_text->text($content, $font_size, $t1);
+      $label_markup .= $svg_text->text($content, $line_spacing, $t1);
     }
-    $label_markup .= $svg_text->text($content, $font_size, $text);
+    $label_markup .= $svg_text->text($content, $line_spacing, $text);
 
     $group = [];
     if(isset($gobject['id']) && $gobject['id'] !== null)
@@ -744,7 +755,8 @@ class DataLabels {
       }
     } else {
       // make sure line is long enough to not look like part of text
-      $llen = max($style['font_size'], $style['tail_length']);
+      list($font_size) = $this->getFontSize($style);
+      $llen = max($font_size, $style['tail_length']);
       $x2 = $x1 + ($llen * cos($a));
       $y2 = $y1 + ($llen * sin($a));
     }
