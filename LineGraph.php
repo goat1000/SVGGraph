@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2020 Graham Breach
+ * Copyright (C) 2009-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,8 +26,8 @@ namespace Goat1000\SVGGraph;
  */
 class LineGraph extends PointGraph {
 
-  protected $curr_line_style = null;
-  protected $curr_fill_style = null;
+  protected $line_styles = [];
+  protected $fill_styles = [];
 
   /**
    * Override constructor to handle some odd settings
@@ -162,7 +162,7 @@ class LineGraph extends PointGraph {
       // close the path?
       if($close)
         $path->add('z');
-      $this->curr_line_style = $attr;
+      $this->line_styles[$dataset] = $attr;
       $attr['d'] = $path;
       if($this->semantic_classes)
         $attr['class'] = 'series' . $dataset;
@@ -184,9 +184,9 @@ class LineGraph extends PointGraph {
         $graph_line = $this->element('path', $fill_style) . $graph_line;
 
         unset($fill_style['d'], $fill_style['class']);
-        $this->curr_fill_style = $fill_style;
+        $this->fill_styles[$dataset] = $fill_style;
       } else {
-        $this->curr_fill_style = null;
+        $this->fill_styles[$dataset] = null;
       }
     }
 
@@ -224,8 +224,10 @@ class LineGraph extends PointGraph {
    */
   protected function setLegendEntry($dataset, $index, $item, $style_info)
   {
-    $style_info['line_style'] = $this->curr_line_style;
-    $style_info['fill_style'] = $this->curr_fill_style;
+    $style_info['line_style'] = isset($this->line_styles[$dataset]) ?
+      $this->line_styles[$dataset] : null;
+    $style_info['fill_style'] = isset($this->fill_styles[$dataset]) ?
+      $this->fill_styles[$dataset] : null;
     parent::setLegendEntry($dataset, $index, $item, $style_info);
   }
 
@@ -234,16 +236,18 @@ class LineGraph extends PointGraph {
    */
   public function drawLegendEntry($x, $y, $w, $h, $entry)
   {
-    if(!isset($entry->style['line_style']))
-      return '';
     $marker = parent::drawLegendEntry($x, $y, $w, $h, $entry);
+    $graph_line = '';
+
     $h1 = $h/2;
     $y += $h1;
-    $line = $entry->style['line_style'];
-    $line['d'] = new PathData('M', $x, $y, 'l', $w, 0);
-    $graph_line = $this->element('path', $line);
 
-    if($entry->style['fill_style'] !== null) {
+    if(isset($entry->style['line_style'])) {
+      $line = $entry->style['line_style'];
+      $line['d'] = new PathData('M', $x, $y, 'l', $w, 0);
+      $graph_line = $this->element('path', $line);
+    }
+    if(isset($entry->style['fill_style'])) {
       $fill = $entry->style['fill_style'];
       $fill['d'] = new PathData('M', $x, $y, 'l', $w, 0, 0, $h1, -$w, 0, 'z');
       $graph_line = $this->element('path', $fill) . $graph_line;
