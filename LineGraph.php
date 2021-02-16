@@ -138,7 +138,9 @@ class LineGraph extends PointGraph {
       $fillpath = new PathData;
       $cmd = 'M';
       $y_bottom = new Number($y_bottom);
-      foreach($points as $point) {
+
+      $line_points = $this->getLinePoints($points);
+      foreach($line_points as $point) {
         list($x, $y, $item, $dataset, $index) = $point;
         $x = new Number($x);
         $y = new Number($y);
@@ -201,6 +203,14 @@ class LineGraph extends PointGraph {
       }
     }
     return $graph_line;
+  }
+
+  /**
+   * Preprocess the points of a joined line
+   */
+  protected function getLinePoints($points)
+  {
+    return $points;
   }
 
   /**
