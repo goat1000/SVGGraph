@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2020 Graham Breach
+ * Copyright (C) 2016-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -53,6 +53,7 @@ class Legend {
   protected $title_font_adjust;
   protected $title_font_size;
   protected $title_font_weight;
+  protected $title_line_spacing;
   protected $type;
   protected $unique_fields;
 
@@ -78,6 +79,12 @@ class Legend {
       'legend_font_adjust');
     $this->title_font_size = $graph->getOption('legend_title_font_size',
       'legend_font_size');
+    $this->line_spacing = $graph->getOption('legend_line_spacing');
+    if($this->line_spacing === null || $this->line_spacing < 1)
+      $this->line_spacing = $this->font_size;
+    $this->title_line_spacing = $graph->getOption('legend_title_line_spacing');
+    if($this->title_line_spacing === null || $this->title_line_spacing < 1)
+      $this->title_line_spacing = $this->title_font_size;
   }
 
   /**
@@ -145,7 +152,7 @@ class Legend {
     $svg_text = new Text($this->graph, $this->font, $this->font_adjust);
     $baseline = $svg_text->baseline($font_size);
     foreach($this->entry_details as $entry) {
-      list($w, $h) = $svg_text->measure($entry->text, $font_size, 0, $font_size);
+      list($w, $h) = $svg_text->measure($entry->text, $font_size, 0, $this->line_spacing);
       if($w > $max_width)
         $max_width = $w;
       if($h > $max_height)
@@ -170,7 +177,7 @@ class Legend {
       $svg_text_title = new Text($this->graph, $this->title_font,
         $this->title_font_adjust);
       list($tw, $th) = $svg_text_title->measure($this->title, $title_font_size,
-        0, $title_font_size);
+        0, $this->title_line_spacing);
       $title_width = $tw + $padding_x * 2;
       $start_y += $th + $this->graph->getOption('legend_title_spacing',
         'legend_padding', 1);
@@ -193,7 +200,7 @@ class Legend {
       'legend_padding', 1);
     $col_space = $this->graph->getOption('legend_column_spacing',
       'legend_padding', 1);
-  
+
     foreach($entries as $entry) {
       $y = $start_y + $column_entry * ($entry_height + $spacing);
 
@@ -204,7 +211,7 @@ class Legend {
       if(!empty($element)) {
         // position the text element
         $text['y'] = $y + $baseline + ($entry_height - $entry->height) / 2;
-        $text_element = $svg_text->text($entry->text, $font_size, $text);
+        $text_element = $svg_text->text($entry->text, $this->line_spacing, $text);
         $text_columns[$column] .= $text_element;
         $entry_columns[$column] .= $element;
 
@@ -291,7 +298,7 @@ class Legend {
         $text['font-weight'] = $this->title_font_weight;
       if($this->title_colour != $this->colour)
         $text['fill'] = new Colour($this->graph, $this->title_colour);
-      $title = $svg_text_title->text($this->title, $title_font_size, $text);
+      $title = $svg_text_title->text($this->title, $this->title_line_spacing, $text);
     }
 
     // create group to contain whole legend

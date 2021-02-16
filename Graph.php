@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -547,12 +547,15 @@ abstract class Graph {
     $title_colour = $this->getOption('graph_title_colour');
     $title_pos = $this->getOption('graph_title_position');
     $title_space = $this->getOption('graph_title_space');
+    $title_line_spacing = $this->getOption('graph_title_line_spacing');
+    if($title_line_spacing === null || $title_line_spacing < 1)
+      $title_line_spacing = $title_font_size;
 
     if($title_pos != 'bottom' && $title_pos != 'left' && $title_pos != 'right')
       $title_pos = 'top';
     $pad_side = 'pad_' . $title_pos;
     list($width, $height) = $svg_text->measure($title, $title_font_size,
-      0, $title_font_size);
+      0, $title_line_spacing);
     $baseline = $svg_text->baseline($title_font_size);
     $text = [
       'font-size' => $title_font_size,
@@ -603,9 +606,12 @@ abstract class Graph {
         'graph_title_colour');
       $subtitle_space = $this->getOption('graph_subtitle_space',
         'graph_title_space');
+      $subtitle_line_spacing = $this->getOption('graph_subtitle_line_spacing');
+      if($subtitle_line_spacing === null || $subtitle_line_spacing < 1)
+        $subtitle_line_spacing = $subtitle_font_size;
 
       list($swidth, $sheight) = $svg_subtext->measure($subtitle,
-        $subtitle_font_size, 0, $subtitle_font_size);
+        $subtitle_font_size, 0, $subtitle_line_spacing);
       $sbaseline = $svg_text->baseline($subtitle_font_size);
       $stext = [
         'font-size' => $subtitle_font_size,
@@ -639,11 +645,11 @@ abstract class Graph {
       }
 
       $this->{$pad_side} += $sheight + $subtitle_space;
-      $subtitle_text = $svg_subtext->text($subtitle, $subtitle_font_size, $stext);
+      $subtitle_text = $svg_subtext->text($subtitle, $subtitle_line_spacing, $stext);
     }
 
     // the Text function will break it into lines
-    $title_text = $svg_text->text($title, $title_font_size, $text);
+    $title_text = $svg_text->text($title, $title_line_spacing, $text);
 
     return $title_text . $subtitle_text;
   }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2020 Graham Breach
+ * Copyright (C) 2018-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -147,7 +147,7 @@ class DisplayAxisRotated extends DisplayAxis {
 
   /**
    * Returns text information:
-   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle]
+   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle, $line_spacing]
    */
   protected function getTextInfo($x, $y, &$point, $opposite, $level)
   {
@@ -156,10 +156,12 @@ class DisplayAxisRotated extends DisplayAxis {
     $y_add = $point->position * $direction * cos($this->arad);
 
     $font_size = $this->styles['t_font_size'];
+    $line_spacing = $this->styles['t_line_spacing'];
     $svg_text = new Text($this->graph, $this->styles['t_font'],
       $this->styles['t_font_adjust']);
     $baseline = $svg_text->baseline($font_size);
-    list($w, $h) = $svg_text->measure($point->getText(), $font_size, 0, $font_size);
+    list($w, $h) = $svg_text->measure($point->getText(), $font_size, 0,
+      $line_spacing);
     $attr = [
       'x' => $x + $x_add,
       'text-anchor' => $this->anchor,
@@ -179,7 +181,8 @@ class DisplayAxisRotated extends DisplayAxis {
       $xform->rotate($angle, $rcx, $rcy);
       $attr['transform'] = $xform;
     }
-    return [$svg_text, $font_size, $attr, $this->anchor, $rcx, $rcy, $angle];
+    return [$svg_text, $font_size, $attr, $this->anchor, $rcx, $rcy, $angle,
+      $line_spacing];
   }
 
   /**
@@ -197,8 +200,9 @@ class DisplayAxisRotated extends DisplayAxis {
   protected function getLabelPosition()
   {
     $font_size = $this->styles['l_font_size'];
+    $line_spacing = $this->styles['l_line_spacing'];
     $svg_text = new Text($this->graph, $this->styles['l_font']);
-    $tsize = $svg_text->measure($this->label, $font_size, 0, $font_size);
+    $tsize = $svg_text->measure($this->label, $font_size, 0, $line_spacing);
     $baseline = $svg_text->baseline($font_size);
     $c = cos($this->arad);
     $s = sin($this->arad);

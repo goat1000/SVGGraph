@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2020 Graham Breach
+ * Copyright (C) 2018-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -178,7 +178,7 @@ class DisplayAxisRadar extends DisplayAxis {
 
   /**
    * Returns text information:
-   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle]
+   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle, $line_spacing]
    */
   protected function getTextInfo($x, $y, &$point, $opposite, $level)
   {
@@ -210,10 +210,12 @@ class DisplayAxisRadar extends DisplayAxis {
       $sector == 0 || $sector == 15);
 
     $font_size = $this->styles['t_font_size'];
+    $line_spacing = $this->styles['t_line_spacing'];
     $svg_text = new Text($this->graph, $this->styles['t_font'],
       $this->styles['t_font_adjust']);
     $baseline = $svg_text->baseline($font_size);
-    list($w, $h) = $svg_text->measure($point->getText(), $font_size, 0, $font_size);
+    list($w, $h) = $svg_text->measure($point->getText(), $font_size, 0,
+      $line_spacing);
 
     $attr['x'] = $x1;
     if($anchor == 'middle')
@@ -230,7 +232,8 @@ class DisplayAxisRadar extends DisplayAxis {
       $attr['transform'] = $xform;
     }
     $attr['text-anchor'] = $anchor;
-    return [$svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $text_angle];
+    return [$svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $text_angle,
+      $line_spacing];
   }
 
   /**
@@ -261,8 +264,9 @@ class DisplayAxisRadar extends DisplayAxis {
   {
     $bbox = $this->measure(false);
     $font_size = $this->styles['l_font_size'];
+    $line_spacing = $this->styles['l_line_spacing'];
     $svg_text = new Text($this->graph, $this->styles['l_font']);
-    $tsize = $svg_text->measure($this->label, $font_size, 0, $font_size);
+    $tsize = $svg_text->measure($this->label, $font_size, 0, $line_spacing);
     $baseline = $svg_text->baseline($font_size);
     $space = $this->styles['l_space'];
 

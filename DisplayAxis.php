@@ -141,6 +141,10 @@ class DisplayAxis {
       $styles['t_colour'] = new Colour($graph, $graph->getOption(
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]));
+      $styles['t_line_spacing'] = $graph->getOption(
+        ['axis_text_line_spacing_' . $o, $axis_no], 'axis_text_line_spacing');
+      if($styles['t_line_spacing'] === null || $styles['t_line_spacing'] < 1)
+        $styles['t_line_spacing'] = $styles['t_font_size'];
       $styles['t_back_colour'] = null;
 
       // fill in background colour array, if required
@@ -180,6 +184,10 @@ class DisplayAxis {
       $styles['l_space'] = $graph->getOption('label_space');
       $styles['l_pos'] = $graph->getOption(
         ['axis_label_position_' . $o, $axis_no], 'axis_label_position');
+      $styles['l_line_spacing'] = $graph->getOption(
+        ['label_line_spacing_' . $o, $axis_no], 'label_line_spacing');
+      if($styles['l_line_spacing'] === null || $styles['l_line_spacing'] < 1)
+        $styles['l_line_spacing'] = $styles['l_font_size'];
     }
 
     $this->styles = $styles;
@@ -467,7 +475,7 @@ class DisplayAxis {
     }
 
     $svg_text = new Text($this->graph, $this->styles['l_font']);
-    return $svg_text->text($this->label, $this->styles['l_font_size'], $label);
+    return $svg_text->text($this->label, $this->styles['l_line_spacing'], $label);
   }
 
   /**
@@ -499,8 +507,9 @@ class DisplayAxis {
   {
     $bbox = $this->measure(false);
     $font_size = $this->styles['l_font_size'];
+    $line_spacing = $this->styles['l_line_spacing'];
     $svg_text = new Text($this->graph, $this->styles['l_font']);
-    $tsize = $svg_text->measure($this->label, $font_size, 0, $font_size);
+    $tsize = $svg_text->measure($this->label, $font_size, 0, $line_spacing);
     $baseline = $svg_text->baseline($font_size);
     $a_length = $this->axis->getLength();
     $space = $this->styles['l_space'];
@@ -619,12 +628,12 @@ class DisplayAxis {
    */
   protected function measureText($x, $y, &$point, $opposite, $level)
   {
-    list($svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $angle) =
-      $this->getTextInfo($x, $y, $point, $opposite, $level);
+    list($svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $angle,
+      $line_spacing) = $this->getTextInfo($x, $y, $point, $opposite, $level);
 
     // find (rotated) size and position now
     list($x, $y, $w, $h) = $svg_text->measurePosition($point->getText($level),
-      $font_size, $font_size, $attr['x'], $attr['y'], $anchor, $angle,
+      $font_size, $line_spacing, $attr['x'], $attr['y'], $anchor, $angle,
       $rcx, $rcy);
     return ['x' => $x, 'y' => $y, 'width' => $w, 'height' => $h];
   }
@@ -644,29 +653,32 @@ class DisplayAxis {
 
     $string = $point->getText($level);
     $text_out = '';
-    list($svg_text, $font_size, $attr) = $this->getTextInfo($x, $y, $point,
-      $opposite, $level);
+    $text_info = $this->getTextInfo($x, $y, $point, $opposite, $level);
+    $svg_text = $text_info[0];
+    $attr = $text_info[2];
+    $line_spacing = $text_info[7];
 
     if(!empty($this->styles['t_back_colour'])) {
       $b_attr = array_merge($this->styles['t_back_colour'], $attr);
-      $text_out .= $svg_text->text($string, $font_size, $b_attr);
+      $text_out .= $svg_text->text($string, $line_spacing, $b_attr);
     }
-    $text_out .= $svg_text->text($string, $font_size, $attr);
+    $text_out .= $svg_text->text($string, $line_spacing, $attr);
     return $text_out;
   }
 
   /**
    * Returns text information:
-   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle]
+   * [Text, $font_size, $attr, $anchor, $rcx, $rcy, $angle, $line_spacing]
    */
   protected function getTextInfo($x, $y, &$point, $opposite, $level)
   {
     $font_size = $this->styles['t_font_size'];
+    $line_spacing = $this->styles['t_line_spacing'];
     $svg_text = new Text($this->graph, $this->styles['t_font'],
       $this->styles['t_font_adjust']);
     $baseline = $svg_text->baseline($font_size);
     list($w, $h) = $svg_text->measure($point->getText($level), $font_size, 0,
-      $font_size);
+      $line_spacing);
     if($this->orientation == 'h') {
       $attr['x'] = $x + $point->position;
       $attr['y'] = $y + $baseline - ($opposite ? $h : 0);
@@ -702,7 +714,8 @@ class DisplayAxis {
     }
     $attr['text-anchor'] = $anchor;
 
-    return [$svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $angle];
+    return [$svg_text, $font_size, $attr, $anchor, $rcx, $rcy, $angle,
+      $line_spacing];
   }
 
   /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2019 Graham Breach
+ * Copyright (C) 2012-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -157,12 +157,16 @@ class Javascript {
 
     case 'texttt' :
       $this->addFuncs('getE', 'setattr', 'newel', 'newtext');
-      $opts = ['padding', 'colour', 'font', 'font_size', 'font_weight'];
+      $opts = ['padding', 'colour', 'font', 'font_size', 'font_weight', 'line_spacing'];
       $vars = [];
       foreach($opts as $opt)
         $vars[$opt] = $this->graph->getOption('tooltip_' . $opt);
       $vars['colour'] = new Colour($this->graph, $vars['colour'], false, false);
-      $vars['tty'] = $vars['font_size'] + $vars['padding'];
+      $vars['ttoffset'] = $vars['font_size'] + $vars['padding'];
+      if($vars['line_spacing'] === null || $vars['line_spacing'] < 1)
+        $vars['tty'] = $vars['ttoffset'];
+      else
+        $vars['tty'] = $vars['line_spacing'];
       return $this->insertTemplate('texttt', $vars);
 
     case 'ttEvent' :

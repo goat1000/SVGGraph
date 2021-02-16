@@ -69,7 +69,7 @@ class Guidelines {
     // set up options
     $opts = ['above', 'dash', 'font', 'font_adjust', 'font_size',
       'font_weight', 'length', 'length_units', 'opacity', 'stroke_width',
-      'text_align', 'text_angle', 'text_padding', 'text_position'];
+      'text_align', 'text_angle', 'text_padding', 'text_position', 'line_spacing'];
     foreach($opts as $opt)
       $this->{$opt} = $graph->getOption('guideline_' . $opt);
 
@@ -163,6 +163,7 @@ class Guidelines {
       'text_padding' => 'text_padding',
       'text_angle' => 'text_angle',
       'text_align' => 'text_align',
+      'line_spacing' => 'line_spacing',
     ];
 
     // handle colours first
@@ -345,21 +346,25 @@ class Guidelines {
       $font = $this->font;
       $font_size = $this->font_size;
       $font_adjust = $this->font_adjust;
+      $line_spacing = $this->line_spacing;
       if(isset($line['text'])) {
         $this->updateAndUnset($text_pos, $line['text'], 'text_position');
         $this->updateAndUnset($text_pad, $line['text'], 'text_padding');
         $this->updateAndUnset($text_angle, $line['text'], 'text_angle');
         $this->updateAndUnset($text_align, $line['text'], 'text_align');
         $this->updateAndUnset($font_adjust, $line['text'], 'font_adjust');
+        $this->updateAndUnset($line_spacing, $line['text'], 'line_spacing');
         if(isset($line['text']['font-family']))
           $font = $line['text']['font-family'];
         if(isset($line['text']['font-size']))
           $font_size = $line['text']['font-size'];
       }
+      if($line_spacing === null || $line_spacing < 1)
+        $line_spacing = $font_size;
 
       $svg_text = new Text($this->graph, $font, $font_adjust);
       list($text_w, $text_h) = $svg_text->measure($line['title'], $font_size,
-        $text_angle, $font_size);
+        $text_angle, $line_spacing);
 
       list($x, $y, $text_pos_align) = Graph::relativePosition(
         $text_pos, $y, $x, $y + $h, $x + $w,
@@ -384,7 +389,7 @@ class Guidelines {
 
       if(isset($line['text']))
         $t = array_merge($t, $line['text']);
-      $text .= $svg_text->text($line['title'], $font_size, $t);
+      $text .= $svg_text->text($line['title'], $line_spacing, $t);
     }
   }
 
