@@ -1,18 +1,16 @@
 function dateFormat(d,f) {
-  var str = '', i, s, m = ['January','February','March','April','May','June',
-    'July','August','September','October','November','December'],
-    w = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var str = '', i, s;
   for(i = 0; i < f.length; ++i) {
     switch(f[i]) {
     case 'Y' : s = d.getUTCFullYear(); break;
     case 'y' : s = (d.getUTCFullYear() + '').substr(2); break;
-    case 'F' : s = m[d.getUTCMonth()]; break;
-    case 'M' : s = m[d.getUTCMonth()].substr(0,3); break;
+    case 'F' : s = monthsLong[d.getUTCMonth()]; break;
+    case 'M' : s = monthsShort[d.getUTCMonth()]; break;
     case 'm' : s = ('0' + (d.getUTCMonth() + 1)).substr(-2); break;
     case 'n' : s = d.getUTCMonth() + 1; break;
     case 'd' : s = ('0' + d.getUTCDate()).substr(-2); break;
-    case 'D' : s = w[d.getUTCDay()].substr(0,3); break;
-    case 'l' : s = w[d.getUTCDay()]; break;
+    case 'D' : s = daysShort[d.getUTCDay()]; break;
+    case 'l' : s = daysLong[d.getUTCDay()]; break;
     case 'a' : s = ['am','pm'][d.getUTCHours() > 11 ? 1 : 0]; break;
     case 'A' : s = ['AM','PM'][d.getUTCHours() > 11 ? 1 : 0]; break;
     case 'g' : s = d.getUTCHours() % 12 || 12; break;

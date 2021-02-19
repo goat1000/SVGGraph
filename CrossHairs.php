@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -223,6 +223,7 @@ class CrossHairs {
         $gridy_attrs['zero'] = $dt->format('c');
         $gridy_attrs['function'] = 'dateStrValueY';
         $gridy_attrs['format'] = $this->y_axis->getFormat();
+        $date_axis =& $this->y_axis;
       } else {
         $this->graph->javascript->addFunction('dateStrValueX');
         $zx = (int)$this->x_axis->value(0);
@@ -232,7 +233,20 @@ class CrossHairs {
         $gridx_attrs['zero'] = $dt->format('c');
         $gridx_attrs['function'] = 'dateStrValueX';
         $gridx_attrs['format'] = $this->x_axis->getFormat();
+        $date_axis =& $this->x_axis;
       }
+      $long_days = $date_axis->getLongDays();
+      $short_days = $date_axis->getShortDays();
+      $long_months = $date_axis->getLongMonths();
+      $short_months = $date_axis->getShortMonths();
+      foreach($long_days as $day)
+        $this->graph->javascript->insertVariable('daysLong', null, $day);
+      foreach($short_days as $day)
+        $this->graph->javascript->insertVariable('daysShort', null, $day);
+      foreach($long_months as $month)
+        $this->graph->javascript->insertVariable('monthsLong', null, $month);
+      foreach($short_months as $month)
+        $this->graph->javascript->insertVariable('monthsShort', null, $month);
     }
 
     // build associative data keys XML
