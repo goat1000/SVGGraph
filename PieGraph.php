@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2020 Graham Breach
+ * Copyright (C) 2009-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -225,8 +225,9 @@ class PieGraph extends Graph {
             $original_position : $key);
           if($this->datetime_keys) {
             $number_key = new Number($label_key);
+            $dtf = new DateTimeFormatter;
             $dt = new \DateTime('@' . $number_key);
-            $label_key = $dt->format($this->data_label_datetime_format);
+            $label_key = $dtf->format($dt, $this->data_label_datetime_format);
           }
           $parts = explode("\n", $label_key);
         }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2020 Graham Breach
+ * Copyright (C) 2010-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -305,7 +305,8 @@ abstract class PointGraph extends GridGraph {
     if($this->datetime_keys) {
       $number_key = new Number($key);
       $dt = new \DateTime('@' . $number_key);
-      $text = $dt->format($this->tooltip_datetime_format);
+      $axis = $this->x_axes[$this->main_x_axis];
+      $text = $axis->format($dt, $this->tooltip_datetime_format);
     } elseif(is_numeric($key)) {
       $num = new Number($key, $this->units_tooltip_key,
         $this->units_before_tooltip_key);

@@ -214,31 +214,30 @@ class CrossHairs {
     if($this->graph->getOption('datetime_keys') &&
       (method_exists($this->x_axis, 'GetFormat') ||
       method_exists($this->y_axis, 'GetFormat'))) {
+      $dtf = new DateTimeFormatter;
       if($this->flip_axes) {
         $this->graph->javascript->addFunction('dateStrValueY');
         $zy = (int)$this->y_axis->value(0);
         $ey = (int)$this->y_axis->value($this->width);
         $dt = new \DateTime('@' . $zy);
         $gridy_attrs['scale'] = ($ey - $zy) / $this->height;
-        $gridy_attrs['zero'] = $dt->format('c');
+        $gridy_attrs['zero'] = $dtf->format($dt, 'c', true);
         $gridy_attrs['function'] = 'dateStrValueY';
         $gridy_attrs['format'] = $this->y_axis->getFormat();
-        $date_axis =& $this->y_axis;
       } else {
         $this->graph->javascript->addFunction('dateStrValueX');
         $zx = (int)$this->x_axis->value(0);
         $ex = (int)$this->x_axis->value($this->width);
         $dt = new \DateTime('@' . $zx);
         $gridx_attrs['scale'] = ($ex - $zx) / $this->width;
-        $gridx_attrs['zero'] = $dt->format('c');
+        $gridx_attrs['zero'] = $dtf->format($dt, 'c', true);
         $gridx_attrs['function'] = 'dateStrValueX';
         $gridx_attrs['format'] = $this->x_axis->getFormat();
-        $date_axis =& $this->x_axis;
       }
-      $long_days = $date_axis->getLongDays();
-      $short_days = $date_axis->getShortDays();
-      $long_months = $date_axis->getLongMonths();
-      $short_months = $date_axis->getShortMonths();
+      $long_days = $dtf->getLongDays();
+      $short_days = $dtf->getShortDays();
+      $long_months = $dtf->getLongMonths();
+      $short_months = $dtf->getShortMonths();
       foreach($long_days as $day)
         $this->graph->javascript->insertVariable('daysLong', null, $day);
       foreach($short_days as $day)

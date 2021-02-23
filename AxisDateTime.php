@@ -32,7 +32,8 @@ class AxisDateTime extends Axis {
   protected $end = 0;
   protected $label_callback;
   protected $axis_text_format = 'Y-m-d';
-  protected $localize = false;
+  protected $timezone = null;
+  protected $formatter = null;
   protected $div = null;
   protected $division = null;
   protected $levels = null;
@@ -147,6 +148,10 @@ class AxisDateTime extends Axis {
     // convert actual min/max to start/end times
     $start_date = new \DateTime('@' . $min_val);
     $end_date = new \DateTime('@' . $max_val);
+    $this->timezone = new \DateTimeZone(date_default_timezone_get());
+    $start_date->setTimezone($this->timezone);
+    $end_date->setTimezone($this->timezone);
+    $this->formatter = new DateTimeFormatter;
 
     // set the week start day before finding divisions
     if(isset($options['datetime_week_start']) &&
@@ -207,12 +212,6 @@ class AxisDateTime extends Axis {
 
     if($text_format !== null)
       $this->axis_text_format = $text_format;
-
-    // see if output needs localization
-    $locale = setlocale(LC_TIME, 0);
-    if($locale && $locale !== 'C' && $locale !== 'POSIX' &&
-      strpos($locale, 'en_') === false)
-      $this->localize = true;
   }
 
   /**
@@ -634,14 +633,13 @@ class AxisDateTime extends Axis {
   public function dateText($f)
   {
     $dt = new \DateTime('@' . $f);
-    $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
 
     if(!is_array($this->axis_text_format))
-      return $this->format($dt, $this->axis_text_format);
+      return $this->formatter->format($dt, $this->axis_text_format);
 
     $strings = [];
     foreach($this->axis_text_format as $fmt)
-      $strings[] = $this->format($dt, $fmt);
+      $strings[] = $this->formatter->format($dt, $fmt);
     return $strings;
   }
 
@@ -656,86 +654,11 @@ class AxisDateTime extends Axis {
   }
 
   /**
-   * Returns the formatted date/time
+   * Returns the formatted, localized date/time
    */
-  private function format($dt, $fmt)
+  public function format($dt, $fmt)
   {
-    if(!$this->localize)
-      return $dt->format($fmt);
-
-    $map = [
-      'D' => '%a',
-      'l' => '%A',
-      'M' => '%b',
-      'F' => '%B',
-    ];
-
-    $result = '';
-    $unixtime = $dt->format('U');
-    for($i = 0; $i < strlen($fmt); ++$i) {
-      $char = $fmt[$i];
-      if(isset($map[$char]))
-        $result .= strftime($map[$char], $unixtime);
-      else
-        $result .= $dt->format($fmt[$i]);
-    }
-    return $result;
-  }
-
-  /**
-   * Returns the list of day names
-   */
-  public function getLongDays()
-  {
-    return $this->getDateStrings('%A', 'd');
-  }
-
-  /**
-   * Returns the list of abbreviated day names
-   */
-  public function getShortDays()
-  {
-    return $this->getDateStrings('%a', 'd');
-  }
-
-  /**
-   * Returns the list of month names
-   */
-  public function getLongMonths()
-  {
-    return $this->getDateStrings('%B', 'm');
-  }
-
-  /**
-   * Returns the list of abbreviated month names
-   */
-  public function getShortMonths()
-  {
-    return $this->getDateStrings('%b', 'm');
-  }
-
-  /**
-   * Returns a list of day or month strings using strftime() to localize
-   */
-  private function getDateStrings($fmt, $inc)
-  {
-    // 1978 started on a Sunday
-    $dt = new \DateTime('1978-01-01T12:00:00Z');
-    if($inc == 'm') {
-      $count = 12;
-      $offset = 'month';
-    } else {
-      $count = 7;
-      $offset = 'day';
-    }
-
-    $strings = [];
-    for($i = 0; $i < $count; ++$i) {
-      if($i)
-        $dt->modify('+1 ' . $offset);
-      $strings[] = strftime($fmt, $dt->format('U'));
-    }
-    return $strings;
+    return $this->formatter->format($dt, $fmt);
   }
 }
 
