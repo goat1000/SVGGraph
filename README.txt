@@ -1,4 +1,4 @@
-SVGGraph Library version 3.7
+SVGGraph Library version 3.8
 ============================
 
 This library provides PHP classes and functions for easily creating SVG
@@ -35,6 +35,11 @@ At the moment these types of graph are supported by SVGGraph:
  ScatterGraph    - markers drawn at arbitrary horizontal and vertical points;
 
  MultiLineGraph  - multiple data sets drawn as lines on one graph;
+
+ SteppedLineGraph - a line graph with its lines drawin in horizonal and vertical
+                    steps;
+
+ MultiSteppedLineGraph - a MultiLineGraph, but using stepped lines;
 
  StackedBarGraph - multiple data sets drawn as bars, stacked one on top of
                    another;
@@ -306,4 +311,4 @@ For more information about this software please contact the author,
 graham(at)goat1000.com or visit the website: http://www.goat1000.com/
 
 
-Copyright (C) 2009-2020 Graham Breach
+Copyright (C) 2009-2021 Graham Breach

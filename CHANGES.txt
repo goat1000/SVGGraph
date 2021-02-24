@@ -1,3 +1,16 @@
+Version 3.8 (23/02/2021)
+-----------
+- Added SteppedLineGraph and MultiSteppedLineGraph graph types.
+- Added force_block_label_x option.
+- Added axis_zero_y option.
+- Added data_label_opacity option.
+- Added various line spacing options.
+- Added localization of date strings.
+- Improved timezone support for date/time values.
+- Fixed axis label position on graphs with negative values.
+- Fixed date conversion problems in guideline positions.
+- Fixed empty legend entry on multi-line graphs with single point in dataset.
+
 Version 3.7 (27/11/2020)
 -----------
 - Added options for displaying mean average lines.
