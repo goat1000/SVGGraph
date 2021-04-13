@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2019 Graham Breach
+ * Copyright (C) 2015-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,7 @@ abstract class Shape {
   protected $link = null;
   protected $link_target = '_blank';
   protected $coords = null;
+  protected $autohide = false;
 
   /**
    * attributes required to draw shape
@@ -81,8 +82,21 @@ abstract class Shape {
       $this->link = $this->attrs['xlink:href'];
     if(isset($this->attrs['target']))
       $this->link_target = $this->attrs['target'];
-    unset($this->attrs['href'], $this->attrs['xlink:href'],
-      $this->attrs['target']);
+    if(isset($this->attrs['autohide'])) {
+      $hide = 0;
+      $show = isset($this->attrs['opacity']) ? $this->attrs['opacity'] : 1;
+      if(isset($this->attrs['autohide_opacity'])) {
+        if(is_array($this->attrs['autohide_opacity']))
+          list($hide, $show) = $this->attrs['autohide_opacity'];
+        else
+          $hide = $this->attrs['autohide_opacity'];
+      }
+      $this->autohide = [$hide, $show];
+    }
+
+    $clean = ['href', 'xlink:href', 'target', 'autohide', 'autohide_opacity'];
+    foreach($clean as $att)
+      unset($this->attrs[$att]);
   }
 
   /**
@@ -114,6 +128,12 @@ abstract class Shape {
       }
     }
     $this->transformCoordinates($attributes);
+
+    if($this->autohide) {
+      $graph->javascript->autoHide($attributes, $this->autohide[0],
+        $this->autohide[1]);
+    }
+
     $element = $this->drawElement($graph, $attributes);
     if($this->link !== null) {
       $link = ['xlink:href' => $this->link];
