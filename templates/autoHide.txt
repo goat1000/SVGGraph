@@ -4,11 +4,11 @@ function autoHide() {
       autohide[a] = getE(a);
     document.addEventListener('mouseout', function(e) {
       var t = finditem(e,autohide);
-      t && setattr(t,'opacity',1);
+      t && setattr(t,'opacity',ah_opacity[t.id][1]);
     });
     document.addEventListener('mouseover', function(e) {
       var t = finditem(e,autohide);
-      t && setattr(t,'opacity',0);
+      t && setattr(t,'opacity',ah_opacity[t.id][0]);
     });
   }
 }

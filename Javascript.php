@@ -500,12 +500,15 @@ class Javascript {
   /**
    * Makes something auto-hide
    */
-  public function autoHide(&$element)
+  public function autoHide(&$element, $hidden_opacity = 0, $full_opacity = 1)
   {
     if(!isset($element['id']))
       $element['id'] = $this->graph->newID();
     $this->addFunction('autoHide');
     $this->insertVariable('autohide', $element['id'], 0);
+    $this->insertVariable('ah_opacity', $element['id'], '[' .
+      new Number($hidden_opacity) . ',' .
+      new Number($full_opacity) . ']', false);
   }
 
   /**

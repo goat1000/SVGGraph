@@ -29,6 +29,7 @@ class Legend {
   protected $graph;
   protected $entry_details = [];
   protected $autohide;
+  protected $autohide_opacity;
   protected $back_colour;
   protected $colour;
   protected $columns;
@@ -62,9 +63,9 @@ class Legend {
     $this->graph =& $graph;
 
     // copy options to class
-    $opts = ['autohide', 'back_colour', 'colour', 'columns', 'draggable',
-      'entries', 'entry_height', 'entry_width', 'font', 'font_adjust',
-      'font_size', 'font_weight', 'position', 'round',
+    $opts = ['autohide', 'autohide_opacity', 'back_colour', 'colour', 'columns',
+      'draggable', 'entries', 'entry_height', 'entry_width', 'font',
+      'font_adjust', 'font_size', 'font_weight', 'position', 'round',
       'shadow_opacity', 'show_empty', 'stroke_colour', 'stroke_width',
       'text_side', 'title', 'title_font_weight', 'type', 'unique_fields'];
     foreach($opts as $opt) {
@@ -325,8 +326,17 @@ class Legend {
       $rect = $this->graph->element('rect', $box) . $rect;
     }
 
-    if($this->autohide)
-      $this->graph->javascript->autoHide($group);
+    if($this->autohide) {
+      $o0 = $this->autohide_opacity;
+      $o1 = 1;
+      if($o0 < 0)
+      {
+        $o1 = new Number(-$o0);
+        $o0 = 1;
+        $group['opacity'] = $o1;
+      }
+      $this->graph->javascript->autoHide($group, $o0, $o1);
+    }
     if($this->draggable)
       $this->graph->javascript->setDraggable($group);
     return $this->graph->element('g', $group, null, $rect . $title . $parts);
