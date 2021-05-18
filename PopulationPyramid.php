@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2020 Graham Breach
+ * Copyright (C) 2013-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -238,7 +238,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
   protected function getAxes($ends, &$x_len, &$y_len)
   {
     // always assoc, no units
-    $this->units_x = $this->units_before_x = null;
+    $this->setOption('units_x', null);
+    $this->setOption('units_before_x', null);
 
     // if fixed grid spacing is specified, make the min spacing 1 pixel
     if(is_numeric($this->grid_division_v))
@@ -255,9 +256,9 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $y_min_unit = 1;
     $y_fit = true;
     $x_units_after = (string)$this->getOption(['units_y', 0]);
-    $y_units_after = (string)$this->getOption(['units_x', 0]);
+    $y_units_after = '';
     $x_units_before = (string)$this->getOption(['units_before_y', 0]);
-    $y_units_before = (string)$this->getOption(['units_before_x', 0]);
+    $y_units_before = '';
     $x_decimal_digits = $this->getOption(['decimal_digits_y', 0],
       'decimal_digits');
     $y_decimal_digits = $this->getOption(['decimal_digits_x', 0],
@@ -302,20 +303,26 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
         $x_decimal_digits, $x_text_callback);
     }
 
-    if(!is_numeric($this->grid_division_v)) {
-      $y_min_space = $this->getOption(['minimum_grid_spacing_v', 0],
-        'minimum_grid_spacing');
-      $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
-        $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
-        $y_text_callback, $this->values);
-    } else {
-      $y_axis = new AxisFixed($y_len, $max_v, $min_v, $this->grid_division_v,
-        $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
-        $this->values);
+    $min_space = $this->getOption(['minimum_grid_spacing_v', 0],
+      'minimum_grid_spacing');
+    $grid_division = $this->getOption(['grid_division_v', 0]);
+    if(is_numeric($grid_division)) {
+      if($grid_division <= 0)
+        throw new \Exception('Invalid grid division');
+      $this->setOption('minimum_grid_spacing_v', 1);
+      $min_space = 1;
     }
 
-    $y_axis->bar(); // always a bar graph
-    $y_axis->reverse(); // because axis starts at bottom
+    $levels = $this->getOption(['axis_levels_h', 0]);
+    $ticks = $this->getOption('axis_ticks_x');
+
+    $y_axis_factory = new AxisFactory($this->datetime_keys, $this->settings,
+      true, true, true);
+    $y_axis = $y_axis_factory->get($y_len, $min_v, $max_v, $y_min_unit,
+      $min_space, $grid_division, $y_units_before, $y_units_after,
+      $y_decimal_digits, $y_text_callback, $this->values, false, 0, $levels,
+      $ticks);
+
     return [ [$x_axis], [$y_axis] ];
   }
 

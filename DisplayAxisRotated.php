@@ -233,5 +233,12 @@ class DisplayAxisRotated extends DisplayAxis {
 
     return compact('x', 'y', 'width', 'height', 'tx', 'ty', 'angle');
   }
-}
 
+  /**
+   * Returns true if the text exists
+   */
+  protected function pointTextVisible($point, $axis_len, $offset)
+  {
+    return !$point->blank();
+  }
+}

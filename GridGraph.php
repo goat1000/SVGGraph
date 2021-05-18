@@ -510,62 +510,56 @@ abstract class GridGraph extends Graph {
    */
   protected function getAxes($ends, &$x_len, &$y_len)
   {
-    // disable units for associative keys
-    if($this->values->associativeKeys())
-      $this->units_x = $this->units_before_x = null;
+    $this->validateAxisOptions();
 
+    $x_bar = $this->getOption('label_centre');
+    $x_axis_factory = new AxisFactory($this->datetime_keys, $this->settings,
+      true, $x_bar, false);
+    $y_axis_factory = new AxisFactory(false, $this->settings, false, false, true);
+
+    // at the moment there will only be 1 X axis, but allow for expansion
     $x_axes = [];
     $x_axis_count = $this->xAxisCount();
     for($i = 0; $i < $x_axis_count; ++$i) {
 
-      $x_min_space = $this->getOption(['minimum_grid_spacing_h', $i],
+      $min_space = $this->getOption(['minimum_grid_spacing_h', $i],
         'minimum_grid_spacing');
       $grid_division = $this->getOption(['grid_division_h', $i]);
       if(is_numeric($grid_division)) {
         if($grid_division <= 0)
           throw new \Exception('Invalid grid division');
         // if fixed grid spacing is specified, make the min spacing 1 pixel
-        $this->minimum_grid_spacing_h = $x_min_space = 1;
+        $this->minimum_grid_spacing_h = $min_space = 1;
       }
 
       $max_h = $ends['k_max'][$i];
       $min_h = $ends['k_min'][$i];
-      $x_min_unit = 1;
-      $x_fit = true;
-      $x_units_after = (string)$this->getOption(['units_x', $i]);
-      $x_units_before = (string)$this->getOption(['units_before_x', $i]);
-      $x_decimal_digits = $this->getOption(['decimal_digits_x', $i],
-        'decimal_digits');
-      $x_text_callback = $this->getOption(['axis_text_callback_x', $i],
-        'axis_text_callback');
-      $x_values = $this->multi_graph ? $this->multi_graph : $this->values;
-
       if(!is_numeric($max_h) || !is_numeric($min_h))
         throw new \Exception('Non-numeric min/max');
 
-      if($this->datetime_keys) {
-        $levels = $this->getOption(['axis_levels_h', $i]);
-        $x_axis = new AxisDateTime($x_len, $max_h, $min_h, $x_min_space,
-          $grid_division, $levels, $this->settings);
-      } elseif(!is_numeric($grid_division)) {
-        $x_axis = new Axis($x_len, $max_h, $min_h, $x_min_unit, $x_min_space,
-          $x_fit, $x_units_before, $x_units_after, $x_decimal_digits,
-          $x_text_callback, $x_values);
-      } else {
-        $x_axis = new AxisFixed($x_len, $max_h, $min_h, $grid_division,
-          $x_units_before, $x_units_after, $x_decimal_digits, $x_text_callback,
-          $x_values);
-      }
-      if($this->getOption('label_centre'))
-        $x_axis->bar();
+      $min_unit = 1;
+      $units_after = (string)$this->getOption(['units_x', $i]);
+      $units_before = (string)$this->getOption(['units_before_x', $i]);
+      $decimal_digits = $this->getOption(['decimal_digits_x', $i],
+        'decimal_digits');
+      $text_callback = $this->getOption(['axis_text_callback_x', $i],
+        'axis_text_callback');
+      $values = $this->multi_graph ? $this->multi_graph : $this->values;
+      $levels = $this->getOption(['axis_levels_h', $i]);
+      $ticks = $this->getOption('axis_ticks_x');
+
+      $x_axis = $x_axis_factory->get($x_len, $min_h, $max_h, $min_unit,
+        $min_space, $grid_division, $units_before, $units_after,
+        $decimal_digits, $text_callback, $values, false, 0, $levels, $ticks);
       $x_axes[] = $x_axis;
     }
 
     $y_axes = [];
     $y_axis_count = $this->yAxisCount();
+
     for($i = 0; $i < $y_axis_count; ++$i) {
 
-      $y_min_space = $this->getOption(['minimum_grid_spacing_v', $i],
+      $min_space = $this->getOption(['minimum_grid_spacing_v', $i],
         'minimum_grid_spacing');
       // make sure minimum_grid_spacing option is an array
       if(!is_array($this->getOption('minimum_grid_spacing_v')))
@@ -577,30 +571,31 @@ abstract class GridGraph extends Graph {
           throw new \Exception('Invalid grid division');
         // if fixed grid spacing is specified, make the min spacing 1 pixel
         $this->setOption('minimum_grid_spacing_v', 1, $i);
-        $y_min_space = 1;
+        $min_space = 1;
       } elseif(!isset($this->minimum_grid_spacing_v[$i])) {
-        $this->setOption('minimum_grid_spacing_v', $y_min_space, $i);
+        $this->setOption('minimum_grid_spacing_v', $min_space, $i);
       }
 
       $max_v = $ends['v_max'][$i];
       $min_v = $ends['v_min'][$i];
-      $y_min_unit = $this->getOption(['minimum_units_y', $i]);
-      $y_fit = false;
-      $y_values = false;
-
-      $y_text_callback = $this->getOption(['axis_text_callback_y', $i],
-        'axis_text_callback');
-      $y_decimal_digits = $this->getOption(['decimal_digits_y', $i],
-        'decimal_digits');
-      $y_units_after = (string)$this->getOption(['units_y', $i]);
-      $y_units_before = (string)$this->getOption(['units_before_y', $i]);
-
       if(!is_numeric($max_v) || !is_numeric($min_v))
         throw new \Exception('Non-numeric min/max');
 
+      $min_unit = $this->getOption(['minimum_units_y', $i]);
+      $text_callback = $this->getOption(['axis_text_callback_y', $i],
+        'axis_text_callback');
+      $decimal_digits = $this->getOption(['decimal_digits_y', $i],
+        'decimal_digits');
+      $units_after = (string)$this->getOption(['units_y', $i]);
+      $units_before = (string)$this->getOption(['units_before_y', $i]);
+      $log = $this->getOption(['log_axis_y', $i]);
+      $log_base = $this->getOption(['log_axis_y_base', $i]);
+      $ticks = $this->getOption(['axis_ticks_y', $i]);
+      $values = $levels = null;
+
       if($min_v == $max_v) {
-        if($y_min_unit > 0) {
-          $inc = $y_min_unit;
+        if($min_unit > 0) {
+          $inc = $min_unit;
         } else {
           $fallback = $this->getOption('axis_fallback_max');
           $inc = $fallback > 0 ? $fallback : 1;
@@ -608,23 +603,11 @@ abstract class GridGraph extends Graph {
         $max_v += $inc;
       }
 
-      if($this->getOption(['log_axis_y', $i])) {
-        $y_axis = new AxisLog($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
-          $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
-          $this->getOption(['log_axis_y_base', $i]),
-          $grid_division, $y_text_callback);
-      } elseif(!is_numeric($grid_division)) {
-        $y_axis = new Axis($y_len, $max_v, $min_v, $y_min_unit, $y_min_space,
-          $y_fit, $y_units_before, $y_units_after, $y_decimal_digits,
-          $y_text_callback, $y_values);
-      } else {
-        $y_axis = new AxisFixed($y_len, $max_v, $min_v, $grid_division,
-          $y_units_before, $y_units_after, $y_decimal_digits, $y_text_callback,
-          $y_values);
-      }
-      $y_axis->reverse(); // because axis starts at bottom
+      $y_axis = $y_axis_factory->get($y_len, $min_v, $max_v, $min_unit,
+        $min_space, $grid_division, $units_before, $units_after,
+        $decimal_digits, $text_callback, $values, $log, $log_base,
+        $levels, $ticks);
       $y_axis->setTightness($this->getOption(['axis_tightness_y', $i]));
-
       $y_axes[] = $y_axis;
     }
 
@@ -634,6 +617,38 @@ abstract class GridGraph extends Graph {
       array_unshift($y_axes, null);
     }
     return [$x_axes, $y_axes];
+  }
+
+  /**
+   * Axis options can be complicated
+   */
+  protected function validateAxisOptions()
+  {
+    // disable units for associative keys
+    if($this->values->associativeKeys()) {
+      $this->setOption('units_x', null);
+      $this->setOption('units_before_x', null);
+    }
+
+    // ticks are a bit tricky, could be an array or array of arrays or ...
+    $ticks = $this->getOption('axis_ticks_y');
+    if(is_array($ticks)) {
+      $count = count($ticks);
+      $nulls = $arrays = 0;
+      foreach($ticks as $t) {
+        if(is_array($t))
+          ++$arrays;
+        elseif($t === null)
+          ++$nulls;
+      }
+
+      // if array of nulls, null it
+      if($nulls == $count)
+        $this->setOption('axis_ticks_y', null);
+      // if single array, enclose it
+      elseif($arrays == 0)
+        $this->setOption('axis_ticks_y', [$ticks]);
+    }
   }
 
   /**

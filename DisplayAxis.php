@@ -280,13 +280,13 @@ class DisplayAxis {
     $bbox = new BoundingBox(0, 0, 0, 0);
     list($x_off, $y_off, $opp) = $this->getTextOffset(0, 0, 0, 0, 0, 0, $level);
 
+    $t_offset = ($this->orientation == 'h' ? $x_off : -$y_off);
+    $length = $this->axis->getLength();
     $points = $this->axis->getGridPoints(0);
     $count = count($points);
-    if($this->block_label)
-      --$count;
     for($p = 0; $p < $count; ++$p) {
 
-      if($points[$p]->blank())
+      if(!$this->pointTextVisible($points[$p], $length, $t_offset))
         continue;
 
       $lbl = $this->measureText($x_off, $y_off, $points[$p], $opp, $level);
@@ -294,6 +294,20 @@ class DisplayAxis {
         $lbl['y'] + $lbl['height']);
     }
     return $bbox;
+  }
+
+  /**
+   * Returns true if the text exists and its location is within the axis
+   */
+  protected function pointTextVisible($point, $axis_len, $offset)
+  {
+    if($point->blank())
+      return false;
+
+    // amount of space to allow for rounding errors
+    $leeway = 0.5;
+    $position = abs($point->position) + $offset;
+    return $position >= -$leeway && $position <= $axis_len + $leeway;
   }
 
   /**
@@ -416,14 +430,14 @@ class DisplayAxis {
       list($x_offset, $y_offset, $opposite) = $this->getTextOffset($x, $y,
         $gx, $gy, $g_width, $g_height, 0);
 
+      $t_offset = ($this->orientation == 'h' ? $x_offset : -$y_offset);
+      $length = $this->axis->getLength();
       $points = $this->axis->getGridPoints(0);
       $count = count($points);
-      if($this->block_label)
-        --$count;
       for($p = 0; $p < $count; ++$p) {
 
         $point = $points[$p];
-        if($point->blank())
+        if(!$this->pointTextVisible($point, $length, $t_offset))
           continue;
 
         $labels .= $this->getText($x + $x_offset, $y + $y_offset, $point,
