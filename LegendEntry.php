@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2019 Graham Breach
+ * Copyright (C) 2016-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,14 +28,16 @@ class LegendEntry {
 
   public $item = null;
   public $text = null;
+  public $link = null;
   public $style = null;
   public $width = 0;
   public $height = 0;
 
-  public function __construct($item, $text, $style)
+  public function __construct($item, $text, $link, $style)
   {
     $this->item = $item;
     $this->text = $text;
+    $this->link = $link;
     $this->style = $style;
   }
 }

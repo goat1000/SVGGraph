@@ -892,7 +892,7 @@ abstract class Graph {
   /**
    * Returns a link URL or NULL if none
    */
-  protected function getLinkURL($item, $key, $row = 0)
+  public function getLinkURL($item, $key, $row = 0)
   {
     $link = ($item === null ? null : $item->link);
     if($link === null && is_array($this->links[$row]) &&
@@ -910,7 +910,7 @@ abstract class Graph {
   /**
    * Retrieves a link
    */
-  protected function getLink($item, $key, $content, $row = 0)
+  public function getLink($item, $key, $content, $row = 0)
   {
     $link = $this->getLinkURL($item, $key, $row);
     if($link === null)

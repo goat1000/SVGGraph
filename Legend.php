@@ -55,6 +55,7 @@ class Legend {
   protected $title_font_size;
   protected $title_font_weight;
   protected $title_line_spacing;
+  protected $title_link;
   protected $type;
   protected $unique_fields;
 
@@ -67,7 +68,8 @@ class Legend {
       'draggable', 'entries', 'entry_height', 'entry_width', 'font',
       'font_adjust', 'font_size', 'font_weight', 'position', 'round',
       'shadow_opacity', 'show_empty', 'stroke_colour', 'stroke_width',
-      'text_side', 'title', 'title_font_weight', 'type', 'unique_fields'];
+      'text_side', 'title', 'title_link', 'title_font_weight', 'type',
+      'unique_fields'];
     foreach($opts as $opt) {
       $this->{$opt} = $graph->getOption('legend_' . $opt);
     }
@@ -99,6 +101,7 @@ class Legend {
 
     // find the text first
     $text = '';
+    $link = null;
     $entry = count($this->entry_details);
     $itext = $item->legend_text;
     if($itext !== null)
@@ -122,6 +125,10 @@ class Legend {
       }
     }
 
+    // split out link
+    if(is_array($text))
+      list($text, $link) = $text;
+
     if($this->unique_fields) {
       // prevent adding multiple entries with the same text
       foreach($this->entry_details as $e) {
@@ -132,7 +139,8 @@ class Legend {
 
     // if there is no text, don't add the entry
     if($text != '')
-      $this->entry_details[$entry] = new LegendEntry($item, $text, $style_info);
+      $this->entry_details[$entry] = new LegendEntry($item, $text, $link,
+        $style_info);
   }
 
   /**
@@ -213,6 +221,8 @@ class Legend {
         // position the text element
         $text['y'] = $y + $baseline + ($entry_height - $entry->height) / 2;
         $text_element = $svg_text->text($entry->text, $this->line_spacing, $text);
+        if($entry->link !== null)
+          $text_element = $this->graph->getLink($entry, 0, $text_element);
         $text_columns[$column] .= $text_element;
         $entry_columns[$column] .= $element;
 
@@ -300,6 +310,11 @@ class Legend {
       if($this->title_colour != $this->colour)
         $text['fill'] = new Colour($this->graph, $this->title_colour);
       $title = $svg_text_title->text($this->title, $this->title_line_spacing, $text);
+      if(!empty($this->title_link)) {
+        $item = new \stdClass;
+        $item->link = $this->title_link;
+        $title = $this->graph->getLink($item, 0, $title);
+      }
     }
 
     // create group to contain whole legend
