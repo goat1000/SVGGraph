@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2020 Graham Breach
+ * Copyright (C) 2012-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -372,14 +372,22 @@ class RadarGraph extends LineGraph {
           'grid_subdivision_dash', 'grid_dash_h', 'grid_dash');
         $dash_v = $this->getOption('grid_subdivision_dash_v',
           'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
+        $width_h = $this->getOption('grid_subdivision_stroke_width_h',
+          'grid_subdivision_stroke_width', 'grid_stroke_width_h',
+          'grid_stroke_width');
+        $width_v = $this->getOption('grid_subdivision_stroke_width_v',
+          'grid_subdivision_stroke_width', 'grid_stroke_width_v',
+          'grid_stroke_width');
 
-        if($dash_h == $dash_v && $colour_h == $colour_v) {
+        if($dash_h == $dash_v && $colour_h == $colour_v && $width_h == $width_v) {
           $subpath_h->add($subpath_v);
-          $subpath = $this->gridLines($subpath_h, $colour_h,
-            $dash_h, 'none');
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, $width_h,
+            ['fill' => 'none']);
         } else {
-          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, 'none') .
-            $this->gridLines($subpath_v, $colour_v, $dash_v, 'none');
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, $width_h,
+            ['fill' => 'none']) .
+            $this->gridLines($subpath_v, $colour_v, $dash_v, $width_v,
+              ['fill' => 'none']);
         }
       }
     }
@@ -395,13 +403,18 @@ class RadarGraph extends LineGraph {
     $colour_v = $this->getOption('grid_colour_v', 'grid_colour');
     $dash_h = $this->getOption('grid_dash_h', 'grid_dash');
     $dash_v = $this->getOption('grid_dash_v', 'grid_dash');
+    $width_h = $this->getOption('grid_stroke_width_h', 'grid_stroke_width');
+    $width_v = $this->getOption('grid_stroke_width_v', 'grid_stroke_width');
 
-    if($dash_h == $dash_v && $colour_h == $colour_v) {
+    if($dash_h == $dash_v && $colour_h == $colour_v && $width_h == $width_v) {
       $path_v->add($path_h);
-      $path = $this->gridLines($path_v, $colour_h, $dash_h, 'none');
+      $path = $this->gridLines($path_v, $colour_h, $dash_h, $width_h,
+        ['fill' => 'none']);
     } else {
-      $path = $this->gridLines($path_h, $colour_h, $dash_h, 'none') .
-        $this->gridLines($path_v, $colour_v, $dash_v, 'none');
+      $path = $this->gridLines($path_h, $colour_h, $dash_h, $width_h,
+        ['fill' => 'none']) .
+        $this->gridLines($path_v, $colour_v, $dash_v, $width_v,
+          ['fill' => 'none']);
     }
 
     return $back . $subpath . $path;

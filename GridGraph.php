@@ -790,15 +790,17 @@ abstract class GridGraph extends Graph {
   /**
    * Returns a set of gridlines
    */
-  protected function gridLines($path, $colour, $dash, $fill = null)
+  protected function gridLines($path, $colour, $dash, $width, $more = null)
   {
     if($path->isEmpty() || $colour == 'none')
       return '';
     $opts = ['d' => $path, 'stroke' => new Colour($this, $colour)];
     if(!empty($dash))
       $opts['stroke-dasharray'] = $dash;
-    if(!empty($fill))
-      $opts['fill'] = $fill;
+    if($width && $width != 1)
+      $opts['stroke-width'] = $width;
+    if(is_array($more))
+      $opts = array_merge($opts, $more);
     return $this->element('path', $opts);
   }
 
@@ -919,13 +921,19 @@ abstract class GridGraph extends Graph {
           'grid_subdivision_dash', 'grid_dash_h', 'grid_dash');
         $dash_v = $this->getOption('grid_subdivision_dash_v',
           'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
+        $width_h = $this->getOption('grid_subdivision_stroke_width_h',
+          'grid_subdivision_stroke_width', 'grid_stroke_width_h',
+          'grid_stroke_width');
+        $width_v = $this->getOption('grid_subdivision_stroke_width_v',
+          'grid_subdivision_stroke_width', 'grid_stroke_width_v',
+          'grid_stroke_width');
 
-        if($dash_h == $dash_v && $colour_h == $colour_v) {
+        if($dash_h == $dash_v && $colour_h == $colour_v && $width_h == $width_v) {
           $subpath_h->add($subpath_v);
-          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h);
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, $width_h);
         } else {
-          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h) .
-            $this->gridLines($subpath_v, $colour_v, $dash_v);
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, $width_h) .
+            $this->gridLines($subpath_v, $colour_v, $dash_v, $width_v);
         }
       }
     }
@@ -947,13 +955,15 @@ abstract class GridGraph extends Graph {
     $colour_v = $this->getOption('grid_colour_v', 'grid_colour');
     $dash_h = $this->getOption('grid_dash_h', 'grid_dash');
     $dash_v = $this->getOption('grid_dash_v', 'grid_dash');
+    $width_h = $this->getOption('grid_stroke_width_h', 'grid_stroke_width');
+    $width_v = $this->getOption('grid_stroke_width_v', 'grid_stroke_width');
 
-    if($dash_h == $dash_v && $colour_h == $colour_v) {
+    if($dash_h == $dash_v && $colour_h == $colour_v && $width_h == $width_v) {
       $path_v->add($path_h);
-      $path = $this->gridLines($path_v, $colour_h, $dash_h);
+      $path = $this->gridLines($path_v, $colour_h, $dash_h, $width_h);
     } else {
-      $path = $this->gridLines($path_h, $colour_h, $dash_h) .
-        $this->gridLines($path_v, $colour_v, $dash_v);
+      $path = $this->gridLines($path_h, $colour_h, $dash_h,$width_h) .
+        $this->gridLines($path_v, $colour_v, $dash_v, $width_v);
     }
 
     return $this->element('g', $grid_group, null,

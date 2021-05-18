@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2019 Graham Breach
+ * Copyright (C) 2009-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -146,13 +146,13 @@ abstract class ThreeDGraph extends GridGraph {
       $subpath_v = new PathData;
       if($this->show_grid_h) {
         $subdivs = $this->getSubDivsY($this->main_y_axis);
-        foreach($subdivs as $y) 
+        foreach($subdivs as $y)
           $subpath_v->add('M', $xleft, $y->position, 'l', $xd, $yd,
             'l', $x_w, 0);
       }
       if($this->show_grid_v) {
         $subdivs = $this->getSubDivsX(0);
-        foreach($subdivs as $x) 
+        foreach($subdivs as $x)
           $subpath_h->add('M', $x->position, $ybottom, 'l', $xd, $yd,
             'l', 0, $minus_y_h);
       }
@@ -165,13 +165,22 @@ abstract class ThreeDGraph extends GridGraph {
           'grid_subdivision_dash', 'grid_dash_h', 'grid_dash');
         $dash_v = $this->getOption('grid_subdivision_dash_v',
           'grid_subdivision_dash', 'grid_dash_v', 'grid_dash');
+        $width_h = $this->getOption('grid_subdivision_stroke_width_h',
+          'grid_subdivision_stroke_width', 'grid_stroke_width_h',
+          'grid_stroke_width');
+        $width_v = $this->getOption('grid_subdivision_stroke_width_v',
+          'grid_subdivision_stroke_width', 'grid_stroke_width_v',
+          'grid_stroke_width');
 
-        if($dash_h == $dash_v && $colour_h == $colour_v) {
+        if($dash_h == $dash_v && $colour_h == $colour_v && $width_h == $width_v) {
           $subpath_h->add($subpath_v);
-          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, 'none');
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, $width_h,
+            ['fill' => 'none']);
         } else {
-          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h, 'none') .
-            $this->gridLines($subpath_v, $colour_v, $dash_v, 'none');
+          $subpath = $this->gridLines($subpath_h, $colour_h, $dash_h,$width_h,
+            ['fill' => 'none']) .
+            $this->gridLines($subpath_v, $colour_v, $dash_v, $width_v,
+              ['fill' => 'none']);
         }
       }
     }
@@ -196,13 +205,18 @@ abstract class ThreeDGraph extends GridGraph {
     $colour_v = $this->getOption('grid_colour_v', 'grid_colour');
     $dash_h = $this->getOption('grid_dash_h', 'grid_dash');
     $dash_v = $this->getOption('grid_dash_v', 'grid_dash');
+    $width_h = $this->getOption('grid_stroke_width_h', 'grid_stroke_width');
+    $width_v = $this->getOption('grid_stroke_width_v', 'grid_stroke_width');
 
-    if($dash_h == $dash_v && $colour_h == $colour_v) {
+    if($dash_h == $dash_v && $colour_h == $colour_v && $width_h == $width_v) {
       $path_h->add($path_v);
-      $path = $this->gridLines($path_h, $colour_h, $dash_h, 'none');
+      $path = $this->gridLines($path_h, $colour_h, $dash_h, $width_h,
+        ['fill' => 'none']);
     } else {
-      $path = $this->gridLines($path_h, $colour_h, $dash_h, 'none') .
-        $this->gridLines($path_v, $colour_v, $dash_v, 'none');
+      $path = $this->gridLines($path_h, $colour_h, $dash_h, $width_h,
+        ['fill' => 'none']) .
+        $this->gridLines($path_v, $colour_v, $dash_v, $width_v,
+          ['fill' => 'none']);
     }
 
     return $back . $subpath . $path;
