@@ -1,3 +1,11 @@
+Version 3.9 (24/05/2021)
+-----------
+- Added support for linking legend entries and title.
+- Added axis_ticks_x and axis_ticks_y options for specific tick marks.
+- Added legend_autohide_opacity option.
+- Added autohide and autohide_opacity options for shapes.
+- Added grid stroke width options.
+
 Version 3.8 (23/02/2021)
 -----------
 - Added SteppedLineGraph and MultiSteppedLineGraph graph types.
