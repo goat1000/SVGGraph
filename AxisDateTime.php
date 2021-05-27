@@ -453,6 +453,9 @@ class AxisDateTime extends Axis {
    */
   public function positionByKey($key)
   {
+    // ignore grid-relative positions
+    if(in_array($key, ['t', 'l', 'b', 'r', 'h', 'w', 'cx', 'cy']))
+      return null;
     $value = Graph::dateConvert($key);
     if($value)
       return $this->position($value);
