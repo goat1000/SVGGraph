@@ -1,16 +1,22 @@
 function dateFormat(d,f) {
   var str = '', i, s;
+  var o = []; o[1] = o[21] = o[31] = 'st'; o[2] = o[22] = 'nd'; o[3] = o[23] = 'rd';
   for(i = 0; i < f.length; ++i) {
     switch(f[i]) {
-    case 'Y' : s = d.getUTCFullYear(); break;
-    case 'y' : s = (d.getUTCFullYear() + '').substr(2); break;
-    case 'F' : s = monthsLong[d.getUTCMonth()]; break;
-    case 'M' : s = monthsShort[d.getUTCMonth()]; break;
-    case 'm' : s = ('0' + (d.getUTCMonth() + 1)).substr(-2); break;
-    case 'n' : s = d.getUTCMonth() + 1; break;
     case 'd' : s = ('0' + d.getUTCDate()).substr(-2); break;
     case 'D' : s = daysShort[d.getUTCDay()]; break;
+    case 'j' : s = d.getUTCDate(); break;
     case 'l' : s = daysLong[d.getUTCDay()]; break;
+    case 'N' : s = (d.getUTCDay() || 7); break;
+    case 'S' : s = d.getUTCDate(); s = o[s] || 'th'; break;
+    case 'w' : s = d.getUTCDay(); break;
+    case 'F' : s = monthsLong[d.getUTCMonth()]; break;
+    case 'm' : s = ('0' + (d.getUTCMonth() + 1)).substr(-2); break;
+    case 'M' : s = monthsShort[d.getUTCMonth()]; break;
+    case 'n' : s = d.getUTCMonth() + 1; break;
+    case 'L' : s = d.getUTCFullYear(); s = (s % 400 && (s % 4 || !(s % 100))) ? 0 : 1; break;
+    case 'Y' : s = d.getUTCFullYear(); break;
+    case 'y' : s = (d.getUTCFullYear() + '').substr(2); break;
     case 'a' : s = ['am','pm'][d.getUTCHours() > 11 ? 1 : 0]; break;
     case 'A' : s = ['AM','PM'][d.getUTCHours() > 11 ? 1 : 0]; break;
     case 'g' : s = d.getUTCHours() % 12 || 12; break;
@@ -19,6 +25,8 @@ function dateFormat(d,f) {
     case 'H' : s = ('0' + d.getUTCHours()).substr(-2); break;
     case 'i' : s = ('0' + d.getUTCMinutes()).substr(-2); break;
     case 's' : s = ('0' + d.getUTCSeconds()).substr(-2); break;
+    case 'u' : s = ('00000' + (d.getUTCMilliseconds() * 1000)).substr(-6); break;
+    case 'v' : s = ('00' + d.getUTCMilliseconds()).substr(-3); break;
     default:
       s = f[i];
     }
