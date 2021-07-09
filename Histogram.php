@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2020 Graham Breach
+ * Copyright (C) 2015-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,9 @@
 namespace Goat1000\SVGGraph;
 
 class Histogram extends BarGraph {
+
+  private $scaling = 1;
+  private $increment = 1;
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
@@ -65,14 +68,15 @@ class Histogram extends BarGraph {
         }
       }
 
-      // calculate increment?
-      $increment = $this->getOption('increment');
-      if($increment <= 0) {
+      // calculate or clean up increment
+      $inc = $this->getOption('increment');
+      if($inc <= 0) {
         $diff = $max - $min;
         if($diff <= 0) {
           $inc = 1;
         } else {
-          $inc = pow(10, floor(log10($diff)));
+          $scale = floor(log10($diff));
+          $inc = pow(10, $scale);
           $d1 = $diff / $inc;
           if(($inc != 1 || !is_integer($diff)) && $d1 < 4) {
             if($d1 < 3)
@@ -81,23 +85,36 @@ class Histogram extends BarGraph {
               $inc *= 0.5;
           }
         }
-        $increment = $inc;
-        $this->setOption('increment', $inc);
       }
+
+      // need to scale if $inc not an integer
+      $s = 1;
+      while($inc < 1 || ($inc != floor($inc))) {
+        $s *= 10;
+        $inc *= 10;
+      }
+      if($s > 1) {
+        $this->scaling = $s;
+        $max *= $s;
+        $min *= $s;
+        $diff = $max - $min;
+      }
+      $this->increment = $inc;
 
       // prefill the map with nulls
       $map = [];
       $start = $this->interval($min);
-      $end = $this->interval($max, true) + $increment / 2;
+      $end = $this->interval($max, true) + $this->increment / 2;
 
       Number::setup($this->getOption('precision'), $this->getOption('decimal'),
         $this->getOption('thousands'));
-      for($i = $start; $i < $end; $i += $increment) {
+      for($i = $start; $i < $end; $i += $this->increment) {
         $key = (int)$i;
         $map[$key] = 0;
       }
 
       foreach($values as $val) {
+        $val *= $this->scaling;
         $k = (int)$this->interval($val);
         if(!array_key_exists($k, $map))
           $map[$k] = 1;
@@ -133,12 +150,20 @@ class Histogram extends BarGraph {
 
       // set up options to make bar graph class draw the histogram properly
       $this->setOption('minimum_units_y', 1);
-      $this->setOption('subdivision_h', $increment); // no subdiv below bar size
-      $this->setOption('grid_division_h', max($increment, $this->grid_division_h));
+      $this->setOption('subdivision_h', $this->increment); // no subdiv below bar size
+      $this->setOption('grid_division_h', $this->increment); //max($increment, $this->grid_division_h));
 
       $amh = $this->getOption('axis_min_h');
       if(empty($amh))
         $this->setOption('axis_min_h', $start);
+      if($this->scaling !== 1) {
+        $this->setOption('axis_text_callback_x', function($v) {
+          $s = $this->scaling;
+          $p = log10($this->scaling) + 1;
+          $n = new Number($v / $s);
+          return $n->format(null, $p);
+        });
+      }
     }
     parent::values($values);
   }
@@ -148,11 +173,10 @@ class Histogram extends BarGraph {
    */
   public function interval($value, $next = false)
   {
-    $increment = $this->getOption('increment');
-    $n = floor($value / $increment);
+    $n = floor($value / $this->increment);
     if($next)
       ++$n;
-    return $n * $increment;
+    return $n * $this->increment;
   }
 
   /**
@@ -188,7 +212,7 @@ class Histogram extends BarGraph {
     $bar_width = $this->getOption('bar_width');
     if(is_numeric($bar_width) && $bar_width >= 1)
       return $bar_width;
-    $unit_w = $this->getOption('increment') *
+    $unit_w = $this->increment *
       $this->x_axes[$this->main_x_axis]->unit();
     return max(1, $unit_w - $this->getOption('bar_space'));
   }
@@ -198,7 +222,7 @@ class Histogram extends BarGraph {
    */
   protected function barSpace($bar_width)
   {
-    $uwidth = $this->getOption('increment') *
+    $uwidth = $this->increment *
       $this->x_axes[$this->main_x_axis]->unit();
     return max(0, ($uwidth - $bar_width) / 2);
   }
