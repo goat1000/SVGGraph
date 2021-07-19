@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2019 Graham Breach
+ * Copyright (C) 2015-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -97,6 +97,7 @@ class ShapeList {
       'marker' => 'Goat1000\\SVGGraph\\MarkerShape',
       'figure' => 'Goat1000\\SVGGraph\\FigureShape',
       'image' => 'Goat1000\\SVGGraph\\Image',
+      'text' => 'Goat1000\\SVGGraph\\TextShape',
     ];
 
     if(isset($class_map[$shape]) && class_exists($class_map[$shape])) {
