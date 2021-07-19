@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,10 +34,14 @@ trait PolarAreaTrait {
   {
     parent::calc();
 
-    $smax = sqrt($this->values->getMaxValue($this->dataset));
+    $dt = $this->getOption('datetime_keys');
+    $max_value = $this->values->getMaxValue($this->dataset);
+    $num_values = $dt ? $this->values->itemsCount($this->dataset) :
+      $this->values->getMaxKey($this->dataset) + 1;
+    $smax = sqrt($max_value);
     $this->radius_factor_x = $this->radius_x / $smax;
     $this->radius_factor_y = $this->radius_y / $smax;
-    $this->slice_angle = 2.0 * M_PI / ($this->values->getMaxKey($this->dataset) + 1);
+    $this->slice_angle = 2.0 * M_PI / $num_values;
   }
 
   /**
