@@ -124,6 +124,15 @@ class DisplayAxis {
     if($this->show_text) {
       $styles['t_angle'] = $graph->getOption(
         ['axis_text_angle_' . $o, $axis_no], 0);
+      if($graph->getOption('limit_text_angle')) {
+        $angle = $styles['t_angle'] % 360;
+        if($angle > 180)
+          $angle = -360 + $angle;
+        if($angle < -180)
+          $angle = 360 + $angle;
+        $angle = min(90, max(-90, $angle));
+        $styles['t_angle'] = $angle;
+      }
       $styles['t_position'] = $graph->getOption(
         ['axis_text_position_' . $o, $axis_no], 'axis_text_position');
       $styles['t_location'] = $graph->getOption(

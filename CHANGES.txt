@@ -1,3 +1,12 @@
+Version 3.10 (19/07/2021)
+------------
+- Added support for using text as a shape or figure.
+- Fixed angled axis text being badly placed with new limit_text_angle option.
+- Fixed guidelines not showing on date/time graphs.
+- Fixed some missing date/time tokens in crosshair text.
+- Fixed histograms not supporting non-integer values.
+- Fixed polar area graphs drawing incorrectly with date/time keys.
+
 Version 3.9 (24/05/2021)
 -----------
 - Added support for linking legend entries and title.
