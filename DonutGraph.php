@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2019 Graham Breach
+ * Copyright (C) 2014-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,18 +29,30 @@ class DonutGraph extends PieGraph {
   protected function getSlice($item, $angle_start, $angle_end, $radius_x,
     $radius_y, &$attr, $single_slice, $colour_index)
   {
+    $ratio = min(0.99, max(0.01, $this->getOption('inner_radius')));
+    $angle = $angle_end - $angle_start;
+
+    $gap_angle = $this->getOption('donut_slice_gap');
+    $outer_a = $inner_a = 0;
+    if($gap_angle > 0) {
+      $a = deg2rad($gap_angle);
+      if($a < $angle * 0.5) {
+        $outer_a = 0.5 * $a;
+        $inner_a = $outer_a / $ratio;
+      }
+    }
+
     $x_start = $y_start = $x_end = $y_end = 0;
     $angle_start += $this->s_angle;
     $angle_end += $this->s_angle;
-    $this->calcSlice($angle_start, $angle_end, $radius_x, $radius_y,
-      $x_start, $y_start, $x_end, $y_end);
-    $ratio = min(0.99, max(0.01, $this->inner_radius));
+    $this->calcSlice($angle_start + $outer_a, $angle_end - $outer_a,
+      $radius_x, $radius_y, $x_start, $y_start, $x_end, $y_end);
     $xc = $this->x_centre;
     $yc = $this->y_centre;
     $rx1 = $radius_x * $ratio;
     $ry1 = $radius_y * $ratio;
 
-    if($single_slice && $this->full_angle >= M_PI * 2.0) {
+    if($single_slice && $this->full_angle >= M_2_PI) {
       $x1_start = $xc + $rx1;
       $x1_end = $xc - $rx1;
       $y1_start = $y1_end = $yc;
@@ -57,13 +69,16 @@ class DonutGraph extends PieGraph {
       $attr['d'] = $path;
       $attr['fill-rule'] = 'evenodd';
     } else {
-      $outer = ($angle_end - $angle_start > M_PI ? 1 : 0);
+      $outer = ($angle > M_PI ? 1 : 0);
       $sweep = ($this->reverse ? 0 : 1);
 
-      $x1_start = $xc + (($x_start - $xc) * $ratio);
-      $x1_end = $xc + (($x_end - $xc) * $ratio);
-      $y1_start = $yc + (($y_start -$yc) * $ratio);
-      $y1_end = $yc + (($y_end - $yc) * $ratio);
+      // inner radius reduced by gap
+      $as = $angle_start + $inner_a;
+      $ae = $angle_end - $inner_a;
+      if($ae < $as)
+        $ae = $as = ($ae + $as) / 2; // not enough space, so come to a point
+
+      $this->calcSlice($as, $ae, $rx1, $ry1, $x1_start, $y1_start, $x1_end, $y1_end);
       $isweep = $sweep ? 0 : 1;
       $path = new PathData('M', $x1_end, $y1_end);
       $path->add('A', $rx1, $ry1, 0, $outer, $isweep, $x1_start, $y1_start);
