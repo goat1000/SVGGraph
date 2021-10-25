@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2020 Graham Breach
+ * Copyright (C) 2011-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -31,9 +31,7 @@ class HorizontalBarGraph extends HorizontalGridGraph {
     if(isset($settings['show_bar_labels']) && !isset($settings['show_data_labels']))
       $settings['show_data_labels'] = $settings['show_bar_labels'];
 
-    $fs = [
-      'label_centre' => true,
-    ];
+    $fs = ['label_centre' => !isset($settings['datetime_keys'])];
     $fs = array_merge($fs, $fixed_settings);
     parent::__construct($w, $h, $settings, $fs);
   }

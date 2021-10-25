@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2020 Graham Breach
+ * Copyright (C) 2013-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,7 @@ class BoxAndWhiskerGraph extends PointGraph {
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
     $fs = [
-      'label_centre' => true,
+      'label_centre' => !isset($settings['datetime_keys']),
       'require_structured' => ['top', 'bottom', 'wtop', 'wbottom'],
     ];
     $fs = array_merge($fs, $fixed_settings);

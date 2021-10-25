@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -92,7 +92,7 @@ trait BarGraphTrait {
   protected function setBarWidth($width, $space)
   {
     $this->calculated_bar_width = $width;
-    $this->calculated_bar_space = $space;
+    $this->calculated_bar_space = $this->getOption('datetime_keys') ? 0 : $space;
   }
 
   /**
