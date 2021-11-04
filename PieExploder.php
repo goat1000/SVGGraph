@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2019 Graham Breach
+ * Copyright (C) 2017-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -75,6 +75,8 @@ class PieExploder {
    */
   public function getExplode($item, $angle_start, $angle_end)
   {
+    if($item === null)
+      return [0,0];
     $range = $this->largest_value - $this->smallest_value;
     switch($this->explode) {
     case 'none' :

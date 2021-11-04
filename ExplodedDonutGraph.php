@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2021 Graham Breach
+ * Copyright (C) 2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,27 +21,9 @@
 
 namespace Goat1000\SVGGraph;
 
-class ExplodedPie3DGraph extends Pie3DGraph {
+class ExplodedDonutGraph extends DonutGraph {
 
   use ExplodedPieGraphTrait;
 
-  public function __construct($w, $h, array $settings, array $fixed_settings = [])
-  {
-    $fs = [ 'draw_flat_sides' => true, ];
-    $fs = array_merge($fs, $fixed_settings);
-    parent::__construct($w, $h, $settings, $fs);
-  }
-
-  /**
-   * Returns an edge markup
-   */
-  protected function getEdge($edge, $x_centre, $y_centre, $depth, $overlay)
-  {
-    list($xo, $yo) = $this->pie_exploder->getExplode($edge->slice['item'],
-      $edge->slice['angle_start'] + $this->s_angle,
-      $edge->slice['angle_end'] + $this->s_angle);
-    return parent::getEdge($edge, $x_centre + $xo, $y_centre + $yo, $depth,
-      $overlay);
-  }
 }
 
