@@ -424,6 +424,49 @@ class AxisDateTime extends Axis {
   }
 
   /**
+   * Returns the distance in pixels $u takes from $pos
+   */
+  public function measureUnits($pos, $u)
+  {
+    $i = Coords::parseValue($pos);
+
+    // start with a plain date
+    $datetime = new \DateTime('@0');
+    $datetime->setTimezone($this->timezone);
+    if($i['simple']) {
+      $a = new Number($pos);
+      $datetime = new \DateTime('@' . $a);
+      $datetime->setTimezone($this->timezone);
+    } elseif($i['grid']) {
+      if($i['units']) {
+        list($units, $unit_count) = AxisDateTime::parseFixedDivisions($i['value'],
+          $this->start, $this->end, $this->length);
+        $datetime->setTimezone($this->timezone);
+        $uc = new Number($unit_count);
+        $datetime->modify('+' . $uc . ' ' . $units);
+      } else {
+        $v = Graph::dateConvert($i['value']);
+        $a = new Number($v);
+        $datetime = new \DateTime('@' . $a);
+        $datetime->setTimezone($this->timezone);
+      }
+    }
+
+    $start_value = $datetime->format('U');
+    $start_pos = $this->length * ($start_value - $this->start) / $this->duration;
+
+    list($units, $unit_count) = AxisDateTime::parseFixedDivisions($u,
+      $this->start, $this->end, $this->length);
+
+    $datetime->setTimezone($this->timezone);
+    $uc = new Number($unit_count);
+    $datetime->modify('+' . $uc . ' ' . $units);
+    $value = $datetime->format('U');
+    $end_pos = $this->length * ($value - $this->start) / $this->duration;
+    return $end_pos - $start_pos;
+  }
+
+  /**
    * Returns the position of a value on the axis
    */
   public function position($index, $item = null)

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2019 Graham Breach
+ * Copyright (C) 2015-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,7 +52,7 @@ class Coords {
   /**
    * splits $value, removing leading char and updating $axis, $axis_no
    */
-  private function valueAxis(&$value, &$axis, &$axis_no)
+  private static function valueAxis(&$value, &$axis, &$axis_no)
   {
     if(preg_match('/^[ug](.*?)(([xy])(\d?))?$/i', $value, $matches)) {
       $value = $matches[1];
@@ -79,56 +79,72 @@ class Coords {
   }
 
   /**
+   * Determines the type of value
+   */
+  public static function parseValue($value, $axis = null)
+  {
+    $info = [
+      'value' => $value, 'axis' => $axis, 'axis_no' => null,
+      'simple' => true, 'grid' => false, 'units' => false
+    ];
+    if(is_numeric($value) || !is_string($value))
+      return $info;
+
+    $info['simple'] = false;
+    $first = strtolower(substr($value, 0, 1));
+    if($first == 'u' || $first == 'g') {
+      Coords::valueAxis($value, $axis, $axis_no);
+      $info['value'] = $value;
+      $info['axis'] = $axis;
+      $info['axis_no'] = $axis_no;
+      $info['grid'] = true;
+      $info['units'] = ($first == 'u');
+    }
+    return $info;
+  }
+
+  /**
    * Transform from grid space etc. to SVG space
    */
-  public function transform($value, $axis, $default_pos = 0)
+  public function transform($value, $axis, $default_pos = 0, $measure_from = 0)
   {
-    if(is_numeric($value) || !is_string($value))
+    $v_info = Coords::parseValue($value, $axis);
+    if($v_info['simple'])
       return $value;
-    $first = strtolower(substr($value, 0, 1));
-    $grid = false;
 
-    if($first == 'u' || $first == 'g') {
-      if(!method_exists($this->graph, 'gridX'))
-        throw new \Exception('Invalid dimensions (non-grid graph)');
+    $value = $v_info['value'];
+    if($v_info['grid'] && !method_exists($this->graph, 'gridX'))
+      throw new \Exception('Invalid dimensions (non-grid graph)');
 
-      $this->valueAxis($value, $axis, $axis_no);
-
-      if($first == 'u') {
-        // value is in grid units
-        $func = $axis == 'x' ? 'unitsX' : 'unitsY';
-        return $this->graph->{$func}($value, $axis_no) -
-          $this->graph->{$func}(0, $axis_no);
-      }
-
-      // value is a grid position
-      $grid = true;
+    if($v_info['units']) {
+      $axis_inst = $this->graph->getAxis($v_info['axis'], $v_info['axis_no']);
+      return $axis_inst->measureUnits($measure_from, $value);
     }
 
     $dim = $this->graph->getDimensions();
 
     // try value as assoc/datetime key first
-    if($grid) {
-      $axis_inst = $this->graph->getAxis($axis, $axis_no);
+    if($v_info['grid']) {
+      $axis_inst = $this->graph->getAxis($v_info['axis'], $v_info['axis_no']);
       $position = $axis_inst->positionByKey($value);
       if($position !== null) {
-        if($axis == 'x')
+        if($v_info['axis'] == 'x')
           return $position + $dim['pad_left'];
         return $dim['height'] - $dim['pad_bottom'] - $position;
       }
     }
 
     if(is_numeric($value)) {
-      if($grid) {
+      if($v_info['grid']) {
         $func = $axis == 'x' ? 'gridX' : 'gridY';
-        return $this->graph->{$func}($value, $axis_no);
+        return $this->graph->{$func}($value, $v_info['axis_no']);
       }
       return $value;
     }
 
     if($value == 'c')
       $value .= $axis;
-    if($grid)
+    if($v_info['grid'])
       return $this->getGridPosition($value, $default_pos);
     return $this->getGraphPosition($value, $default_pos);
   }

@@ -41,6 +41,12 @@ abstract class Shape {
   protected $transform = [];
 
   /**
+   * map attributes to be transformed to the attribute they are relative to
+   * - 'attr_relative' => 'attr_fixed'
+   */
+  protected $transform_from = [];
+
+  /**
    * coordinate pairs for dependent transforns - don't include them in
    * $transform or they will be transformed twice
    */
@@ -119,7 +125,11 @@ abstract class Shape {
       if($value !== null) {
         $val = $value;
         if(isset($this->transform[$attr])) {
-          $val = $this->coords->transform($value, $this->transform[$attr]);
+          $measure_from = 0;
+          if(isset($this->transform_from[$attr]))
+            $measure_from = $this->attrs[$this->transform_from[$attr]];
+
+          $val = $this->coords->transform($value, $this->transform[$attr], 0, $measure_from);
         } elseif(isset($this->colour_convert[$attr])) {
           $val = new Colour($graph, $value, $this->colour_convert[$attr]);
         }

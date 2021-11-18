@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ class Ellipse extends Shape {
   protected $element = 'ellipse';
   protected $required = ['cx','cy','rx','ry'];
   protected $transform = ['rx' => 'x', 'ry' => 'y'];
+  protected $transform_from = ['rx' => 'cx', 'ry' => 'cy'];
   protected $transform_pairs = [ ['cx', 'cy'] ];
 }
 

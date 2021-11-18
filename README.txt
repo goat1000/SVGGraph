@@ -1,4 +1,4 @@
-SVGGraph Library version 3.10
+SVGGraph Library version 3.11
 =============================
 
 This library provides PHP classes and functions for easily creating SVG
@@ -89,6 +89,8 @@ At the moment these types of graph are supported by SVGGraph:
  DonutGraph - a pie graph with a hole in the middle;
 
  SemiDonutGraph - half of a donut graph;
+
+ ExplodedDonutGraph - a donut graph with its slices exploded;
 
  PolarAreaGraph - a pie graph where the area of the slice varies instead of
                   its angle;

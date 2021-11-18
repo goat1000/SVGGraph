@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ class MarkerShape extends Shape {
   protected $element = 'use';
   protected $required = ['type', 'x', 'y'];
   protected $transform = ['size' => 'y'];
+  protected $transform_from = ['size' => 'y'];
   protected $transform_pairs = [ ['x', 'y'] ];
 
   /**

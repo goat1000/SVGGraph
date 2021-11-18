@@ -419,6 +419,17 @@ class Axis {
   }
 
   /**
+   * Returns the distance in pixels $u takes from $pos
+   */
+  public function measureUnits($pos, $u)
+  {
+    // on an ordinary axis this works fine
+    $l = $this->position($u);
+    $zero = $this->position(0);
+    return $l - $zero;
+  }
+
+  /**
    * Returns the position of a value on the axis
    */
   public function position($index, $item = null)
