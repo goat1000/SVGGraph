@@ -142,11 +142,13 @@ abstract class HorizontalGridGraph extends GridGraph {
       $units_before = (string)$this->getOption(['units_before_x', $i]);
       $values = $this->multi_graph ? $this->multi_graph : $this->values;
       $levels = $this->getOption(['axis_levels_h', $i]);
+      $log = $this->getOption(['log_axis_x', $i]);
+      $log_base = $this->getOption(['log_axis_x_base', $i]);
       $ticks = $this->getOption('axis_ticks_x');
 
       $y_axis = $y_axis_factory->get($y_len, $min_v, $max_v, $min_unit,
         $min_space, $grid_division, $units_before, $units_after,
-        $decimal_digits, $text_callback, $values, false, 0, $levels, $ticks);
+        $decimal_digits, $text_callback, $values, $log, $log_base, $levels, $ticks);
       $y_axes[] = $y_axis;
     }
 

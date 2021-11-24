@@ -493,10 +493,16 @@ abstract class GridGraph extends Graph {
           $k_max[] = $fixed_max;
         else
           $k_max[] = max(0, $this->getMaxKey(), (float)$g_max_x);
-        if(is_numeric($fixed_min))
+        if(is_numeric($fixed_min)) {
           $k_min[] = $fixed_min;
-        else
+        } elseif($this->getOption(['log_axis_x', $i])) {
+          $min_val = $this->getMinKey();
+          if($g_min_x !== null)
+            $min_val = min($min_val, (float)$g_min_x);
+          $k_min[] = $min_val;
+        } else {
           $k_min[] = min(0, $this->getMinKey(), (float)$g_min_x);
+        }
       }
       if($k_max[$i] < $k_min[$i])
         throw new \Exception('Invalid X axis: min > max (' . $k_min[$i] .
@@ -545,12 +551,15 @@ abstract class GridGraph extends Graph {
       $text_callback = $this->getOption(['axis_text_callback_x', $i],
         'axis_text_callback');
       $values = $this->multi_graph ? $this->multi_graph : $this->values;
+      $log = $this->getOption(['log_axis_x', $i]);
+      $log_base = $this->getOption(['log_axis_x_base', $i]);
       $levels = $this->getOption(['axis_levels_h', $i]);
       $ticks = $this->getOption('axis_ticks_x');
 
       $x_axis = $x_axis_factory->get($x_len, $min_h, $max_h, $min_unit,
         $min_space, $grid_division, $units_before, $units_after,
-        $decimal_digits, $text_callback, $values, false, 0, $levels, $ticks);
+        $decimal_digits, $text_callback, $values, $log, $log_base,
+        $levels, $ticks);
       $x_axes[] = $x_axis;
     }
 

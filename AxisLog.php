@@ -38,7 +38,7 @@ class AxisLog extends Axis {
 
   public function __construct($length, $max_val, $min_val, $min_unit,
     $min_space, $fit, $units_before, $units_after, $decimal_digits,
-    $base, $divisions, $label_callback)
+    $base, $divisions, $label_callback, $values)
   {
     if($min_val == 0 || $max_val == 0)
       throw new \Exception('0 value on log axis');
@@ -53,6 +53,7 @@ class AxisLog extends Axis {
     $this->units_after = $units_after;
     $this->decimal_digits = $decimal_digits;
     $this->label_callback = $label_callback;
+    $this->values = $values;
     if(is_numeric($base) && $base > 1) {
       $this->base = $base * 1.0;
       $this->int_base = $this->base == floor($this->base);
