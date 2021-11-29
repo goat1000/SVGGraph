@@ -68,16 +68,47 @@ class AxisLog extends Axis {
     if(is_numeric($divisions))
       $this->divisions = $divisions;
 
-    $this->lgmin = floor(log($min_val, $this->base));
-    $this->lgmax = ceil(log($max_val, $this->base));
+    if($fit && $this->int_base) {
+      // X-axis, try to use values
+      $lgminf = $this->bfloor($min_val);
+      $lgmaxf = $this->bceil($max_val);
+      $this->lgmin = log($lgminf, $this->base);
+      $this->lgmax = log($lgmaxf, $this->base);
+    } else {
+      // Y-axis, allow space
+      $this->lgmin = floor(log($min_val, $this->base));
+      $this->lgmax = ceil(log($max_val, $this->base));
+    }
 
     // if all the values are the same, and a power of the base
     if($this->lgmax <= $this->lgmin)
-      --$this->lgmin;
+      $this->lgmin -= 1.0;
 
     $this->lgmul = $this->length / ($this->lgmax - $this->lgmin);
     $this->min_value = pow($this->base, $this->lgmin);
     $this->max_value = pow($this->base, $this->lgmax);
+  }
+
+  /**
+   * Floor to the nearest sensible number
+   */
+  protected function bfloor($value)
+  {
+    $b = floor(log($value, $this->base));
+    $bf = pow($this->base, $b);
+    $m = floor($value / $bf);
+    return $m * $bf;
+  }
+
+  /**
+   * Ceil to the nearest sensible number
+   */
+  protected function bceil($value)
+  {
+    $b = floor(log($value, $this->base));
+    $bf = pow($this->base, $b);
+    $m = ceil($value / $bf);
+    return $m * $bf;
   }
 
   /**
@@ -89,7 +120,7 @@ class AxisLog extends Axis {
     if($start === null)
       return;
 
-    $pow_div = $this->lgmax - $this->lgmin;
+    $pow_div = ceil($this->lgmax) - floor($this->lgmin);
     $this->grid_space = $this->length / $pow_div;
 
     $this->grid_split = $this->divisions ? $this->divisions :
@@ -101,24 +132,34 @@ class AxisLog extends Axis {
         $spoints[] = log($l, $this->base);
     }
 
-    $l = $this->lgmin;
     $points = [];
-    while($l <= $this->lgmax) {
-      $val = pow($this->base, $l) * ($this->negative ? -1 : 1);
-      $pos = $this->position($val);
-      $position = $start + ($this->direction * $pos);
-      $points[] = $this->getGridPoint($position, $val);
+    $val = $this->min_value;
+    while($val <= $this->max_value) {
+      $value = $this->negative ? -$val : $val;
+      $position = $this->position($value);
+      $position = $start + ($this->direction * $position);
+      $points[] = $this->getGridPoint($position, $value);
 
-      // add in divisions between powers
-      if($l < $this->lgmax) {
-        foreach($spoints as $l1) {
-          $val = pow($this->base, $l + $l1) * ($this->negative ? -1 : 1);
-          $pos = $this->position($val);
-          $position = $start + ($this->direction * $pos);
-          $points[] = $this->getGridPoint($position, $val);
+      // inserted at start of loop, but calculated at end
+      if($val > ($this->max_value * 0.995))
+        break;
+
+      // find next point
+      $l = log($val, $this->base);
+      $l_floor = floor($l);
+      $l_dec = $l - $l_floor;
+      $l_next = 0;
+      foreach($spoints as $l1) {
+        if($l1 && ($l1 - $l_dec) > 0.001) {
+          $l_next = $l_floor + $l1;
+          break;
         }
       }
-      ++$l;
+      if(!$l_next || $l_next > $this->lgmax) {
+        // next full power or end of axis
+        $l_next = min($l_floor + 1, $this->lgmax);
+      }
+      $val = pow($this->base, $l_next);
     }
 
     if($this->direction < 0) {

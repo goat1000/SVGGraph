@@ -489,13 +489,21 @@ abstract class GridGraph extends Graph {
           throw new \Exception('Invalid X axis options: min > max (' .
             $fixed_min . ' > ' . $fixed_max . ')');
 
-        if(is_numeric($fixed_max))
+        $log_axis = $this->getOption(['log_axis_x', $i]);
+        if(is_numeric($fixed_max)) {
           $k_max[] = $fixed_max;
-        else
+        } elseif($log_axis) {
+          $max_val = $this->getMaxKey();
+          if($g_max_x !== null)
+            $max_val = max($max_val, (float)$g_max_x);
+          $k_max[] = $max_val;
+        } else {
           $k_max[] = max(0, $this->getMaxKey(), (float)$g_max_x);
+        }
+
         if(is_numeric($fixed_min)) {
           $k_min[] = $fixed_min;
-        } elseif($this->getOption(['log_axis_x', $i])) {
+        } elseif($log_axis) {
           $min_val = $this->getMinKey();
           if($g_min_x !== null)
             $min_val = min($min_val, (float)$g_min_x);

@@ -85,9 +85,15 @@ class AxisFactory {
     } elseif($log) {
 
       // logarithmic axis
-      $axis = new AxisLog($length, $max, $min, $min_unit, $min_space,
-        $this->fit, $units_before, $units_after, $decimal_digits, $log_base,
-        $grid_division, $text_callback, $values);
+      if(is_array($ticks)) {
+        $axis = new AxisLogTicks($length, $max, $min, $min_unit, $min_space,
+          $this->fit, $units_before, $units_after, $decimal_digits, $log_base,
+          $grid_division, $text_callback, $values, $ticks);
+      } else {
+        $axis = new AxisLog($length, $max, $min, $min_unit, $min_space,
+          $this->fit, $units_before, $units_after, $decimal_digits, $log_base,
+          $grid_division, $text_callback, $values);
+      }
 
     } elseif(is_array($ticks)) {
 
