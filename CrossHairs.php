@@ -194,16 +194,23 @@ class CrossHairs {
     if(!empty($u))
       $chtextitem_attrs['unitsby'] = $u;
 
-    if($this->graph->getOption('log_axis_y')) {
-      $base = $this->graph->getOption('log_axis_y_base');
-      if($this->flip_axes) {
-        $gridx_attrs['base'] = $base;
+    $log_x = $this->graph->getOption(['log_axis_x', 0]);
+    $log_y = $this->graph->getOption(['log_axis_y', 0]);
+    if($log_x || $log_y) {
+      $base_y = $this->graph->getOption('log_axis_y_base');
+      $base_x = $this->graph->getOption('log_axis_x_base');
+      $log_h = $this->flip_axes ? $log_y : $log_x;
+      $log_v = $this->flip_axes ? $log_x : $log_y;
+
+      if($log_h) {
+        $gridx_attrs['base'] = $this->flip_axes ? $base_y : $base_x;
         $gridx_attrs['zero'] = $this->x_axis->value(0);
         $gridx_attrs['scale'] = $this->x_axis->value($this->width);
         $this->graph->javascript->addFunction('logStrValueX');
         $gridx_attrs['function'] = 'logStrValueX';
-      } else {
-        $gridy_attrs['base'] = $base;
+      }
+      if($log_v) {
+        $gridy_attrs['base'] = $this->flip_axes ? $base_x : $base_y;
         $gridy_attrs['zero'] = $this->y_axis->value(0);
         $gridy_attrs['scale'] = $this->y_axis->value($this->height);
         $this->graph->javascript->addFunction('logStrValueY');
