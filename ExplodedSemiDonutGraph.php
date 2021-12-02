@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2021 Graham Breach
+ * Copyright (C) 2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,28 @@
 
 namespace Goat1000\SVGGraph;
 
-class DonutGraph extends PieGraph {
+class ExplodedSemiDonutGraph extends SemiDonutGraph {
 
-  use DonutGraphTrait;
+  use ExplodedPieGraphTrait {
+    dataLabelPosition as protected traitDLP;
+  }
+
+  /**
+   * Overridden to keep inner text in the middle
+   */
+  public function dataLabelPosition($dataset, $index, &$item, $x, $y, $w, $h,
+    $label_w, $label_h)
+  {
+    if($dataset === 'innertext') {
+      if($this->flipped)
+        $y_offset = new Number($label_h / 2);
+      else
+        $y_offset = new Number($label_h / -2);
+      return ['centre middle 0 ' . $y_offset, [$x, $y] ];
+    }
+
+    return $this->traitDLP($dataset, $index, $item, $x, $y, $w, $h,
+      $label_w, $label_h);
+  }
 }
 

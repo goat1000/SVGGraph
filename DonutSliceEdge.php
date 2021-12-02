@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2021 Graham Breach
+ * Copyright (C) 2021 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,20 +22,11 @@
 namespace Goat1000\SVGGraph;
 
 /**
- * The PieSliceEdge class calculates and draws the 3D slice edges
+ * The DonutSliceEdge class calculates and draws the 3D slice edges
  */
-class PieSliceEdge {
+class DonutSliceEdge extends PieSliceEdge {
 
-  const SCALE = 2000.0;
-  public $x;
-  public $y;
-  public $slice;
-
-  // types: 0 => start, 1 => end, 2 => curve,
-  // 3 => second curve (if it exists), -1 = no edge
-  protected $type;
-  protected $a1;
-  protected $a2;
+  protected $ratio = 1.0;
 
   /**
    * $slice is the slice details array
@@ -43,18 +34,31 @@ class PieSliceEdge {
    */
   public function __construct(&$graph, $type, $slice, $s_angle)
   {
+    // types: 0 => start flat, 1 => end flat, 2, 3, 4, 5  => curves, -1 => no edge
     $this->type = -1;
     $this->slice = $slice;
     $tau = M_PI * 2.0;
 
     $start_angle = $slice['angle_start'] + $s_angle;
     $end_angle = $slice['angle_end'] + $s_angle;
-
+    $ratio = min(0.99, max(0.01, $graph->getOption('inner_radius')));
     if(isset($slice['single_slice']) && $slice['single_slice'] &&
       !is_numeric($graph->end_angle)) {
-      // if end_angle is not set, then single_slice is full pie
-      $start_angle = 0.0;
-      $end_angle = M_PI;
+
+      // full pie, draw full bottom and inner edges only
+      switch($type)
+      {
+      case 2:
+        $start_angle = 0.0;
+        $end_angle = M_PI;
+        break;
+      case 4:
+        $start_angle = M_PI;
+        $end_angle = $tau;
+        break;
+      default:
+        return;
+      }
     } elseif($graph->reverse) {
       // apply reverse now to save thinking about it later
       $s = M_PI * 4.0 - $end_angle;
@@ -72,10 +76,12 @@ class PieSliceEdge {
     case 0:
       // flat edge at a1
       $this->a2 = $this->a1;
+      $this->ratio = $ratio;
       break;
     case 1:
       // flat edge at a2
       $this->a1 = $this->a2;
+      $this->ratio = $ratio;
       break;
     case 2:
       // bottom edge
@@ -96,6 +102,25 @@ class PieSliceEdge {
 
       $this->a1 = $tau;
       break;
+    case 4:
+      // slices passing through top
+      if($this->a2 <= M_PI)
+        return;
+
+      if($this->a1 < M_PI)
+        $this->a1 = M_PI;
+      if($this->a2 > $tau)
+        $this->a2 = $tau;
+      $this->ratio = $ratio;
+      break;
+    case 5:
+      // slice starts at top, passes through bottom and ends at top
+      if($this->a2 < M_PI * 3.0)
+        return;
+
+      $this->a1 = M_PI * 3.0;
+      $this->ratio = $ratio;
+      break;
     }
 
     $ac = ($this->a1 + $this->a2) / 2;
@@ -109,101 +134,49 @@ class PieSliceEdge {
    */
   protected static function getEdgeTypes()
   {
-    return 3;
+    return 5;
   }
 
   /**
-   * Returns a array of edges for the slice
-   */
-  public static function getEdges(&$graph, $slice, $start_angle, $flat)
-  {
-    $class = get_called_class();
-    $start = $flat ? 0 : 2;
-    $end = $class::getEdgeTypes();
-    $edges = [];
-    for($e = $start; $e <= $end; ++$e) {
-      $edge = new $class($graph, $e, $slice, $start_angle);
-      if($edge->visible())
-        $edges[] = $edge;
-    }
-    return $edges;
-  }
-
-  /**
-   * Returns TRUE if the edge faces forwards
+   * Returns TRUE when the edge is visible
    */
   public function visible()
   {
-    // type -1 is for non-existent edges
-    if($this->type == -1)
-      return false;
-
-    // the flat edges are visible left or right
-    if($this->type == 0) {
+    switch($this->type)
+    {
+    case -1:
+      return false; // type -1 is for non-existent edges
+    case 0:
       // start on right not visible
       if($this->a1 < M_PI * 0.5 || $this->a1 > M_PI * 1.5)
         return false;
-      return true;
-    }
-
-    $a2 = fmod($this->a2, M_PI * 2.0);
-    if($this->type == 1) {
+      break;
+    case 1:
       // end on left not visible
+      $a2 = fmod($this->a2, M_PI * 2.0);
       if($a2 > M_PI * 0.5 && $a2 < M_PI * 1.5)
         return false;
-      return true;
+      break;
     }
 
-    // if both ends are at top and slice angle < 180, not visible
-    if($this->a1 >= M_PI && $this->a2 <= M_PI * 2.0 &&
-      $this->a2 - $this->a1 < M_PI * 2.0)
-      return false;
+    // curves always visible on donut graph
     return true;
   }
 
   /**
-   * Returns TRUE if this is a curved edge
+   * Returns TRUE when this is an inner edge
    */
-  public function curve()
+  public function inner()
   {
-    return $this->type > 1;
+    return $this->type > 3;
   }
 
   /**
-   * Draws the edge
+   * Returns the ratio of inner to outer
    */
-  public function draw(&$graph, $x_centre, $y_centre, $depth, $attr = null)
+  public function getInnerRatio()
   {
-    $attr = ($attr === null ? $this->slice['attr'] :
-      array_merge($this->slice['attr'], $attr));
-    $attr['d'] = $this->getPath($x_centre, $y_centre, $depth);
-    return $graph->element('path', $attr);
-  }
-
-  /**
-   * Returns the edge as a clipPath element
-   */
-  public function getClipPath(&$graph, $x_centre, $y_centre, $depth, $clip_id)
-  {
-    $attr = ['id' => $clip_id];
-    $path = ['d' => $this->getPath($x_centre, $y_centre, $depth)];
-
-    return $graph->element('clipPath', $attr, null,
-      $graph->element('path', $path));
-  }
-
-  /**
-   * Returns the correct path
-   */
-  protected function getPath($x_centre, $y_centre, $depth)
-  {
-    if($this->type == 0 || $this->type == 1) {
-      $path = $this->getFlatPath($this->type == 1 ? $this->a2 : $this->a1,
-        $x_centre, $y_centre, $depth);
-    } else {
-      $path = $this->getCurvedPath($x_centre, $y_centre, $depth);
-    }
-    return $path;
+    return $this->ratio;
   }
 
   /**
@@ -211,8 +184,14 @@ class PieSliceEdge {
    */
   protected function getFlatPath($angle, $x_centre, $y_centre, $depth)
   {
-    $x1 = $x_centre + $this->slice['radius_x'] * cos($angle);
-    $y1 = $y_centre + $this->slice['radius_y'] * sin($angle) + $depth;
+    $rx = $this->slice['radius_x'] * cos($angle);
+    $ry = $this->slice['radius_y'] * sin($angle);
+    $x1 = $x_centre + $rx;
+    $y1 = $y_centre + $ry;
+    $x2 = $x_centre + ($rx * $this->ratio);
+    $y2 = $y_centre + ($ry * $this->ratio);
+    return new PathData('M', $x2, $y2, 'v', $depth, 'L', $x1, $y1 + $depth,
+      'v', -$depth, 'z');
     return new PathData('M', $x_centre, $y_centre, 'v', $depth, 'L', $x1, $y1,
       'v', -$depth, 'z');
   }
@@ -222,8 +201,10 @@ class PieSliceEdge {
    */
   protected function getCurvedPath($x_centre, $y_centre, $depth)
   {
-    $rx = $this->slice['radius_x'];
-    $ry = $this->slice['radius_y'];
+    $d1 = rad2deg($this->a1);
+    $d2 = rad2deg($this->a2);
+    $rx = $this->slice['radius_x'] * $this->ratio;
+    $ry = $this->slice['radius_y'] * $this->ratio;
     $x1 = $x_centre + $rx * cos($this->a1);
     $y1 = $y_centre + $ry * sin($this->a1);
     $x2 = $x_centre + $rx * cos($this->a2);
