@@ -1,3 +1,13 @@
+Version 3.12 (10/12/2021)
+------------
+- Added exploded semi-donut graph.
+- Added 3D donut graph.
+- Added 3D semi-donut graph.
+- Added exploded 3D donut graph.
+- Added exploded 3D semi-donut graph.
+- Added candlestick graph.
+- Added log_axis_x and log_axis_x_base options with logarithmic X-axis support.
+
 Version 3.11 (18/11/2021)
 ------------
 - Added exploded donut graph.
