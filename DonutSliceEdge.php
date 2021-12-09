@@ -27,6 +27,8 @@ namespace Goat1000\SVGGraph;
 class DonutSliceEdge extends PieSliceEdge {
 
   protected $ratio = 1.0;
+  protected $outer_a = 0;
+  protected $inner_a = 0;
 
   /**
    * $slice is the slice details array
@@ -42,6 +44,10 @@ class DonutSliceEdge extends PieSliceEdge {
     $start_angle = $slice['angle_start'] + $s_angle;
     $end_angle = $slice['angle_end'] + $s_angle;
     $ratio = min(0.99, max(0.01, $graph->getOption('inner_radius')));
+    list($outer_a, $inner_a) = $graph->getSliceGap($end_angle - $start_angle, $ratio);
+    $this->outer_a = $outer_a;
+    $this->inner_a = $inner_a;
+
     if(isset($slice['single_slice']) && $slice['single_slice'] &&
       !is_numeric($graph->end_angle)) {
 
@@ -82,6 +88,8 @@ class DonutSliceEdge extends PieSliceEdge {
       // flat edge at a2
       $this->a1 = $this->a2;
       $this->ratio = $ratio;
+      $this->outer_a = -$outer_a;
+      $this->inner_a = -$inner_a;
       break;
     case 2:
       // bottom edge
@@ -123,9 +131,11 @@ class DonutSliceEdge extends PieSliceEdge {
       break;
     }
 
-    $ac = ($this->a1 + $this->a2) / 2;
-    $this->x = PieSliceEdge::SCALE * cos($ac);
-    $this->y = PieSliceEdge::SCALE * sin($ac);
+    // ignore tiny curves as floating point artifacts
+    if($type > 1 && abs($this->a1 - $this->a2) < 0.0001)
+      return;
+
+    $this->setupSort();
     $this->type = $type;
   }
 
@@ -184,15 +194,15 @@ class DonutSliceEdge extends PieSliceEdge {
    */
   protected function getFlatPath($angle, $x_centre, $y_centre, $depth)
   {
-    $rx = $this->slice['radius_x'] * cos($angle);
-    $ry = $this->slice['radius_y'] * sin($angle);
-    $x1 = $x_centre + $rx;
-    $y1 = $y_centre + $ry;
-    $x2 = $x_centre + ($rx * $this->ratio);
-    $y2 = $y_centre + ($ry * $this->ratio);
+    $rx1 = $this->slice['radius_x'] * cos($angle + $this->outer_a);
+    $ry1 = $this->slice['radius_y'] * sin($angle + $this->outer_a);
+    $rx2 = $this->slice['radius_x'] * $this->ratio * cos($angle + $this->inner_a);
+    $ry2 = $this->slice['radius_y'] * $this->ratio * sin($angle + $this->inner_a);
+    $x1 = $x_centre + $rx1;
+    $y1 = $y_centre + $ry1;
+    $x2 = $x_centre + $rx2;
+    $y2 = $y_centre + $ry2;
     return new PathData('M', $x2, $y2, 'v', $depth, 'L', $x1, $y1 + $depth,
-      'v', -$depth, 'z');
-    return new PathData('M', $x_centre, $y_centre, 'v', $depth, 'L', $x1, $y1,
       'v', -$depth, 'z');
   }
 
@@ -201,14 +211,13 @@ class DonutSliceEdge extends PieSliceEdge {
    */
   protected function getCurvedPath($x_centre, $y_centre, $depth)
   {
-    $d1 = rad2deg($this->a1);
-    $d2 = rad2deg($this->a2);
+    $a = $this->ratio < 1.0 ? $this->inner_a : $this->outer_a;
     $rx = $this->slice['radius_x'] * $this->ratio;
     $ry = $this->slice['radius_y'] * $this->ratio;
-    $x1 = $x_centre + $rx * cos($this->a1);
-    $y1 = $y_centre + $ry * sin($this->a1);
-    $x2 = $x_centre + $rx * cos($this->a2);
-    $y2 = $y_centre + $ry * sin($this->a2);
+    $x1 = $x_centre + $rx * cos($this->a1 + $a);
+    $y1 = $y_centre + $ry * sin($this->a1 + $a);
+    $x2 = $x_centre + $rx * cos($this->a2 - $a);
+    $y2 = $y_centre + $ry * sin($this->a2 - $a);
     $y2d = $y2 + $depth;
 
     $outer = 0; // edge is never > PI

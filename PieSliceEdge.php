@@ -27,7 +27,6 @@ namespace Goat1000\SVGGraph;
 class PieSliceEdge {
 
   const SCALE = 2000.0;
-  public $x;
   public $y;
   public $slice;
 
@@ -98,10 +97,20 @@ class PieSliceEdge {
       break;
     }
 
-    $ac = ($this->a1 + $this->a2) / 2;
-    $this->x = PieSliceEdge::SCALE * cos($ac);
-    $this->y = PieSliceEdge::SCALE * sin($ac);
+    $this->setupSort();
     $this->type = $type;
+  }
+
+  /**
+   * Fills in $this->y, for sorting slices by layer depth
+   */
+  protected function setupSort()
+  {
+    if($this->a1 < M_PI_2 && $this->a2 > M_PI_2)
+      $ac = M_PI_2;
+    else
+      $ac = ($this->a1 + $this->a2) / 2;
+    $this->y = PieSliceEdge::SCALE * sin($ac);
   }
 
   /**

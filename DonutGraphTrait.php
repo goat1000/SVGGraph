@@ -24,14 +24,10 @@ namespace Goat1000\SVGGraph;
 trait DonutGraphTrait {
 
   /**
-   * Override the parent to draw doughnut slice
+   * Returns the outer and inner angle adjustments for the slice gap
    */
-  protected function getSlice($item, $angle_start, $angle_end, $radius_x,
-    $radius_y, &$attr, $single_slice, $colour_index)
+  public function getSliceGap($angle, $ratio)
   {
-    $ratio = min(0.99, max(0.01, $this->getOption('inner_radius')));
-    $angle = $angle_end - $angle_start;
-
     $gap_angle = $this->getOption('donut_slice_gap');
     $outer_a = $inner_a = 0;
     if($gap_angle > 0) {
@@ -41,7 +37,19 @@ trait DonutGraphTrait {
         $inner_a = $outer_a / $ratio;
       }
     }
+    return [$outer_a, $inner_a];
+  }
 
+  /**
+   * Override the parent to draw doughnut slice
+   */
+  protected function getSlice($item, $angle_start, $angle_end, $radius_x,
+    $radius_y, &$attr, $single_slice, $colour_index)
+  {
+    $ratio = min(0.99, max(0.01, $this->getOption('inner_radius')));
+    $angle = $angle_end - $angle_start;
+
+    list($outer_a, $inner_a) = $this->getSliceGap($angle, $ratio);
     $x_start = $y_start = $x_end = $y_end = 0;
     $angle_start += $this->s_angle;
     $angle_end += $this->s_angle;

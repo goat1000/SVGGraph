@@ -28,8 +28,11 @@ class Donut3DGraph extends Pie3DGraph {
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
-    // slice gap is no use on a 3D graph
-    $fs = [ 'donut_slice_gap' => 0, ];
+    $fs = [];
+    // enable flat sides when drawing a gap
+    if(isset($settings['donut_slice_gap']) && $settings['donut_slice_gap'] > 0)
+      $fs['draw_flat_sides'] = true;
+
     $fs = array_merge($fs, $fixed_settings);
     parent::__construct($w, $h, $settings, $fs);
   }
