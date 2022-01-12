@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2021 Graham Breach
+ * Copyright (C) 2009-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -121,7 +121,7 @@ class LineGraph extends PointGraph {
 
     // can't draw a line between fewer than 2 points
     if(count($points) > 1) {
-      $figure = $this->line_figure;
+      $figure = $this->getOption('line_figure');
       $close = $figure && $this->getOption(['line_figure_closed', $dataset]);
       $fill = $this->getOption(['fill_under', $dataset]);
       $dash = $this->getOption(['line_dash', $dataset]);
@@ -134,32 +134,14 @@ class LineGraph extends PointGraph {
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
-      $path = new PathData;
-      $fillpath = new PathData;
-      $cmd = 'M';
       $y_bottom = new Number($y_bottom);
 
       $line_points = $this->getLinePoints($points);
-      foreach($line_points as $point) {
-        list($x, $y, $item, $dataset, $index) = $point;
-        $x = new Number($x);
-        $y = new Number($y);
-
-        if($fillpath->isEmpty()) {
-          if($figure)
-            $fillpath->add('M', $x, $y);
-          else
-            $fillpath->add($this->fillFrom($x, $y_bottom));
-          $fillpath->add('L');
-        }
-
-        $path->add($cmd, $x, $y);
-        $fillpath->add($x, $y);
-
-        // no need to repeat same L command
-        $cmd = $cmd == 'M' ? 'L' : '';
-        $last_x = $x;
-      }
+      $curve = min(5, max(0, $this->getOption(['line_curve', $dataset])));
+      if($curve)
+        list($path, $fillpath) = $this->getCurvedLinePath($line_points, $y_bottom, $last_x, $curve);
+      else
+        list($path, $fillpath) = $this->getLinePath($line_points, $y_bottom, $last_x);
 
       // close the path?
       if($close)
@@ -211,6 +193,91 @@ class LineGraph extends PointGraph {
   protected function getLinePoints($points)
   {
     return $points;
+  }
+
+  /**
+   * Returns the path for a line
+   */
+  protected function getLinePath($points, $y_bottom, &$last_x)
+  {
+    $path = new PathData;
+    $fillpath = new PathData;
+    $cmd = 'M';
+
+    foreach($points as $point) {
+      list($x, $y, $item, $dataset, $index) = $point;
+      $x = new Number($x);
+      $y = new Number($y);
+
+      if($fillpath->isEmpty()) {
+        if($this->getOption('line_figure'))
+          $fillpath->add('M', $x, $y);
+        else
+          $fillpath->add($this->fillFrom($x, $y_bottom));
+        $fillpath->add('L');
+      }
+
+      $path->add($cmd, $x, $y);
+      $fillpath->add($x, $y);
+
+      // no need to repeat same L command
+      $cmd = $cmd == 'M' ? 'L' : '';
+      $last_x = $x;
+    }
+    return [$path, $fillpath];
+  }
+
+  /**
+   * Returns the path for a curved line
+   */
+  protected function getCurvedLinePath($points, $y_bottom, &$last_x, $curve)
+  {
+    $path = new PathData;
+    $fillpath = new PathData;
+
+    $t = $curve / 2.0;
+    $ctrl = [];
+    $last_point = count($points) - 1;
+    foreach($points as $i => $point) {
+      list($x, $y, $item, $dataset, $index) = $point;
+      $nx = new Number($x);
+      $ny = new Number($y);
+
+      $p_prev = $points[$i == 0 ? $i + 1 : $i - 1];
+      $p_next = $points[$i == $last_point ? $i - 1 : $i + 1];
+      $ctrl_prev = $ctrl;
+      $ctrl = $this->getControlPoints($p_prev[0], $p_prev[1], $x, $y, $p_next[0], $p_next[1], $t);
+
+      if($i == 0) {
+        $path->add('M', $nx, $ny);
+        if($this->getOption('line_figure')) {
+          $fillpath->add('M', $nx, $ny);
+        } else {
+          $fillpath->add($this->fillFrom($nx, $y_bottom));
+          $fillpath->add('L', $nx, $ny);
+        }
+      } else {
+        $path->add('C', $ctrl_prev[2], $ctrl_prev[3], $ctrl[0], $ctrl[1], $nx, $ny);
+        $fillpath->add('C', $ctrl_prev[2], $ctrl_prev[3], $ctrl[0], $ctrl[1], $nx, $ny);
+      }
+
+      $last_x = $nx;
+    }
+    return [$path, $fillpath];
+  }
+
+  /**
+   * Returns the control points either side of a point
+   */
+  public static function getControlPoints($x0, $y0, $x1, $y1, $x2, $y2, $t)
+  {
+    $d1 = sqrt(pow($x1 - $x0, 2) + pow($y1 - $y0, 2));
+    $d2 = sqrt(pow($x2 - $x1, 2) + pow($y2 - $y1, 2));
+    $fa = $t * $d1 / ($d1 + $d2);
+    $fb = $t - $fa;
+    $w = $x2 - $x0;
+    $h = $y2 - $y0;
+    return [$x1 - $fa * $w, $y1 - $fa * $h, $x1 + $fb * $w, $y1 + $fb * $h];
   }
 
   /**

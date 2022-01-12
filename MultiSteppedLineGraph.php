@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,5 +24,12 @@ namespace Goat1000\SVGGraph;
 class MultiSteppedLineGraph extends MultiLineGraph {
 
   use SteppedLineTrait;
+
+  public function __construct($w, $h, array $settings, array $fixed_settings = [])
+  {
+    $fs = ['line_curve' => 0];
+    $fs = array_merge($fs, $fixed_settings);
+    parent::__construct($w, $h, $settings, $fs);
+  }
 }
 
