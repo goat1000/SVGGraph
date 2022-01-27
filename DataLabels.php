@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2021 Graham Breach
+ * Copyright (C) 2015-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -787,8 +787,8 @@ class DataLabels {
   {
     // can't be more round than this!
     $round = min((float)$style['round'], $h / 3, $w / 3);
-    $drop = max(2, $style['tail_length']);
-    $spread = min(max(2, $style['tail_width']), $w - $round * 2);
+    $drop = max(2, (float)$style['tail_length']);
+    $spread = min(max(2, (float)$style['tail_width']), $w - $round * 2);
 
     $vert = $h - $round * 2;
     $horz = $w - $round * 2;
