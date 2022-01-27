@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2020 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -153,16 +153,26 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
     if(count($values) > 1 && $values instanceof Data) {
       $new_data = [];
       $count = count($values);
+
+      // set up all keys first
       for($i = 0; $i < $count; ++$i) {
         foreach($values[$i] as $item) {
-          if(!isset($new_data[$item->key])) {
-            // fill the data item with NULLs
-            $new_data[$item->key] = array_fill(0, $count + 1, null);
-            $new_data[$item->key][0] = $item->key;
-          }
+          $new_data[$item->key] = [$item->key];
+        }
+      }
+
+      // sort keys if they are numeric
+      if(!$force_assoc && !$values->associativeKeys())
+        ksort($new_data);
+
+      // fill in values
+      for($i = 0; $i < $count; ++$i) {
+        foreach($values[$i] as $item) {
           $new_data[$item->key][$i + 1] = $item->value;
         }
       }
+
+      // array keys are now superfluous
       $new_data = array_values($new_data);
 
       $new_values = new StructuredData($new_data, $force_assoc,
