@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2021 Graham Breach
+ * Copyright (C) 2015-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -60,6 +60,7 @@ class BarAndLineGraph extends GroupedBarGraph {
     $lines = $this->getOption('line_dataset');
     $line_breaks = [];
     $line_points = [];
+    $line_offsets = [];
     $points = [];
     if(!is_array($lines))
       $lines = [$lines];
@@ -67,6 +68,7 @@ class BarAndLineGraph extends GroupedBarGraph {
     foreach($lines as $line) {
       $line_breaks[$line] = $this->getOption(['line_breaks', $line]);
       $line_points[$line] = [];
+      $line_offsets[$line] = 0;
       $points[$line] = [];
     }
     $this->line_datasets = $lines = array_flip($lines);
@@ -76,8 +78,19 @@ class BarAndLineGraph extends GroupedBarGraph {
     $y_bottom = min($y_axis_pos, $this->height - $this->pad_bottom);
 
     $this->barSetup();
-    $marker_offset = $this->getOption('datetime_keys') ? 0 :
-      $this->x_axes[$this->main_x_axis]->unit() / 2;
+    if(!$this->getOption('datetime_keys')) {
+      $g_width = $this->x_axes[$this->main_x_axis]->unit();
+      foreach($lines as $line => $pos) {
+        $o = $this->getOption(['line_bar', $line]);
+        if(is_numeric($o) && in_array($o, $this->bar_datasets)) {
+          $line_offsets[$line] = $this->calculated_bar_space +
+            ($this->dataset_offsets[$o] * $this->group_bar_spacing) +
+            ($this->calculated_bar_width / 2);
+        } else {
+          $line_offsets[$line] = $g_width / 2;
+        }
+      }
+    }
 
     // draw bars, store line points
     $datasets = $this->multi_graph->getEnabledDatasets();
@@ -100,7 +113,7 @@ class BarAndLineGraph extends GroupedBarGraph {
               $line_points[$line_dataset][] = $points[$line_dataset];
               $points[$line_dataset] = [];
             } elseif($item->value !== null) {
-              $x = $bar_pos + $marker_offset;
+              $x = $bar_pos + $line_offsets[$line_dataset];
               $y = $this->gridY($item->value, $y_axis);
               $points[$line_dataset][] = [$x, $y, $item, $line_dataset, $bnum];
             }
