@@ -153,6 +153,7 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
     if(count($values) > 1 && $values instanceof Data) {
       $new_data = [];
       $count = count($values);
+      $structure = ['key' => 0, 'value' => []];
 
       // set up all keys first
       for($i = 0; $i < $count; ++$i) {
@@ -167,8 +168,10 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
 
       // fill in values
       for($i = 0; $i < $count; ++$i) {
+        $dpos = $i + 1;
+        $structure['value'][] = $dpos;
         foreach($values[$i] as $item) {
-          $new_data[$item->key][$i + 1] = $item->value;
+          $new_data[$item->key][$dpos] = $item->value;
         }
       }
 
@@ -176,7 +179,7 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
       $new_data = array_values($new_data);
 
       $new_values = new StructuredData($new_data, $force_assoc,
-        $datetime_keys, null, false, false, $int_keys, null, true);
+        $datetime_keys, $structure, false, false, $int_keys, null, true);
       return $new_values;
     }
 
