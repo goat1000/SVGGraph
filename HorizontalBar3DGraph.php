@@ -21,9 +21,9 @@
 
 namespace Goat1000\SVGGraph;
 
-class Bar3DGraph extends ThreeDGraph {
+class HorizontalBar3DGraph extends HorizontalThreeDGraph {
 
-  use BarGraphTrait {
+  use HorizontalBarGraphTrait {
     barGroup as traitBarGroup;
     setBarWidth as traitSetBarWidth;
   }
@@ -48,12 +48,12 @@ class Bar3DGraph extends ThreeDGraph {
   protected function bar3D($item, &$bar, $top, $index, $dataset = null,
     $start = null, $axis = null)
   {
-    $pos = $this->barY($item->value, $tmp_bar, $start, $axis);
+    $pos = $this->barX($item, $index, $tmp_bar, $axis, $dataset);
     if($pos === null || $pos > $this->height - $this->pad_bottom)
       return '';
 
     return $this->bar_drawer->draw($bar['x'], $bar['y'],
-      $bar['width'], $bar['height'], $top, true,
+      $bar['width'], $bar['height'], true, $top,
       $this->getColour($item, $index, $dataset, false, false));
   }
 
