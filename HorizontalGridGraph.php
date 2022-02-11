@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2020-2021 Graham Breach
+ * Copyright (C) 2020-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -90,8 +90,8 @@ abstract class HorizontalGridGraph extends GridGraph {
       $values = $levels = null;
 
       if($min_h == $max_h) {
-        if($x_min_unit > 0) {
-          $inc = $x_min_unit;
+        if($min_unit > 0) {
+          $inc = $min_unit;
         } else {
           $fallback = $this->getOption('axis_fallback_max');
           $inc = $fallback > 0 ? $fallback : 1;
