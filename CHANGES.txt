@@ -1,3 +1,13 @@
+Version 3.13 (14/02/2022)
+------------
+- Added curved line graph support with line_curve option.
+- Added horizontal 3D bar graph.
+- Added horizontal grouped 3D bar graph.
+- Added horizontal stacked 3D bar graph.
+- Added line_bar option for setting marker positions on bar and line graphs.
+- Cylinder graphs now support bar_top_overlay_* options.
+- Made conversion of multi-dataset data to structured more robust.
+
 Version 3.12 (10/12/2021)
 ------------
 - Added exploded semi-donut graph.
