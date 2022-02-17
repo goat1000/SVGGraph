@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,16 +28,22 @@ class DateTimeFormatter {
 
   protected $timezone = null;
   protected $localize = false;
+  protected $idf = null;
 
   public function __construct()
   {
     $this->timezone = new \DateTimeZone(date_default_timezone_get());
 
     // see if output needs localization
-    $locale = setlocale(LC_TIME, 0);
-    if($locale && $locale !== 'C' && $locale !== 'POSIX' &&
-      strpos($locale, 'en_') === false)
-      $this->localize = true;
+    if(extension_loaded('intl')) {
+      $locale = setlocale(LC_TIME, 0);
+      if($locale && $locale !== 'C' && $locale !== 'POSIX' &&
+        strpos($locale, 'en_') === false) {
+        $this->localize = true;
+        $this->idf = new \IntlDateFormatter($locale,
+          \IntlDateFormatter::FULL, \IntlDateFormatter::FULL);
+      }
+    }
   }
 
   /**
@@ -60,22 +66,24 @@ class DateTimeFormatter {
       return $datetime->format($fmt);
 
     // DateTime class doesn't do localization, so these fields are passed to
-    // strftime() for processing
+    // IntlDateFormatter instead
     $map = [
-      'D' => '%a',
-      'l' => '%A',
-      'M' => '%b',
-      'F' => '%B',
+      'D' => 'E',
+      'l' => 'EEEE',
+      'M' => 'MMM',
+      'F' => 'MMMM',
     ];
 
     $result = '';
     $unixtime = $datetime->format('U');
     for($i = 0; $i < strlen($fmt); ++$i) {
       $char = $fmt[$i];
-      if(isset($map[$char]))
-        $result .= strftime($map[$char], $unixtime);
-      else
+      if(isset($map[$char])) {
+        $this->idf->setPattern($map[$char]);
+        $result .= $this->idf->format($unixtime);
+      } else {
         $result .= $datetime->format($fmt[$i]);
+      }
     }
     return $result;
   }
@@ -85,7 +93,7 @@ class DateTimeFormatter {
    */
   public function getLongDays()
   {
-    return $this->getDateStrings('%A', 'd');
+    return $this->getDateStrings('l', 'd');
   }
 
   /**
@@ -93,7 +101,7 @@ class DateTimeFormatter {
    */
   public function getShortDays()
   {
-    return $this->getDateStrings('%a', 'd');
+    return $this->getDateStrings('D', 'd');
   }
 
   /**
@@ -101,7 +109,7 @@ class DateTimeFormatter {
    */
   public function getLongMonths()
   {
-    return $this->getDateStrings('%B', 'm');
+    return $this->getDateStrings('F', 'm');
   }
 
   /**
@@ -109,11 +117,11 @@ class DateTimeFormatter {
    */
   public function getShortMonths()
   {
-    return $this->getDateStrings('%b', 'm');
+    return $this->getDateStrings('M', 'm');
   }
 
   /**
-   * Returns a list of day or month strings using strftime() to localize
+   * Returns a list of day or month strings using IntlDateFormatter to localize
    */
   private function getDateStrings($fmt, $inc)
   {
@@ -131,7 +139,7 @@ class DateTimeFormatter {
     for($i = 0; $i < $count; ++$i) {
       if($i)
         $dt->modify('+1 ' . $offset);
-      $strings[] = strftime($fmt, $dt->format('U'));
+      $strings[] = $this->format($dt, $fmt);
     }
     return $strings;
   }
