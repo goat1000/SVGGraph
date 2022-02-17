@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2020 Graham Breach
+ * Copyright (C) 2020-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -330,7 +330,7 @@ class RGBColour {
    */
   public static function hslToRgb($h, $s, $l)
   {
-    $h1 = (360 + ($h % 360)) % 360;
+    $h1 = fmod($h + 720, 360);
     $s1 = min(1.0, max(0.0, $s));
     $l1 = min(1.0, max(0.0, $l));
 
