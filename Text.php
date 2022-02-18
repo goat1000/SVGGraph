@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2019 Graham Breach
+ * Copyright (C) 2018-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,7 +45,8 @@ class Text {
       Text::$use_iconv = false;
       if($graph->getOption('use_iconv', true) && extension_loaded('iconv')) {
         // test the iconv function
-        $out = iconv('UTF-8', 'ASCII//TRANSLIT', 'Test:€');
+        $test_euro = "Test:\u{20ac}";
+        $out = iconv('UTF-8', 'ASCII//TRANSLIT', $test_euro);
         Text::$use_iconv = (strlen($out) > 0);
       }
     }
@@ -392,6 +393,8 @@ class Text {
    */
   public function strlen($text, $enc = null)
   {
+    if($text === null)
+      return 0;
     if($enc === null)
       $enc = $this->encoding;
     if(Text::$use_iconv)
@@ -428,7 +431,7 @@ class Text {
    */
   private function splitChars($text)
   {
-    return preg_split('//u', $text, null, PREG_SPLIT_NO_EMPTY);
+    return preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
   }
 
   /**
