@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2021 Graham Breach
+ * Copyright (C) 2016-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -401,16 +401,18 @@ class Legend {
     }
 
     $entries = $this->entry_details;
-    if(strpos($entry_order, 'sort') !== false) {
-      usort($entries, function($a, $b) {
-        if($a->text == $b->text)
-          return 0;
-        return $a->text > $b->text ? 1 : -1;
-      });
-    }
+    if(!empty($entry_order)) {
+      if(strpos($entry_order, 'sort') !== false) {
+        usort($entries, function($a, $b) {
+          if($a->text == $b->text)
+            return 0;
+          return $a->text > $b->text ? 1 : -1;
+        });
+      }
 
-    if(strpos($entry_order, 'reverse') !== false)
-      $entries = array_reverse($entries, true);
+      if(strpos($entry_order, 'reverse') !== false)
+        $entries = array_reverse($entries, true);
+    }
 
     return $this->filterEntries($entries);
   }

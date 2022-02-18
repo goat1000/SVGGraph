@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2021 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -895,6 +895,8 @@ abstract class Graph {
   public function getLinkURL($item, $key, $row = 0)
   {
     $link = ($item === null ? null : $item->link);
+    if(is_numeric($key))
+      $key = (int)round($key);
     if($link === null && is_array($this->links[$row]) &&
       isset($this->links[$row][$key])) {
       $link = $this->links[$row][$key];

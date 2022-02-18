@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,7 @@ class Attribute {
   public $value;
   public $encoding;
   public $units = '';
-  
+
   // these properties require units to work well
   private static $require_units = [
     'baseline-shift' => 1,
@@ -55,6 +55,8 @@ class Attribute {
 
   public function __toString()
   {
+    if($this->value === null)
+      return '';
     if(is_object($this->value))
       return (string)$this->value;
 

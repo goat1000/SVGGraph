@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -109,7 +109,7 @@ trait GroupedBarTrait {
     $group_size, $bar_space, $group_space)
   {
     if(is_numeric($bar_width) && $bar_width >= 1) {
-      return GroupedBarTrait::barPositionFixed($bar_width, $unit_width,
+      return self::barPositionFixed($bar_width, $unit_width,
         $group_size, $group_space);
     } else {
       // bar width dependent on space
@@ -123,7 +123,7 @@ trait GroupedBarTrait {
         / $group_size;
 
       if($bar_width < $bar_width_min)
-        return GroupedBarTrait::barPositionFixed($bar_width_min, $unit_width,
+        return self::barPositionFixed($bar_width_min, $unit_width,
           $group_size, $group_space);
       $spacing = $bar_width + $gap;
       $offset = $bar_space / 2;

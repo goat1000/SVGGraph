@@ -656,8 +656,9 @@ class DataLabels {
    */
   protected function filter($filter, $dataset, &$label, $index)
   {
-    // non-numeric datasets are for additional labels
-    if(!is_numeric($dataset))
+    // non-numeric datasets are for additional labels,
+    // empty filter does nothing
+    if(!is_numeric($dataset) || empty($filter))
       return true;
 
     $item =& $label['item'];
@@ -667,9 +668,9 @@ class DataLabels {
     if($struct_show !== null)
       return $struct_show;
 
-    // if empty option or 'all' is in the list, others don't matter
+    // if 'all' is in the list, others don't matter
     $filters = explode(' ', $filter);
-    if(empty($filter) || in_array('all', $filters, true))
+    if(in_array('all', $filters, true))
       return true;
 
     // an array of closures for filter tests
