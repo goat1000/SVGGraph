@@ -23,7 +23,9 @@ namespace Goat1000\SVGGraph;
 
 class StackedCylinderGraph extends CylinderGraph {
 
-  use StackedBarTrait;
+  use StackedBarTrait {
+    setBarVisibility as traitSetBarVis;
+  }
 
   public function __construct($w, $h, $settings, $fixed_settings = [])
   {
@@ -37,7 +39,6 @@ class StackedCylinderGraph extends CylinderGraph {
    */
   protected function setBarVisibility($dataset, DataItem $item, $top)
   {
-    $this->bar_visibility[$dataset][$item->key] = ($top || $item->value != 0);
+    $this->traitSetBarVis($dataset, $item, $top, $top || $item->value != 0);
   }
 }
-

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2021 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -81,7 +81,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
           $this->setStroke($bar_style, $item, $bnum, $j);
 
           // store whether the bar can be seen or not
-          $this->bar_visibility[$j][$item->key] = ($item->value != 0);
+          $this->setBarVisibility($j, $item, false);
           $this->setBarLegendEntry($j, $bnum, $item);
 
           $this->barY($value, $bar, $value >= 0 ? $xpos : $xneg);

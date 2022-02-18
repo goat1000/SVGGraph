@@ -94,14 +94,6 @@ trait StackedGroupedBarTrait {
   }
 
   /**
-   * Sets whether a bar is visible or not
-   */
-  protected function setBarVisibility($dataset, DataItem $item, $top)
-  {
-    $this->bar_visibility[$dataset][$item->key] = ($item->value != 0);
-  }
-
-  /**
    * Sets up bar details
    */
   protected function barSetup()

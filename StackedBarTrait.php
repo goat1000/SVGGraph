@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,7 @@ trait StackedBarTrait {
 
   use MultiGraphTrait;
 
-  protected $bar_visibility = [];
+  private $bar_visibility = [];
 
   // used to determine where the total label should go
   protected $last_position_pos = [];
@@ -84,14 +84,6 @@ trait StackedBarTrait {
         $this->setBarLegendEntry($j, $bnum, $item);
 
     return $bars;
-  }
-
-  /**
-   * Sets whether a bar is visible or not
-   */
-  protected function setBarVisibility($dataset, DataItem $item, $top)
-  {
-    $this->bar_visibility[$dataset][$item->key] = ($item->value != 0);
   }
 
   /**
@@ -233,12 +225,21 @@ trait StackedBarTrait {
   }
 
   /**
+   * Sets whether a bar is visible or not
+   */
+  protected function setBarVisibility($dataset, DataItem $item, $top, $override = null)
+  {
+    $k = serialize([$dataset, $item->key]);
+    $this->bar_visibility[$k] = ($override === null ? $item->value != 0 : $override);
+  }
+
+  /**
    * Returns TRUE if the item is visible on the graph
    */
   public function isVisible($item, $dataset = 0)
   {
-    return isset($this->bar_visibility[$dataset][$item->key]) &&
-      $this->bar_visibility[$dataset][$item->key];
+    $k = serialize([$dataset, $item->key]);
+    return isset($this->bar_visibility[$k]) && $this->bar_visibility[$k];
   }
 
   /**

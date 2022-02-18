@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2019 Graham Breach
+ * Copyright (C) 2012-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,9 @@ namespace Goat1000\SVGGraph;
 
 class StackedBar3DGraph extends Bar3DGraph {
 
-  use StackedBarTrait;
+  use StackedBarTrait {
+    setBarVisibility as traitSetBarVis;
+  }
 
   public function __construct($w, $h, $settings, $fixed_settings = [])
   {
@@ -35,9 +37,8 @@ class StackedBar3DGraph extends Bar3DGraph {
   /**
    * Sets whether a bar is visible or not
    */
-  protected function setBarVisibility($dataset, DataItem $item, $top)
+  protected function setBarVisibility($dataset, DataItem $item, $top, $override = null)
   {
-    $this->bar_visibility[$dataset][$item->key] = ($top || $item->value != 0);
+    $this->traitSetBarVis($dataset, $item, $top, $top || $item->value != 0);
   }
 }
-

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,9 +50,9 @@ trait StackedGrouped3DGraphTrait {
   /**
    * Sets whether a bar is visible or not
    */
-  protected function setBarVisibility($dataset, DataItem $item, $top)
+  protected function setBarVisibility($dataset, DataItem $item, $top, $override = null)
   {
-    $this->bar_visibility[$dataset][$item->key] = ($top || $item->value != 0);
+    // alias set in StackedBar3DGraph or StackedCylinderGraph
+    $this->traitSetBarVis($dataset, $item, $top, $top || $item->value != 0);
   }
 }
-

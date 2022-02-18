@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2020 Graham Breach
+ * Copyright (C) 2017-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -128,7 +128,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
               $x = $bar_pos + $marker_offset;
               $y = $this->gridY($item->value, $y_axis);
               $points[$line_dataset][] = [$x, $y, $item, $line_dataset, $bnum];
-              $this->bar_visibility[$line_dataset][$item->key] = 1;
+              $this->setBarVisibility($line_dataset, $item, false, true);
             }
             continue;
           }
@@ -153,7 +153,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
           // store whether the bar can be seen or not
           $top = (++$b == $bar_count);
-          $this->bar_visibility[$j][$item->key] = ($top || $item->value != 0);
+          $this->setBarVisibility($j, $item, $top, $top || $item->value != 0);
 
           $legend_entries[$j][$bnum] = $item;
           $bars .= $this->drawBar($item, $bnum, $start, null, $j, ['top' => $top]);
