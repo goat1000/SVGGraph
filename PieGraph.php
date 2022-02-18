@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2021 Graham Breach
+ * Copyright (C) 2009-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -487,7 +487,7 @@ class PieGraph extends Graph {
   }
 
   /**
-   * Overload to return the firection of the pie centre
+   * Overload to return the direction of the pie centre
    */
   public function dataLabelTailDirection($dataset, $index, $hpos, $vpos)
   {
@@ -495,9 +495,9 @@ class PieGraph extends Graph {
       $a = rad2deg($this->slice_info[$index]->midAngle());
       // tail direction is opposite slice direction
       if($this->reverse)
-        return (900 - $this->start_angle - $a) % 360; // 900 == 360 + 360 + 180
+        return fmod(900 - $this->start_angle - $a, 360); // 900 == 360 + 360 + 180
       else
-        return (180 + $this->start_angle + $a) % 360;
+        return fmod(180 + $this->start_angle + $a, 360);
     }
 
     // fall back to default
