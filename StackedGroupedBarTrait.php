@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -70,6 +70,7 @@ trait StackedGroupedBarTrait {
           }
 
           $stack_last = count($stack) - 1;
+          $top_dataset = 0;
           foreach($stack as $b => $stack_bar) {
             list($j, $start) = $stack_bar;
             $item = $itemlist[$j];
