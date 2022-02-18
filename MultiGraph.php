@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2019 Graham Breach
+ * Copyright (C) 2011-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -91,6 +91,7 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Implement Iterator interface
    */
+  #[\ReturnTypeWillChange]
   public function current()
   {
     if($this->item_cache_pos != $this->position) {
@@ -103,18 +104,22 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
     }
     return $this->item_cache;
   }
+  #[\ReturnTypeWillChange]
   public function key()
   {
     return $this->position;
   }
+  #[\ReturnTypeWillChange]
   public function next()
   {
     ++$this->position;
   }
+  #[\ReturnTypeWillChange]
   public function rewind()
   {
     $this->position = 0;
   }
+  #[\ReturnTypeWillChange]
   public function valid()
   {
     return $this->position < $this->itemsCount();
@@ -123,11 +128,13 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
   /**
    * ArrayAccess methods
    */
+  #[\ReturnTypeWillChange]
   public function offsetExists($offset)
   {
     return ($offset >= 0 && $offset < $this->datasets);
   }
 
+  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     return $this->values[$offset];
@@ -136,10 +143,12 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Don't allow writing to the data
    */
+  #[\ReturnTypeWillChange]
   public function offsetSet($offset, $value)
   {
     throw new \Exception('Read-only');
   }
+  #[\ReturnTypeWillChange]
   public function offsetUnset($offset)
   {
     throw new \Exception('Read-only');
@@ -148,6 +157,7 @@ class MultiGraph implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Countable method
    */
+  #[\ReturnTypeWillChange]
   public function count()
   {
     return $this->datasets;

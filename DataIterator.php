@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,28 +41,33 @@ class DataIterator implements \Iterator {
   /**
    * Iterator methods
    */
+  #[\ReturnTypeWillChange]
   public function current()
   {
     return $this->getItemByIndex($this->position);
   }
 
+  #[\ReturnTypeWillChange]
   public function key()
   {
     return $this->position;
   }
 
+  #[\ReturnTypeWillChange]
   public function next()
   {
     ++$this->position;
     next($this->data[$this->dataset]);
   }
 
+  #[\ReturnTypeWillChange]
   public function rewind()
   {
     $this->position = 0;
     reset($this->data[$this->dataset]);
   }
 
+  #[\ReturnTypeWillChange]
   public function valid()
   {
     return $this->position < $this->count;

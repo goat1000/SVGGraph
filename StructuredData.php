@@ -224,20 +224,27 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   {
     throw new \Exception('Cannot iterate ' . __CLASS__);
   }
+  #[\ReturnTypeWillChange]
   public function current() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function key() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function next() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function rewind() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function valid() { $this->notIterator(); }
 
   /**
    * ArrayAccess methods
    */
+  #[\ReturnTypeWillChange]
   public function offsetExists($offset)
   {
     return array_key_exists($offset, $this->dataset_fields);
   }
 
+  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     return new StructuredDataIterator($this->data, $offset, $this->structure);
@@ -246,10 +253,12 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Don't allow writing to the data
    */
+  #[\ReturnTypeWillChange]
   public function offsetSet($offset, $value)
   {
     throw new \Exception('Read-only');
   }
+  #[\ReturnTypeWillChange]
   public function offsetUnset($offset)
   {
     throw new \Exception('Read-only');
@@ -258,6 +267,7 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Countable method
    */
+  #[\ReturnTypeWillChange]
   public function count()
   {
     return $this->datasets;

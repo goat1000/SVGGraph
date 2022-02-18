@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,26 +45,31 @@ class StructuredDataIterator implements \Iterator {
     $this->dataset_fields = $structure['value'];
   }
 
+  #[\ReturnTypeWillChange]
   public function current()
   {
     return $this->getItemByIndex($this->position);
   }
 
+  #[\ReturnTypeWillChange]
   public function key()
   {
     return $this->position;
   }
 
+  #[\ReturnTypeWillChange]
   public function next()
   {
     ++$this->position;
   }
 
+  #[\ReturnTypeWillChange]
   public function rewind()
   {
     $this->position = 0;
   }
 
+  #[\ReturnTypeWillChange]
   public function valid()
   {
     return $this->position < $this->count;

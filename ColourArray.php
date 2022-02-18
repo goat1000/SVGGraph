@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,6 +43,7 @@ class ColourArray implements \ArrayAccess {
   /**
    * always true, because it wraps around
    */
+  #[\ReturnTypeWillChange]
   public function offsetExists($offset)
   {
     return true;
@@ -51,16 +52,19 @@ class ColourArray implements \ArrayAccess {
   /**
    * return the colour
    */
+  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     return $this->colours[$offset % $this->count];
   }
 
+  #[\ReturnTypeWillChange]
   public function offsetSet($offset, $value)
   {
     $this->colours[$offset % $this->count] = $value;
   }
 
+  #[\ReturnTypeWillChange]
   public function offsetUnset($offset)
   {
     throw new \Exception('Unexpected offsetUnset');

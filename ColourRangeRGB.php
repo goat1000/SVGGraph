@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,6 +45,7 @@ class ColourRangeRGB extends ColourRange {
   /**
    * Return the colour from the range
    */
+  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     $c = max($this->count - 1, 1);

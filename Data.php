@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2019 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -63,20 +63,27 @@ class Data implements \Countable, \ArrayAccess, \Iterator {
   {
     throw new \Exception('Cannot iterate ' . __CLASS__);
   }
+  #[\ReturnTypeWillChange]
   public function current() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function key() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function next() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function rewind() { $this->notIterator(); }
+  #[\ReturnTypeWillChange]
   public function valid() { $this->notIterator(); }
 
   /**
    * ArrayAccess methods
    */
+  #[\ReturnTypeWillChange]
   public function offsetExists($offset)
   {
     return array_key_exists($offset, $this->data);
   }
 
+  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     return new DataIterator($this->data, $offset);
@@ -85,10 +92,12 @@ class Data implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Don't allow writing to the data
    */
+  #[\ReturnTypeWillChange]
   public function offsetSet($offset, $value)
   {
     throw new \Exception('Read-only');
   }
+  #[\ReturnTypeWillChange]
   public function offsetUnset($offset)
   {
     throw new \Exception('Read-only');
@@ -97,6 +106,7 @@ class Data implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Countable method
    */
+  #[\ReturnTypeWillChange]
   public function count()
   {
     return $this->datasets;
