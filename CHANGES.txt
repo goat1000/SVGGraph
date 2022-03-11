@@ -1,3 +1,9 @@
+Version 3.13.1 (11/03/2022)
+--------------
+- Fixed deprecation warning messages displayed by PHP 8.1.
+- Fixed problem with file encoding of Text class.
+- Improved accuracy of HSL to RGB conversion.
+
 Version 3.13 (14/02/2022)
 ------------
 - Added curved line graph support with line_curve option.
