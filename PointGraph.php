@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2021 Graham Breach
+ * Copyright (C) 2010-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,17 @@ abstract class PointGraph extends GridGraph {
   protected $marker_ids = [];
   protected $marker_link_ids = [];
   protected $marker_types = [];
+
+  private $x_offset = null;
+
+  public function __construct($width, $height, array $settings, array $fixed_settings = [])
+  {
+    $fs = [];
+    if(isset($settings['block_position_markers']) && $settings['block_position_markers'])
+      $fs['label_centre'] = true;
+    $fs = array_merge($fs, $fixed_settings);
+    parent::__construct($width, $height, $settings, $fs);
+  }
 
   /**
    * Adds a marker to the list
@@ -328,6 +339,24 @@ abstract class PointGraph extends GridGraph {
   {
     // non-null values should be visible
     return ($item->value !== null);
+  }
+
+  /**
+   * Override to handle offset caused by block position option
+   */
+  protected function gridPosition($item, $index)
+  {
+    $gp = parent::gridPosition($item, $index);
+    if($gp === null)
+      return null;
+
+    if($this->x_offset === null) {
+      $this->x_offset = 0;
+      if($this->getOption('block_position_markers'))
+        $this->x_offset = parent::gridPosition(null, 1)
+          - parent::gridPosition(null, 0.5);
+    }
+    return $this->x_offset + $gp;
   }
 }
 
