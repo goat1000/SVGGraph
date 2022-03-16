@@ -290,7 +290,7 @@ abstract class PointGraph extends GridGraph {
   /**
    * Returns a pair of best fit lines, above and below
    */
-  protected function bestFitLines()
+  public function bestFitLines()
   {
     $bbox = new BoundingBox(0, 0, $this->g_width, $this->g_height);
     $bbox->offset($this->pad_left, $this->pad_top);
