@@ -317,10 +317,31 @@ class Legend {
       }
     }
 
-    // create group to contain whole legend
-    list($left, $top) = $this->graph->parsePosition($this->position,
-      $width, $height);
+    // find position for legend
+    if(is_array($this->position)) {
+      list($px, $py) = $this->position;
+      $vx = Coords::parseValue($px);
+      $vy = Coords::parseValue($py);
+      $c = new Coords($this->graph);
+      list($tx, $ty) = $c->transformCoords($px, $py);
 
+      // handle relative positions
+      switch($vx['value']) {
+      case 'c' : $left = $tx - ($width / 2); break;
+      case 'r' : $left = $tx - $width; break;
+      default : $left = $tx;
+      }
+      switch($vy['value']) {
+      case 'c' : $top = $ty - ($height / 2); break;
+      case 'b' : $top = $ty - $height; break;
+      default: $top = $ty;
+      }
+    } else {
+      list($left, $top) = $this->graph->parsePosition($this->position,
+        $width, $height);
+    }
+
+    // create group to contain whole legend
     $xform = new Transform;
     $xform->translate($left, $top);
     $group = [
