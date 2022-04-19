@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2021 Graham Breach
+ * Copyright (C) 2015-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -85,7 +85,8 @@ class Coords {
   {
     $info = [
       'value' => $value, 'axis' => $axis, 'axis_no' => null,
-      'simple' => true, 'grid' => false, 'units' => false
+      'simple' => true, 'grid' => false, 'units' => false,
+      'offset' => 0, 'offset_units' => false,
     ];
     if(is_numeric($value) || !is_string($value))
       return $info;
@@ -99,6 +100,15 @@ class Coords {
       $info['axis_no'] = $axis_no;
       $info['grid'] = true;
       $info['units'] = ($first == 'u');
+      $first = strtolower(substr($value, 0, 1));
+    }
+
+    // check for offset from relative position
+    if(!$info['units'] && in_array($first, ['t','l','b','r','h','w','c']) &&
+      preg_match('/(.+)([-+][0-9.]+)(u?)/', $info['value'], $matches)) {
+      $info['value'] = $matches[1];
+      $info['offset'] = $matches[2];
+      $info['offset_units'] = ($matches[3] == 'u' || $matches[3] == 'U');
     }
     return $info;
   }
@@ -144,9 +154,19 @@ class Coords {
 
     if($value == 'c')
       $value .= $axis;
-    if($v_info['grid'])
-      return $this->getGridPosition($value, $default_pos);
-    return $this->getGraphPosition($value, $default_pos);
+    $pos = $v_info['grid'] ? $this->getGridPosition($value, $default_pos) :
+      $this->getGraphPosition($value, $default_pos);
+
+    // handle offset from relative position
+    if($v_info['offset']) {
+      if($v_info['offset_units']) {
+        $axis_inst = $this->graph->getAxis($v_info['axis'], $v_info['axis_no']);
+        $pos += $axis_inst->measureUnits($measure_from, $v_info['offset']);
+      } else {
+        $pos += $v_info['offset'];
+      }
+    }
+    return $pos;
   }
 
   /**
