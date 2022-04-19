@@ -499,6 +499,20 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   }
 
   /**
+   * Returns a structured data item
+   */
+  public function getItem($index, $dataset = 0)
+  {
+    $index = (int)round($index);
+    if(!isset($this->data[$index]))
+      return null;
+
+    $key = $this->key_field === null ? $index : null;
+    return new StructuredDataItem($this->data[$index],
+      $this->structure, $dataset, $key);
+  }
+
+  /**
    * Returns TRUE if the data field exists, setting $value
    */
   public function getData($index, $name, &$value)
@@ -571,6 +585,88 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
     $this->assoc = null;
     $this->key_field = $this->structure['key'] = $rekey_name;
     return true;
+  }
+
+  /**
+   * Transforms values using a callback function
+   */
+  public function revalue($callback, $fields = null)
+  {
+    // figure out which fields to convert
+    if($fields == null) {
+      $field_list = $this->structure['value'];
+    } else {
+
+      if(!is_array($fields))
+        $fields = [$fields];
+      $field_list = [];
+      foreach($fields as $f) {
+        if(isset($this->structure[$f])) {
+          $field = $this->structure[$f];
+          if(is_array($field))
+            $field_list = array_merge($field_list, $field);
+          else
+            $field_list[] = $field;
+        }
+      }
+    }
+
+    // call the callback for each value found
+    foreach($this->data as $index => $item) {
+      foreach($field_list as $field) {
+        if(isset($item[$field])) {
+          $this->data[$index][$field] = call_user_func($callback, $item[$field]);
+        }
+      }
+    }
+
+    // forget previous min/max
+    $this->min_values = [];
+    $this->max_values = [];
+    return true;
+  }
+
+  /**
+   * Transform a row using a callback
+   */
+  public function transform($callback, $dataset = 0)
+  {
+    // build the list of fields for this dataset
+    $tstruct = [];
+    foreach($this->structure as $field => $element) {
+      if(is_array($element) && isset($element[$dataset]))
+        $tstruct[$field] = $element[$dataset];
+      else
+        $tstruct[$field] = $element;
+    }
+
+    foreach($this->data as &$row) {
+
+      // use a POD class for the data item
+      $item = new \stdClass;
+
+      foreach($tstruct as $field => $key)
+        if(isset($row[$key]))
+          $item->$field = $row[$key];
+
+      // if the callback returns null, there is no change
+      $item = $callback($item);
+      if($item === null)
+        continue;
+
+      foreach($tstruct as $field => $key)
+        if(isset($item->$field))
+          $row[$key] = $item->$field;
+    }
+  }
+
+  /**
+   * Adds a field to the structure, if it doesn't already exist
+   */
+  public function addField($name)
+  {
+    if(!array_key_exists($name, $this->structure))
+      $this->structure[$name] = uniqid($name, true);
   }
 }
 

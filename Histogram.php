@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2021 Graham Breach
+ * Copyright (C) 2015-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -182,10 +182,10 @@ class Histogram extends BarGraph {
   /**
    * Sets up the colour class with corrected number of colours
    */
-  protected function colourSetup($count, $datasets = null)
+  protected function colourSetup($count, $datasets = null, $reverse = false)
   {
     // $count is off by 1 because the divisions are numbered
-    return parent::colourSetup($count - 1, $datasets);
+    return parent::colourSetup($count - 1, $datasets, $reverse);
   }
 
   /**

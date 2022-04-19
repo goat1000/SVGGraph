@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2021 Graham Breach
+ * Copyright (C) 2011-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -330,6 +330,14 @@ class Axis {
   }
 
   /**
+   * Returns TRUE if the axis is reversed
+   */
+  public function reversed()
+  {
+    return $this->direction < 0;
+  }
+
+  /**
    * Returns the grid spacing
    */
   protected function grid()
@@ -501,11 +509,16 @@ class Axis {
   protected function getGridPoint($position, $value)
   {
     $key = $text = $value;
+    $item = null;
 
     if($this->values) {
+
       // try structured data first
-      if($this->values->getData($value, 'axis_text', $text))
-        return new GridPoint($position, $text, $value);
+      if(method_exists($this->values, 'getItem')) {
+        $item = $this->values->getItem($value);
+        if($this->values->getData($value, 'axis_text', $text))
+          return new GridPoint($position, $text, $value, $item);
+      }
 
       // use the key if it is not the same as the value
       $key = $this->values->getKey($value);
@@ -517,15 +530,15 @@ class Axis {
       if($this->values && $this->values->associativeKeys())
         $value = (int)round($value);
       $text = call_user_func($this->label_callback, $value, $key);
-      return new GridPoint($position, $text, $value);
+      return new GridPoint($position, $text, $value, $item);
     }
 
     if($key !== $value)
-      return new GridPoint($position, $key, $value);
+      return new GridPoint($position, $key, $value, $item);
 
     $n = new Number($value, $this->units_after, $this->units_before);
     $text = $n->format($this->decimal_digits);
-    return new GridPoint($position, $text, $value);
+    return new GridPoint($position, $text, $value, $item);
   }
 
   /**

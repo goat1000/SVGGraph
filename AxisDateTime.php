@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2021 Graham Breach
+ * Copyright (C) 2016-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -195,8 +195,8 @@ class AxisDateTime extends Axis {
 
     // get the axis text format from the options, or use defaults
     $this->axis_text_format = AxisDateTime::$formats[$this->grid_units];
-    if(is_integer($levels) && $levels > 1) {
-      $this->levels = $levels;
+    if(is_numeric($levels) && $levels > 1) {
+      $this->levels = (int)$levels;
       $this->axis_text_format = AxisDateTime::$formats_level[$this->grid_units];
     }
 
@@ -294,10 +294,15 @@ class AxisDateTime extends Axis {
         $y = $time->format('Y');
         $y -= $y % $n;
         $datetime->setDate($y, 1, 1);
+        $datetime->setTime(0, 0);
         break;
 
       case 'month':
-        $datetime->modify($formats['month']);
+        $y = $time->format('Y');
+        $m = $time->format('n') - 1;
+        $m -= $m % $n;
+        $datetime->setDate($y, $m + 1, 1);
+        $datetime->setTime(0, 0);
         break;
 
       case 'day':

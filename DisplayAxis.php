@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2021 Graham Breach
+ * Copyright (C) 2018-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,6 +72,11 @@ class DisplayAxis {
       $this->show_text = $graph->getOption('show_axis_text_' . $o);
     }
 
+    // lambda to make retrieving options simpler
+    $get_axis_option = function($option) use ($graph, $o, $axis_no) {
+      return $graph->getOption([$option . '_' . $o, $axis_no], $option);
+    };
+
     // gridgraph moves label_[xy] into label_[hv]
     $o_labels = $graph->getOption('label_' . $o);
     if(is_array($o_labels)) {
@@ -85,29 +90,23 @@ class DisplayAxis {
     $this->show_label = ($this->label != '');
 
     // axis and text both need colour
-    $styles['colour'] = new Colour($graph,
-      $graph->getOption(['axis_colour_' . $o, $axis_no], 'axis_colour'));
+    $styles['colour'] = new Colour($graph, $get_axis_option('axis_colour'));
     if($this->show_axis) {
       $styles['overlap'] = $graph->getOption('axis_overlap');
-      $styles['stroke_width'] = $graph->getOption(
-        ['axis_stroke_width_' . $o, $axis_no], 'axis_stroke_width');
+      $styles['stroke_width'] = $get_axis_option('axis_stroke_width');
 
       if($graph->getOption('show_divisions')) {
         $this->show_divisions = true;
-        $styles['d_style'] = $graph->getOption(
-          ['division_style_' . $o, $axis_no], 'division_style');
-        $styles['d_size'] = $graph->getOption(
-          ['division_size_' . $o, $axis_no], 'division_size');
+        $styles['d_style'] = $get_axis_option('division_style');
+        $styles['d_size'] = $get_axis_option('division_size');
         $styles['d_colour'] = new Colour($graph, $graph->getOption(
           ['division_colour_' . $o, $axis_no], 'division_colour',
           ['@', $styles['colour']]));
 
         if($graph->getOption('show_subdivisions')) {
           $this->show_subdivisions = true;
-          $styles['s_style'] = $graph->getOption(
-            ['subdivision_style_' . $o, $axis_no], 'subdivision_style');
-          $styles['s_size'] = $graph->getOption(
-            ['subdivision_size_' . $o, $axis_no], 'subdivision_size');
+          $styles['s_style'] = $get_axis_option('subdivision_style');
+          $styles['s_size'] = $get_axis_option('subdivision_size');
           $styles['s_colour'] = new Colour($graph, $graph->getOption(
             ['subdivision_colour_' . $o, $axis_no], 'subdivision_colour',
             ['division_colour_' . $o, $axis_no], 'division_colour',
@@ -133,32 +132,24 @@ class DisplayAxis {
         $angle = min(90, max(-90, $angle));
         $styles['t_angle'] = $angle;
       }
-      $styles['t_position'] = $graph->getOption(
-        ['axis_text_position_' . $o, $axis_no], 'axis_text_position');
-      $styles['t_location'] = $graph->getOption(
-        ['axis_text_location_' . $o, $axis_no], 'axis_text_location');
-      $styles['t_font'] = $graph->getOption(
-        ['axis_font_' . $o, $axis_no], 'axis_font');
-      $styles['t_font_size'] = $graph->getOption(
-        ['axis_font_size_' . $o, $axis_no], 'axis_font_size');
-      $styles['t_font_adjust'] = $graph->getOption(
-        ['axis_font_adjust_' . $o, $axis_no], 'axis_font_adjust');
-      $styles['t_font_weight'] = $graph->getOption(
-        ['axis_font_weight_' . $o, $axis_no], 'axis_font_weight');
-      $styles['t_space'] = $graph->getOption(
-        ['axis_text_space_' . $o, $axis_no], 'axis_text_space');
+      $styles['t_position'] = $get_axis_option('axis_text_position');
+      $styles['t_location'] = $get_axis_option('axis_text_location');
+      $styles['t_font'] = $get_axis_option('axis_font');
+      $styles['t_font_size'] = $get_axis_option('axis_font_size');
+      $styles['t_font_adjust'] = $get_axis_option('axis_font_adjust');
+      $styles['t_font_weight'] = $get_axis_option('axis_font_weight');
+      $styles['t_space'] = $get_axis_option('axis_text_space');
       $styles['t_colour'] = new Colour($graph, $graph->getOption(
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]));
-      $styles['t_line_spacing'] = $graph->getOption(
-        ['axis_text_line_spacing_' . $o, $axis_no], 'axis_text_line_spacing');
+      $styles['t_line_spacing'] = $get_axis_option('axis_text_line_spacing');
       if($styles['t_line_spacing'] === null || $styles['t_line_spacing'] < 1)
         $styles['t_line_spacing'] = $styles['t_font_size'];
       $styles['t_back_colour'] = null;
+      $styles['t_align'] = $get_axis_option('axis_text_align');
 
       // fill in background colour array, if required
-      $back_colour = $graph->getOption(
-        ['axis_text_back_colour_' . $o, $axis_no], 'axis_text_back_colour');
+      $back_colour = $get_axis_option('axis_text_back_colour');
       if(!empty($back_colour)) {
         $styles['t_back_colour'] = [
           'stroke-width' => '3px',
@@ -169,7 +160,8 @@ class DisplayAxis {
 
       // text is boxed only if it is outside and block labelling
       if($this->block_label && $this->show_divisions &&
-        $styles['d_style'] == 'box' && $styles['t_position'] != 'inside') {
+        ($styles['d_style'] == 'box' || $styles['d_style'] == 'extend') &&
+        $styles['t_position'] != 'inside') {
         $this->boxed_text = true;
 
         // text must be attached to axis, not grid
@@ -191,10 +183,8 @@ class DisplayAxis {
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]));
       $styles['l_space'] = $graph->getOption('label_space');
-      $styles['l_pos'] = $graph->getOption(
-        ['axis_label_position_' . $o, $axis_no], 'axis_label_position');
-      $styles['l_line_spacing'] = $graph->getOption(
-        ['label_line_spacing_' . $o, $axis_no], 'label_line_spacing');
+      $styles['l_pos'] = $get_axis_option('axis_label_position');
+      $styles['l_line_spacing'] = $get_axis_option('label_line_spacing');
       if($styles['l_line_spacing'] === null || $styles['l_line_spacing'] < 1)
         $styles['l_line_spacing'] = $styles['l_font_size'];
     }
@@ -202,6 +192,14 @@ class DisplayAxis {
     $this->styles = $styles;
     $this->axis =& $axis;
     $this->graph =& $graph;
+  }
+
+  /**
+   * Returns the array of style information for the axis
+   */
+  public function getStyling()
+  {
+    return $this->styles;
   }
 
   /**
@@ -289,20 +287,67 @@ class DisplayAxis {
     $bbox = new BoundingBox(0, 0, 0, 0);
     list($x_off, $y_off, $opp) = $this->getTextOffset(0, 0, 0, 0, 0, 0, $level);
 
-    $t_offset = ($this->orientation == 'h' ? $x_off : -$y_off);
+    $t_offset = ($this->orientation == 'h' ? $x_off : $y_off);
+    if($this->axis->reversed())
+      $t_offset = -$t_offset;
+
     $length = $this->axis->getLength();
     $points = $this->axis->getGridPoints(0);
-    $count = count($points);
+    $positions = $this->getTextPositions(0, 0, $x_off, $y_off, $points, null);
+    $count = count($positions);
     for($p = 0; $p < $count; ++$p) {
 
       if(!$this->pointTextVisible($points[$p], $length, $t_offset))
         continue;
 
-      $lbl = $this->measureText($x_off, $y_off, $points[$p], $opp, $level);
+      $pos = $positions[$p];
+      $lbl = $this->measureText($pos['x'], $pos['y'], $points[$p], $opp, $level);
       $bbox->grow($lbl['x'], $lbl['y'], $lbl['x'] + $lbl['width'],
         $lbl['y'] + $lbl['height']);
     }
     return $bbox;
+  }
+
+  /**
+   * Returns the overlap between axis text labels
+   */
+  public function getTextOverlap()
+  {
+    // start with obviously good overlap
+    $overlap = -1000;
+    $prev_x = -10;
+    $level = 0;
+
+    // no overlap if there is no text
+    if(!$this->show_text)
+      return null;
+
+    list($x_off, $y_off, $opp) = $this->getTextOffset(0, 0, 0, 0, 0, 0, $level);
+    $t_offset = ($this->orientation == 'h' ? $x_off : $y_off);
+    if($this->axis->reversed())
+      $t_offset = -$t_offset;
+
+    $length = $this->axis->getLength();
+    $points = $this->axis->getGridPoints(0);
+    $positions = $this->getTextPositions(0, 0, $x_off, $y_off, $points, null);
+    $count = count($positions);
+
+    for($p = 0; $p < $count; ++$p) {
+      if(!$this->pointTextVisible($points[$p], $length, $t_offset))
+        continue;
+
+      $pos = $positions[$p];
+      $lbl = $this->measureText($pos['x'], $pos['y'], $points[$p], $opp, $level);
+      $o = $prev_x - $lbl['x'];
+
+      // bail out now if the overlap is positive
+      if($o > 0)
+        return $o;
+      if($o > $overlap)
+        $overlap = $o;
+      $prev_x = $lbl['x'] + $lbl['width'];
+    }
+    return $overlap;
   }
 
   /**
@@ -317,6 +362,39 @@ class DisplayAxis {
     $leeway = 0.5;
     $position = abs($point->position) + $offset;
     return $position >= -$leeway && $position <= $axis_len + $leeway;
+  }
+
+  /**
+   * Returns the positions (actually offsets) of all the text blocks
+   */
+  protected function getTextPositions($x, $y, $xoff, $yoff, $points, $anchor)
+  {
+    $positions = [];
+    // vertical axis a bit simpler
+    if($this->orientation == 'v') {
+      foreach($points as $k => $p) {
+        if($this->boxed_text && isset($points[$k + 1])) {
+          $pnext = $points[$k + 1];
+          $yoff = ($pnext->position - $p->position) / 2;
+        }
+        $positions[] = ['x' => $x + $xoff, 'y' => $y + $yoff];
+      }
+      return $positions;
+    }
+
+    foreach($points as $k => $p) {
+      if($anchor == 'start') {
+        $xoff = $this->styles['t_space'];
+      } elseif($anchor == 'end') {
+        $pnext = $points[$k + 1];
+        $xoff = $pnext->position - $p->position - $this->styles['t_space'];
+      } elseif($this->boxed_text && isset($points[$k + 1])) {
+        $pnext = $points[$k + 1];
+        $xoff = ($pnext->position - $p->position) / 2;
+      }
+      $positions[] = ['x' => $x + $xoff, 'y' => $y + $yoff];
+    }
+    return $positions;
   }
 
   /**
@@ -351,11 +429,12 @@ class DisplayAxis {
   {
     $overlap = $this->styles['overlap'];
     $length = $len + $overlap * 2;
-    $line = $this->orientation;
+    $line = $this->orientation; // 'h' and 'v' are SVG path lines
+    $reversed = $this->axis->reversed();
     if($this->orientation == 'h') {
-      $x = $x - $overlap;
+      $x = $reversed ? $x - $overlap - $len : $x - $overlap;
     } else {
-      $y = $y - $overlap - $len;
+      $y = $reversed ? $y - $overlap - $len : $y - $overlap;
     }
 
     $colour = $this->styles['colour'];
@@ -439,18 +518,56 @@ class DisplayAxis {
       list($x_offset, $y_offset, $opposite) = $this->getTextOffset($x, $y,
         $gx, $gy, $g_width, $g_height, 0);
 
-      $t_offset = ($this->orientation == 'h' ? $x_offset : -$y_offset);
+      $t_offset = ($this->orientation == 'h' ? $x_offset : $y_offset);
+      if($this->axis->reversed())
+        $t_offset = -$t_offset;
+
       $length = $this->axis->getLength();
       $points = $this->axis->getGridPoints(0);
-      $count = count($points);
+      $anchor = null;
+      $space = $this->styles['t_space'];
+      if($this->styles['t_align']) {
+        $bbox = $this->measure(false);
+        switch($this->styles['t_align']) {
+        case 'left':
+          if($this->orientation == 'v') {
+            if(!$opposite) {
+              $anchor = 'start';
+              $x_offset = $bbox->x1 + $space;
+            }
+          } else {
+            $anchor = 'start';
+            $x_offset = $space;
+          }
+          break;
+        case 'right':
+          if($this->orientation == 'v') {
+            if($opposite) {
+              $anchor = 'end';
+              $x_offset = $bbox->x2 - $space;
+            }
+          } else {
+            $anchor = 'end';
+            $x_offset = -$space;
+          }
+          break;
+        case 'centre':
+          if($this->orientation == 'v') {
+            $x_offset = ($x_offset + ($opposite ? $bbox->x2 : $bbox->x1)) / 2;
+            $anchor = 'middle';
+          }
+        }
+      }
+
+      $positions = $this->getTextPositions($x, $y, $x_offset, $y_offset, $points, $anchor);
+      $count = count($positions);
       for($p = 0; $p < $count; ++$p) {
 
-        $point = $points[$p];
-        if(!$this->pointTextVisible($point, $length, $t_offset))
+        if(!$this->pointTextVisible($points[$p], $length, $t_offset))
           continue;
 
-        $labels .= $this->getText($x + $x_offset, $y + $y_offset, $point,
-          $opposite, 0);
+        $pos = $positions[$p];
+        $labels .= $this->getText($pos['x'], $pos['y'], $points[$p], $opposite, 0, $anchor);
       }
       if($labels != '') {
         $group = [
@@ -508,8 +625,9 @@ class DisplayAxis {
   {
     if($this->orientation == 'h') {
 
-      // label always at bottom of grid
-      $y = $gy + $g_height;
+      // label at bottom of grid?
+      if($this->axis_no == 0)
+        $y = $gy + $g_height;
 
     } else {
 
@@ -541,7 +659,11 @@ class DisplayAxis {
     if($this->orientation == 'h') {
       $width = $tsize[0];
       $height = $tsize[1];
-      $y = $bbox->y2 + $space;
+      if($this->axis_no > 0) {
+        $y = $bbox->y1 - $space - $height;
+      } else {
+        $y = $bbox->y2 + $space;
+      }
       if(is_numeric($align)) {
         $tx = $a_length * $align;
       } else {
@@ -565,6 +687,7 @@ class DisplayAxis {
     } else {
       $width = $tsize[1];
       $height = $tsize[0];
+      $reversed = $this->axis->reversed();
       if($this->axis_no > 0) {
         $x = $bbox->x2 + $space;
         $tx = $x + $width - $baseline;
@@ -574,17 +697,17 @@ class DisplayAxis {
         $x -= $space;
       }
       if(is_numeric($align)) {
-        $ty = -$a_length * $align;
+        $ty = $reversed ? -$a_length * $align : $a_length * $align;
       } else {
         switch($align) {
         case 'top' :
-          $ty = -$a_length + $height / 2;
+          $ty = $reversed ? -$a_length + $height / 2 : $height / 2;
           break;
         case 'bottom':
-          $ty = -$height / 2;
+          $ty = $reversed ? -$height / 2 : $a_length - $height / 2;
           break;
         default:
-          $ty = -$a_length / 2;
+          $ty = $reversed ? -$a_length / 2 : $a_length / 2;
           break;
         }
       }
@@ -625,18 +748,22 @@ class DisplayAxis {
     $d1 -= $space;
     $d2 += $space;
     $opposite = ($this->styles['t_position'] == 'inside');
+    $reversed = $this->axis->reversed();
+    $block_offset = $this->axis->unit() * ($reversed ? -0.5 : 0.5);
     $grid = ($this->styles['t_location'] == 'grid');
-    $anchor = 'end';
+    if($this->axis_no > 0)
+      $opposite = !$opposite;
     if($this->orientation == 'h') {
       $y = ($opposite ? -$d2 : -$d1);
-      $x = ($this->block_label ? $this->axis->unit() * 0.5 : 0);
-      if($grid)
+      $x = ($this->block_label ? $block_offset : 0);
+      if($grid) {
         $y += $gy + $g_height - $ay;
+        if($this->axis_no == 1)
+          $y -= $g_height;
+      }
     } else {
-      if($this->axis_no > 0)
-        $opposite = !$opposite;
       $x = ($opposite ? $d2 : $d1);
-      $y = ($this->block_label ? $this->axis->unit() * -0.5 : 0);
+      $y = ($this->block_label ? $block_offset : 0);
       if($grid && $this->axis_no < 2) {
         $x += $gx - $ax;
         if($this->axis_no == 1)
@@ -658,13 +785,21 @@ class DisplayAxis {
     list($x, $y, $w, $h) = $svg_text->measurePosition($point->getText($level),
       $font_size, $line_spacing, $attr['x'], $attr['y'], $anchor, $angle,
       $rcx, $rcy);
+
+    // per-item text indent last
+    if($point->item && $point->axis_text_indent) {
+      if($opposite)
+        $w += $point->axis_text_indent;
+      else
+        $x -= $point->axis_text_indent;
+    }
     return ['x' => $x, 'y' => $y, 'width' => $w, 'height' => $h];
   }
 
   /**
    * Returns the SVG fragment for a single axis label
    */
-  protected function getText($x, $y, &$point, $opposite, $level)
+  protected function getText($x, $y, &$point, $opposite, $level, $anchor)
   {
     // skip 0 on axis when it would sit on top of other axis
     if(!$this->block_label && $point->value == 0) {
@@ -674,15 +809,54 @@ class DisplayAxis {
         return '';
     }
 
+    // see if the text needs shifting
+    if($point->item && $point->axis_text_indent) {
+      switch($this->styles['t_align']) {
+      case 'left' :
+        $x += $point->axis_text_indent;
+        break;
+      case 'centre':
+        // centred things can't be indented
+        break;
+      case 'right':
+      default:
+        $x -= $point->axis_text_indent;
+        break;
+      }
+    }
+
     $string = $point->getText($level);
     $text_out = '';
     $text_info = $this->getTextInfo($x, $y, $point, $opposite, $level);
     $svg_text = $text_info[0];
     $attr = $text_info[2];
     $line_spacing = $text_info[7];
+    $back_colour = $this->styles['t_back_colour'];
 
-    if(!empty($this->styles['t_back_colour'])) {
-      $b_attr = array_merge($this->styles['t_back_colour'], $attr);
+    // $anchor overrides the one based on axis text location
+    if($anchor)
+      $attr['text-anchor'] = $anchor;
+
+    // structured data attributes?
+    if($point->item) {
+      if($point->axis_text_font)
+        $attr['font-family'] = $point->axis_text_font;
+      if($point->axis_text_font_size)
+        $attr['font-size'] = $point->axis_text_font_size;
+      if($point->axis_text_font_weight)
+        $attr['font-weight'] = $point->axis_text_font_weight;
+      if($point->axis_text_colour)
+        $attr['fill'] = new Colour($this->graph, $point->axis_text_colour);
+      if($point->axis_text_back_colour)
+        $back_colour = [
+          'stroke-width' => '3px',
+          'stroke' => new Colour($this->graph, $point->axis_text_back_colour),
+          'stroke-linejoin' => 'round',
+        ];
+    }
+
+    if(!empty($back_colour)) {
+      $b_attr = array_merge($back_colour, $attr);
       $text_out .= $svg_text->text($string, $line_spacing, $b_attr);
     }
     $text_out .= $svg_text->text($string, $line_spacing, $attr);
@@ -695,10 +869,19 @@ class DisplayAxis {
    */
   protected function getTextInfo($x, $y, &$point, $opposite, $level)
   {
+    $font = $this->styles['t_font'];
     $font_size = $this->styles['t_font_size'];
+    $font_adjust = $this->styles['t_font_adjust'];
+    if($point->item) {
+      if($point->axis_text_font)
+        $font = $point->axis_text_font;
+      if($point->axis_text_font_size)
+        $font_size = $point->axis_text_font_size;
+      if($point->axis_text_font_adjust)
+        $font_adjust = $point->axis_text_font_adjust;
+    }
     $line_spacing = $this->styles['t_line_spacing'];
-    $svg_text = new Text($this->graph, $this->styles['t_font'],
-      $this->styles['t_font_adjust']);
+    $svg_text = new Text($this->graph, $font, $font_adjust);
     $baseline = $svg_text->baseline($font_size);
     list($w, $h) = $svg_text->measure($point->getText($level), $font_size, 0,
       $line_spacing);
@@ -773,9 +956,7 @@ class DisplayAxis {
     if(!$path->isEmpty() && $path_info['box']) {
       $x = $x0 + $path_info['box_pos'] * $yinc;
       $y = $y0 + $path_info['box_pos'] * $xinc;
-      $line = $path_info['box_line'];
-      $len = $path_info['box_len'];
-      $path->add('M', $x, $y, $line, $len);
+      $path->add('M', $x, $y, $path_info['box_line'], $path_info['box_len']);
     }
     return $path;
   }
@@ -793,7 +974,7 @@ class DisplayAxis {
     } else {
       $line = 'h';
       $full = $g_width;
-      $box_len = -$g_height;
+      $box_len = $this->axis->reversed() ? -$g_height : $g_height;
       $box_line = 'v';
     }
 
@@ -839,7 +1020,13 @@ class DisplayAxis {
     case 'box' :
       $box = true;
       if($this->axis_no > 0)
-        $box_pos += $size;
+        $box_pos += ($this->orientation == 'h' ? -$size : $size);
+      if($this->axis_no == 0)
+        $pos -= $size;
+      break;
+    case 'extend' :
+      if($this->axis_no > 0)
+        $box_pos += ($this->orientation == 'h' ? -$size : $size);
       // fall through
     case 'out' :
     default :
@@ -850,6 +1037,4 @@ class DisplayAxis {
     return compact('sz', 'pos', 'line', 'full', 'box', 'box_len', 'box_line',
       'box_pos');
   }
-
 }
-

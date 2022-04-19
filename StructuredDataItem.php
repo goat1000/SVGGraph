@@ -66,6 +66,23 @@ class StructuredDataItem extends DataItem {
   }
 
   /**
+   * Tests if a field is set
+   */
+  public function __isset($field)
+  {
+    if(!isset($this->structure[$field]))
+      return false;
+    $item_field = $this->structure[$field];
+    if(is_array($item_field)) {
+      if(!isset($item_field[$this->dataset]))
+        return false;
+      $item_field = $item_field[$this->dataset];
+    }
+
+    return isset($this->item[$item_field]);
+  }
+
+  /**
    * Returns some extra data from item
    */
   public function data($field)

@@ -26,6 +26,8 @@ class Colours implements \Countable {
   private $colours = [];
   private $dataset_count = 0;
   private $fallback = false;
+  private $max_index = 1;
+  private $reverse = false;
 
   /**
    * Constructor sets up fallback colour array in case per-dataset
@@ -45,7 +47,7 @@ class Colours implements \Countable {
   /**
    * Setup based on graph requirements
    */
-  public function setup($count, $datasets = null)
+  public function setup($count, $datasets = null, $reverse = false)
   {
     if($this->fallback !== false) {
       if($datasets !== null) {
@@ -61,6 +63,8 @@ class Colours implements \Countable {
 
     foreach($this->colours as $clist)
       $clist->setup($count);
+    $this->max_index = $count - 1;
+    $this->reverse = $reverse;
   }
 
   /**
@@ -71,6 +75,9 @@ class Colours implements \Countable {
     // default is for a colour per dataset
     if($dataset === null)
       $dataset = 0;
+
+    if($this->reverse)
+      $index = $this->max_index - $index;
 
     // see if specific dataset exists
     if(array_key_exists($dataset, $this->colours))

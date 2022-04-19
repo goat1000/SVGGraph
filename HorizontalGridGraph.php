@@ -47,117 +47,88 @@ abstract class HorizontalGridGraph extends GridGraph {
   }
 
   /**
-   * Returns the X and Y axis class instances as a list
+   * Returns the factory for an X-axis
    */
-  protected function getAxes($ends, &$x_len, &$y_len)
+  protected function getXAxisFactory()
   {
-    $this->validateAxisOptions();
+    return new AxisFactory(false, $this->settings, false, false, false);
+  }
 
+  /**
+   * Returns the factory for a Y-axis
+   */
+  protected function getYAxisFactory()
+  {
     $y_bar = $this->getOption('label_centre');
-    $x_axis_factory = new AxisFactory(false, $this->settings, false, false, false);
-    $y_axis_factory = new AxisFactory($this->datetime_keys, $this->settings,
+    return new AxisFactory($this->datetime_keys, $this->settings,
       true, $y_bar, true);
+  }
 
-    $x_axes = [];
-    $x_axis_count = $this->xAxisCount();
-    for($i = 0; $i < $x_axis_count; ++$i) {
+  /**
+   * Creates and returns an X-axis
+   */
+  protected function createXAxis($factory, $length, $ends, $i, $min_space, $grid_division)
+  {
+    $max_h = $ends['v_max'][$i];
+    $min_h = $ends['v_min'][$i];
+    if(!is_numeric($max_h) || !is_numeric($min_h))
+      throw new \Exception('Non-numeric min/max');
 
-      $min_space = $this->getOption(['minimum_grid_spacing_h', $i],
-        'minimum_grid_spacing');
-      $grid_division = $this->getOption(['grid_division_h', $i]);
-      if(is_numeric($grid_division)) {
-        if($grid_division <= 0)
-          throw new \Exception('Invalid grid division');
-        // if fixed grid spacing is specified, make the min spacing 1 pixel
-        $this->minimum_grid_spacing_h = $min_space = 1;
+    $min_unit = $this->getOption(['minimum_units_y', $i]);
+    $units_after = (string)$this->getOption(['units_y', $i]);
+    $units_before = (string)$this->getOption(['units_before_y', $i]);
+    $decimal_digits = $this->getOption(['decimal_digits_y', $i],
+      'decimal_digits');
+    $text_callback = $this->getOption(['axis_text_callback_y', $i],
+      'axis_text_callback');
+    $log = $this->getOption(['log_axis_y', $i]);
+    $log_base = $this->getOption(['log_axis_y_base', $i]);
+    $ticks = $this->getOption(['axis_ticks_y', $i]);
+    $values = $levels = null;
+
+    if($min_h == $max_h) {
+      if($min_unit > 0) {
+        $inc = $min_unit;
+      } else {
+        $fallback = $this->getOption('axis_fallback_max');
+        $inc = $fallback > 0 ? $fallback : 1;
       }
-
-      $max_h = $ends['v_max'][$i];
-      $min_h = $ends['v_min'][$i];
-      if(!is_numeric($max_h) || !is_numeric($min_h))
-        throw new \Exception('Non-numeric min/max');
-
-      $min_unit = $this->getOption(['minimum_units_y', $i]);
-      $units_after = (string)$this->getOption(['units_y', $i]);
-      $units_before = (string)$this->getOption(['units_before_y', $i]);
-      $decimal_digits = $this->getOption(['decimal_digits_y', $i],
-        'decimal_digits');
-      $text_callback = $this->getOption(['axis_text_callback_y', $i],
-        'axis_text_callback');
-      $log = $this->getOption(['log_axis_y', $i]);
-      $log_base = $this->getOption(['log_axis_y_base', $i]);
-      $ticks = $this->getOption(['axis_ticks_y', $i]);
-      $values = $levels = null;
-
-      if($min_h == $max_h) {
-        if($min_unit > 0) {
-          $inc = $min_unit;
-        } else {
-          $fallback = $this->getOption('axis_fallback_max');
-          $inc = $fallback > 0 ? $fallback : 1;
-        }
-        $max_h += $inc;
-      }
-
-      $x_axis = $x_axis_factory->get($x_len, $min_h, $max_h, $min_unit,
-        $min_space, $grid_division, $units_before, $units_after,
-        $decimal_digits, $text_callback, $values, $log, $log_base, $levels, $ticks);
-      $x_axis->setTightness($this->getOption(['axis_tightness_y', $i]));
-      $x_axes[] = $x_axis;
+      $max_h += $inc;
     }
 
-    $y_axes = [];
-    $y_axis_count = $this->yAxisCount();
+    $x_axis = $factory->get($length, $min_h, $max_h, $min_unit,
+      $min_space, $grid_division, $units_before, $units_after,
+      $decimal_digits, $text_callback, $values, $log, $log_base, $levels, $ticks);
+    $x_axis->setTightness($this->getOption(['axis_tightness_y', $i]));
+    return $x_axis;
+  }
 
-    for($i = 0; $i < $y_axis_count; ++$i) {
+  /**
+   * Creates and returns a Y-axis
+   */
+  protected function createYAxis($factory, $length, $ends, $i, $min_space, $grid_division)
+  {
+    $max_v = $ends['k_max'][$i];
+    $min_v = $ends['k_min'][$i];
+    if(!is_numeric($max_v) || !is_numeric($min_v))
+      throw new \Exception('Non-numeric min/max');
 
-      $min_space = $this->getOption(['minimum_grid_spacing_v', $i],
-        'minimum_grid_spacing');
-      // make sure minimum_grid_spacing option is an array
-      if(!is_array($this->getOption('minimum_grid_spacing_v')))
-        $this->setOption('minimum_grid_spacing_v', []);
+    $min_unit = 1;
+    $text_callback = $this->getOption(['axis_text_callback_x', $i],
+      'axis_text_callback');
+    $decimal_digits = $this->getOption(['decimal_digits_x', $i],
+      'decimal_digits');
+    $units_after = (string)$this->getOption(['units_x', $i]);
+    $units_before = (string)$this->getOption(['units_before_x', $i]);
+    $values = $this->multi_graph ? $this->multi_graph : $this->values;
+    $levels = $this->getOption(['axis_levels_h', $i]);
+    $log = $this->getOption(['log_axis_x', $i]);
+    $log_base = $this->getOption(['log_axis_x_base', $i]);
+    $ticks = $this->getOption('axis_ticks_x');
 
-      $grid_division = $this->getOption(['grid_division_v', $i]);
-      if(is_numeric($grid_division)) {
-        if($grid_division <= 0)
-          throw new \Exception('Invalid grid division');
-        // if fixed grid spacing is specified, make the min spacing 1 pixel
-        $this->setOption('minimum_grid_spacing_v', 1, $i);
-        $min_space = 1;
-      } elseif(!isset($this->minimum_grid_spacing_v[$i])) {
-        $this->setOption('minimum_grid_spacing_v', $min_space, $i);
-      }
-
-      $max_v = $ends['k_max'][$i];
-      $min_v = $ends['k_min'][$i];
-      if(!is_numeric($max_v) || !is_numeric($min_v))
-        throw new \Exception('Non-numeric min/max');
-
-      $min_unit = 1;
-      $text_callback = $this->getOption(['axis_text_callback_x', $i],
-        'axis_text_callback');
-      $decimal_digits = $this->getOption(['decimal_digits_x', $i],
-        'decimal_digits');
-      $units_after = (string)$this->getOption(['units_x', $i]);
-      $units_before = (string)$this->getOption(['units_before_x', $i]);
-      $values = $this->multi_graph ? $this->multi_graph : $this->values;
-      $levels = $this->getOption(['axis_levels_h', $i]);
-      $log = $this->getOption(['log_axis_x', $i]);
-      $log_base = $this->getOption(['log_axis_x_base', $i]);
-      $ticks = $this->getOption('axis_ticks_x');
-
-      $y_axis = $y_axis_factory->get($y_len, $min_v, $max_v, $min_unit,
-        $min_space, $grid_division, $units_before, $units_after,
-        $decimal_digits, $text_callback, $values, $log, $log_base, $levels, $ticks);
-      $y_axes[] = $y_axis;
-    }
-
-    // set the main axis correctly
-    if($this->axis_right && count($y_axes) == 1) {
-      $this->main_y_axis = 1;
-      array_unshift($y_axes, null);
-    }
-    return [$x_axes, $y_axes];
+    return $factory->get($length, $min_v, $max_v, $min_unit,
+      $min_space, $grid_division, $units_before, $units_after,
+      $decimal_digits, $text_callback, $values, $log, $log_base, $levels, $ticks);
   }
 
   /**
@@ -180,9 +151,9 @@ abstract class HorizontalGridGraph extends GridGraph {
   protected function getSubDivsY($axis)
   {
     $a = $this->y_axes[$axis];
+    $offset = $a->reversed() ? $this->height - $this->pad_bottom : $this->pad_top;
     return $a->getGridSubdivisions($this->getOption('minimum_subdivision'), 1,
-      $this->height - $this->pad_bottom,
-      $this->getOption(['subdivision_v', $axis]));
+      $offset, $this->getOption(['subdivision_v', $axis]));
   }
 
   /**
@@ -191,8 +162,9 @@ abstract class HorizontalGridGraph extends GridGraph {
   protected function getSubDivsX($axis)
   {
     $a = $this->x_axes[$axis];
+    $offset = $a->reversed() ? $this->width - $this->pad_right : $this->pad_left;
     return $a->getGridSubdivisions($this->getOption('minimum_subdivision'),
-      $this->getOption(['minimum_units_y', $axis]), $this->pad_left,
+      $this->getOption(['minimum_units_y', $axis]), $offset,
       $this->getOption(['subdivision_h', $axis]));
   }
 
@@ -232,11 +204,13 @@ abstract class HorizontalGridGraph extends GridGraph {
    */
   protected function gridPosition($item, $index)
   {
-    $offset = $this->y_axes[$this->main_y_axis]->position($index, $item);
+    $axis = $this->y_axes[$this->main_y_axis];
+    $offset = $axis->position($index, $item);
     $zero = -0.01; // catch values close to 0
 
     if($offset >= $zero && floor($offset) <= $this->grid_limit)
-      return $this->height - $this->pad_bottom - $offset;
+      return $axis->reversed() ? $this->height - $this->pad_bottom - $offset :
+        $this->pad_top + $offset;
 
     return null;
   }

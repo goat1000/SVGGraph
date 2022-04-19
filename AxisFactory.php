@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,11 +38,11 @@ class AxisFactory {
    * $bar = bar-style axis (bool)
    * $reverse = reverse direction (bool)
    */
-  public function __construct($datetime, $settings, $fit = true, $bar = false,
+  public function __construct($datetime, &$settings, $fit = true, $bar = false,
     $reverse = false)
   {
     $this->datetime = $datetime;
-    $this->settings = $settings;
+    $this->settings =& $settings;
     $this->fit = $fit;
     $this->bar = $bar;
     $this->reverse = $reverse;

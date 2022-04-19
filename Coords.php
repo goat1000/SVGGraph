@@ -140,7 +140,9 @@ class Coords {
       if($position !== null) {
         if($v_info['axis'] == 'x')
           return $position + $dim['pad_left'];
-        return $dim['height'] - $dim['pad_bottom'] - $position;
+        return $axis_inst->reversed() ?
+          $dim['height'] - $dim['pad_bottom'] - $position :
+          $position + $dim['pad_top'];
       }
     }
 

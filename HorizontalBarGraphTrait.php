@@ -84,7 +84,11 @@ trait HorizontalBarGraphTrait {
     if($bar_y === null)
       return null;
 
-    $bar['y'] = $bar_y - $this->calculated_bar_space - $this->calculated_bar_width;
+    $axis = $this->y_axes[$this->main_y_axis];
+    if($axis->reversed())
+      $bar['y'] = $bar_y - $this->calculated_bar_space - $this->calculated_bar_width;
+    else
+      $bar['y'] = $bar_y + $this->calculated_bar_space;
     $bar['height'] = $this->calculated_bar_width;
     return $bar_y;
   }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2020 Graham Breach
+ * Copyright (C) 2020-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -67,8 +67,13 @@ class DisplayAxisLevels extends DisplayAxis {
       $tbox = $this->getTextBBox($i);
       if($this->orientation == 'h') {
         $dbox->flipY();
-        $dbox->offset(0, $bbox->y2);
-        $tbox->offset(0, $bbox->y2);
+        if($this->axis_no > 0) {
+          $dbox->offset(0, $bbox->y1);
+          $tbox->offset(0, $bbox->y1);
+        } else {
+          $dbox->offset(0, $bbox->y2);
+          $tbox->offset(0, $bbox->y2);
+        }
       } else {
         $dbox->offset($bbox->x1, 0);
         $tbox->offset($bbox->x1, 0);
@@ -99,13 +104,19 @@ class DisplayAxisLevels extends DisplayAxis {
 
     $bbox = new BoundingBox(0, 0, 0, 0);
     list($x_off, $y_off, $opp) = $this->getTextOffset(0, 0, 0, 0, 0, 0, $level);
+    $t_offset = ($this->orientation == 'h' ? $x_off : $y_off);
+    if($this->axis->reversed())
+      $t_offset = -$t_offset;
+    $length = $this->axis->getLength();
 
     $points = $this->axis->getGridPoints(0);
     $lpoints = $this->getPointsForLevel($points, $level);
-    $positions = $this->getTextPositions(0, 0, $x_off, $y_off, $lpoints);
+    $positions = $this->getTextPositions(0, 0, $x_off, $y_off, $lpoints, null);
     $pcount = count($positions);
     for($p = 0; $p < $pcount; ++$p) {
       $point = $lpoints[$p];
+      if(!$this->pointTextVisible($point, $length, $t_offset))
+        continue;
       if(!$point->blank($level)) {
         $pos = $positions[$p];
         $lbl = $this->measureText($pos['x'], $pos['y'], $point, $opp, $level);
@@ -124,10 +135,19 @@ class DisplayAxisLevels extends DisplayAxis {
     if($this->level_count <= 1)
       return parent::drawText($x, $y, $gx, $gy, $g_width, $g_height);
 
+    list($x_offset, $y_offset, $opposite) = $this->getTextOffset($x, $y,
+      $gx, $gy, $g_width, $g_height, 0);
+
+    $t_offset = ($this->orientation == 'h' ? $x_offset : $y_offset);
+    if($this->axis->reversed())
+      $t_offset = -$t_offset;
+
     // measure function fills in text locations
     $this->measure();
     $labels = '';
+    $anchor = null;
     $points = $this->axis->getGridPoints(0);
+    $length = $this->axis->getLength();
 
     for($i = 0; $i < $this->level_count; ++$i) {
       $count = count($points);
@@ -139,21 +159,45 @@ class DisplayAxisLevels extends DisplayAxis {
       $x1 = $x_offset;
       $y1 = $y_offset;
 
-      if($i > 0) {
-        $tbox = $this->levels[$i]['text_box'];
-        if($this->orientation == 'h')
-          $y1 = $y_offset + $tbox->y1;
+      $tbox = $this->levels[$i]['text_box'];
+      if($this->orientation == 'h') {
+        if($this->axis_no > 0)
+          $y1 = $y_offset + $tbox->y2;
         else
-          $x1 = $x_offset + $tbox->x2;
+          $y1 = $y_offset + $tbox->y1;
+        switch($this->styles['t_align']) {
+        case 'left':
+          $anchor = 'start';
+          break;
+        case 'right':
+          $anchor = 'end';
+          break;
+        }
+      } else {
+        $x1 = $x_offset + $tbox->x2;
+        switch($this->styles['t_align']) {
+        case 'left':
+          if(!$opposite) {
+            $anchor = 'start';
+            $x1 = $tbox->x1;
+          }
+          break;
+        case 'centre':
+          $x1 = ($tbox->x1 + $tbox->x2) / 2;
+          $anchor = 'middle';
+          break;
+        }
       }
 
       $lpoints = $this->getPointsForLevel($points, $i);
-      $positions = $this->getTextPositions($x, $y, $x1, $y1, $lpoints);
+      $positions = $this->getTextPositions($x, $y, $x1, $y1, $lpoints, $anchor);
       $pcount = count($positions);
       for($p = 0; $p < $pcount; ++$p) {
         $point = $lpoints[$p];
+        if(!$this->pointTextVisible($point, $length, $t_offset))
+          continue;
         $pos = $positions[$p];
-        $labels .= $this->getText($pos['x'], $pos['y'], $point, $opposite, $i);
+        $labels .= $this->getText($pos['x'], $pos['y'], $point, $opposite, $i, $anchor);
       }
     }
     if($labels != '') {
@@ -176,27 +220,6 @@ class DisplayAxisLevels extends DisplayAxis {
   }
 
   /**
-   * Returns the positions of all the text blocks
-   */
-  protected function getTextPositions($x, $y, $xoff, $yoff, $points)
-  {
-    $pmax = count($points) - 1;
-    $positions = [];
-    for($p = 0; $p < $pmax; ++$p) {
-      $point = $points[$p];
-      if($this->boxed_text) {
-        $point_next = $points[$p + 1];
-        if($this->orientation == 'h')
-          $xoff = ($point_next->position - $point->position) / 2;
-        else
-          $yoff = ($point_next->position - $point->position) / 2;
-      }
-      $positions[] = ['x' => $x + $xoff, 'y' => $y + $yoff];
-    }
-    return $positions;
-  }
-
-  /**
    * Draws the axis divisions
    */
   public function drawDivisions($x, $y, $g_width, $g_height)
@@ -209,6 +232,11 @@ class DisplayAxisLevels extends DisplayAxis {
     $points = $this->axis->getGridPoints(0);
     $x_offset = $y_offset = 0;
 
+    // direction of offset depends on h/v and axis number
+    $direction = ($this->orientation == 'v' ? -1 : 1);
+    if($this->axis_no > 0)
+      $direction = -$direction;
+
     for($i = 0; $i < $this->level_count; ++$i) {
       $path_info = $this->getDivisionPathInfo(false, $g_width, $g_height, $i);
       if($path_info === null)
@@ -219,9 +247,9 @@ class DisplayAxisLevels extends DisplayAxis {
         $path_info, $i);
 
       if($this->orientation == 'h')
-        $y_offset += $path_info['sz'];
+        $y_offset += $direction * $path_info['sz'];
       else
-        $x_offset -= $path_info['sz'];
+        $x_offset += $direction * $path_info['sz'];
     }
     if($path == '')
       return '';
@@ -244,7 +272,8 @@ class DisplayAxisLevels extends DisplayAxis {
     $prev = $points[0]->getText($level);
 
     $last_point = count($points) - 1;
-    for($p = 1; $p < $last_point; ++$p) {
+    $end = $this->boxed_text ? $last_point : $last_point + 1;
+    for($p = 1; $p < $end; ++$p) {
       if($points[$p]->blank($level))
         continue;
 
@@ -257,7 +286,8 @@ class DisplayAxisLevels extends DisplayAxis {
     }
 
     // the last point is the division at the end of the axis
-    $lpoints[] = $points[$last_point];
+    if($this->boxed_text)
+      $lpoints[] = $points[$last_point];
     return $lpoints;
   }
 }
