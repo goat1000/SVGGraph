@@ -46,33 +46,33 @@ class GanttChart extends HorizontalBarGraph {
     if(empty($values) || $this->values->error)
       return $res;
 
+    // convert times to seconds, find start and end
     $start_date = $end_date = null;
+    $update_times = function($item) use (&$start_date, &$end_date) {
+      if(!isset($item->value))
+        return;
+      $s = Graph::dateConvert($item->value);
+      if($s !== null) {
+        if($start_date === null || $start_date > $s)
+          $start_date = $s;
+        $item->value = $s;
 
-    // convert start dates, find earliest
-    $revalue_start = function($start) use(&$start_date) {
-      $e = Graph::dateConvert($start);
-      if($e === null)
-        return $e;
-      if($start_date === null || $start_date > $e)
-        $start_date = $e;
-      return $e;
+        $e = isset($item->end) ? Graph::dateConvert($item->end) : null;
+        if($e === null) {
+          $e = $s;
+        } else {
+          $e = new \DateTime('@' . $e);
+          $e->setTime(23, 59, 50); // just in case of leap seconds
+          $e = $e->format('U');
+        }
+
+        if($end_date === null || $end_date < $e)
+          $end_date = $e;
+        $item->end = $e;
+      }
+      return $item;
     };
-    $this->values->revalue($revalue_start, ['value']);
-
-    // end values need to end at end of the day
-    $end_of_day = function($end) use(&$end_date) {
-      $e = Graph::dateConvert($end);
-      if($e === null)
-        return $e;
-      $ed = new \DateTime('@' . $e);
-      $ed->setTime(23, 59, 50); // just in case of leap seconds
-      $ed = $ed->format('U');
-
-      if($end_date === null || $end_date < $ed)
-        $end_date = $ed;
-      return $ed;
-    };
-    $this->values->revalue($end_of_day, ['end']);
+    $this->values->transform($update_times);
 
     // find groups
     $groups = [];
@@ -81,6 +81,7 @@ class GanttChart extends HorizontalBarGraph {
     $entries = 0;
     $levels = [];
     foreach($this->values[0] as $item) {
+
       if($item->group !== null) {
 
         // numeric group has max number of entries
