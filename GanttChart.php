@@ -177,6 +177,16 @@ class GanttChart extends HorizontalBarGraph {
     $dataset = $this->getOption(['dataset', 0], 0);
     $icount = $this->values->itemsCount($dataset);
 
+    // axis min/max alter number of items
+    $max = $this->getOption(['axis_max_v', 0], 1e7) + 1;
+    if($max < $icount)
+      $icount = $max;
+    $min = $this->getOption(['axis_min_v', 0], 0);
+    if($min > 0)
+      $icount -= $min;
+    if($icount < 1)
+      throw new \Exception('No items to display');
+
     // use two datasets for main/completed colour
     $this->colourSetup($icount, 2);
     if(!is_numeric($this->height))
