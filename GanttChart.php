@@ -558,7 +558,7 @@ class GanttChart extends HorizontalBarGraph {
       if($this->gridX($item->value) === null)
         return null;
       $element = $this->getMilestone($item, $index, $dataset, $bar);
-      $label = $item->key;
+      $label = $item->axis_text ? $item->axis_text : $item->key;
       $label_shown = $this->addDataLabel($dataset, $index, $element, $item,
         $bar['x'], $bar['y'], $element['size'], $bar['height'], $label);
     } else {
