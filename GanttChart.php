@@ -113,10 +113,8 @@ class GanttChart extends HorizontalBarGraph {
       }
 
       // not a group
-      if($key !== null)
-        $item_groups[$item->key] = $key;
-
       if($key !== null && $entries) {
+        $item_groups[$item->key] = $key;
         $item_time = $item->end - $item->value;
         $item_percent = $item_time > 0 ? $item_time * $item->complete / 100 : 0;
 
