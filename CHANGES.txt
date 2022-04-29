@@ -1,3 +1,11 @@
+Version 3.14 (02/05/2022)
+------------
+- Added Gantt chart.
+- Added automatic graph height option.
+- Added support for best-fit lines on bar and line graphs.
+- Added support for using coordinates for legend position.
+- Added block_position_markers option.
+
 Version 3.13.1 (11/03/2022)
 --------------
 - Fixed deprecation warning messages displayed by PHP 8.1.

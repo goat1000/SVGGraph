@@ -400,10 +400,19 @@ class GanttChart extends HorizontalBarGraph {
    */
   protected function getToday()
   {
-    $today = new \DateTime();
+    $today = $t_i = null;
+    $when = $this->getOption('gantt_today_date');
+    if($when) {
+      $t_i = Graph::dateConvert($when);
+      if($t_i !== null)
+        $today = new \DateTime('@' . $t_i);
+    }
+    if($today === null) {
+      $today = new \DateTime();
+      $t_i = $today->format('U');
+    }
 
     // check that today is on the chart
-    $t_i = $today->format('U');
     $axis = $this->getAxis('x', null);
     $a_len = $axis->getLength();
     $start_time = $axis->value(0);

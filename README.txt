@@ -1,5 +1,5 @@
-SVGGraph Library version 3.13.1
-===============================
+SVGGraph Library version 3.14
+=============================
 
 This library provides PHP classes and functions for easily creating SVG
 graphs from data. Version 3.0 of SVGGraph requires at least PHP 5.4 - if
@@ -122,7 +122,7 @@ At the moment these types of graph are supported by SVGGraph:
 There are also these graphs that are really hard to describe:
 
  FloatingBarGraph; HorizontalFloatingBarGraph; BubbleGraph;
- BoxAndWhiskerGraph; PopulationPyramid; CandlestickGraph.
+ BoxAndWhiskerGraph; PopulationPyramid; CandlestickGraph; GanttChart.
 
 Using SVGGraph
 ==============

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2021 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -201,6 +201,9 @@ class AxisLog extends Axis {
   public function measureUnits($pos, $u)
   {
     $i = Coords::parseValue($pos);
+    if(!is_numeric($i['value']))
+      throw new \Exception("Unable to measure $u units from '{$i['value']}'");
+
     $start_pos = $this->position($i['value']);
     $end_pos = $this->position($i['value'] + $u);
     return $end_pos - $start_pos;
