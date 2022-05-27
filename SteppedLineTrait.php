@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,25 +41,4 @@ trait SteppedLineTrait {
 
     return $new_points;
   }
-
-  /**
-   * Override to expand clipping rectangle slightly
-   */
-  public function gridClipPath()
-  {
-    if(isset($this->grid_clip_id))
-      return $this->grid_clip_id;
-
-    $rect = [
-      'x' => $this->pad_left - 2, 'y' => $this->pad_top - 2,
-      'width' => $this->width - $this->pad_left - $this->pad_right + 4,
-      'height' => $this->height - $this->pad_top - $this->pad_bottom + 4,
-    ];
-    $clip_id = $this->newID();
-    $this->defs->add($this->element('clipPath', ['id' => $clip_id], null,
-      $this->element('rect', $rect)));
-    return ($this->grid_clip_id = $clip_id);
-  }
-
 }
-

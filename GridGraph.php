@@ -40,7 +40,7 @@ abstract class GridGraph extends Graph {
   protected $max_guide = ['x' => null, 'y' => null];
 
   protected $grid_limit;
-  private $grid_clip_id;
+  private $grid_clip_id = [];
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
@@ -1077,27 +1077,35 @@ abstract class GridGraph extends Graph {
    */
   protected function clipGrid(&$attr)
   {
-    $clip_id = $this->gridClipPath();
+    $cx = $this->getOption('grid_clip_overlap_x');
+    $cy = $this->getOption('grid_clip_overlap_y');
+
+    $clip_id = $this->gridClipPath($cx, $cy);
     $attr['clip-path'] = 'url(#' . $clip_id . ')';
   }
 
   /**
    * Returns the ID of the grid clipping path
    */
-  public function gridClipPath()
+  public function gridClipPath($x_overlap = 0, $y_overlap = 0)
   {
-    if(isset($this->grid_clip_id))
-      return $this->grid_clip_id;
+    $cid = new Number($x_overlap) . '_' . new Number($y_overlap);
+    if(isset($this->grid_clip_id[$cid]))
+      return $this->grid_clip_id[$cid];
 
+    $crop_top = max(0, $this->pad_top - $y_overlap);
+    $crop_bottom = min($this->height, $this->height - $this->pad_bottom + $y_overlap);
+    $crop_left = max(0, $this->pad_left - $x_overlap);
+    $crop_right = min($this->width, $this->width - $this->pad_right + $x_overlap);
     $rect = [
-      'x' => $this->pad_left, 'y' => $this->pad_top,
-      'width' => $this->width - $this->pad_left - $this->pad_right,
-      'height' => $this->height - $this->pad_top - $this->pad_bottom
+      'x' => $crop_left, 'y' => $crop_top,
+      'width' => $crop_right - $crop_left,
+      'height' => $crop_bottom - $crop_top,
     ];
     $clip_id = $this->newID();
     $this->defs->add($this->element('clipPath', ['id' => $clip_id], null,
       $this->element('rect', $rect)));
-    return ($this->grid_clip_id = $clip_id);
+    return ($this->grid_clip_id[$cid] = $clip_id);
   }
 
   /**
