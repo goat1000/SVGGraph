@@ -83,7 +83,6 @@ class RadarGraph extends LineGraph {
 
     $graph_line .= $this->drawLine($dataset, $points, 0);
     $group = [];
-    $this->clipGrid($group);
     if($this->semantic_classes)
       $group['class'] = 'series';
     $graph_line = $this->element('g', $group, null, $graph_line);
