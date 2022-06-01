@@ -46,13 +46,18 @@ class GanttChart extends HorizontalBarGraph {
     if(empty($values) || $this->values->error)
       return $res;
 
+    // set up class for adjusting times
+    $units = $this->getOption('gantt_units');
+    $ts = new TimeSpanner($units);
+
     // convert times to seconds, find start and end
     $start_date = $end_date = null;
-    $update_times = function($item) use (&$start_date, &$end_date) {
+    $update_times = function($item) use (&$start_date, &$end_date, $ts) {
       if(!isset($item->value))
         return;
       $s = Graph::dateConvert($item->value);
       if($s !== null) {
+        $s = $ts->start($s);
         if($start_date === null || $start_date > $s)
           $start_date = $s;
         $item->value = $s;
@@ -61,9 +66,7 @@ class GanttChart extends HorizontalBarGraph {
         if($e === null) {
           $e = $s;
         } else {
-          $e = new \DateTime('@' . $e);
-          $e->setTime(23, 59, 50); // just in case of leap seconds
-          $e = $e->format('U');
+          $e = $ts->end($e);
         }
 
         if($end_date === null || $end_date < $e)
@@ -301,6 +304,27 @@ class GanttChart extends HorizontalBarGraph {
       ['1 day', ['d', 'M Y']],
       ['1 day', ['D d', 'M Y']],
     ];
+
+    // if using units smaller than days might need smaller divisions
+    $units = $this->getOption('gantt_units');
+    if($units == 'hour' || $units == 'minute') {
+      $more_divisions = [
+        ['12 hour', ['H:i', 'D d M Y']],
+        ['6 hour', ['H:i', 'D d M Y']],
+        ['3 hour', ['H:i', 'D d M Y']],
+        ['2 hour', ['H:i', 'D d M Y']],
+        ['1 hour', ['H:i', 'D d M Y']],
+      ];
+      $divisions = array_merge($divisions, $more_divisions);
+    }
+    $subdivisions = [
+      '1 hour' => '30 minute',
+      '2 hour' => '1 hour',
+      '3 hour' => '1 hour',
+      '6 hour' => '1 hour',
+      '12 hour' => '2 hour',
+      '1 day' => '6 hour',
+    ];
     $div_id = count($divisions) - 1;
 
     $factory = $this->getXAxisFactory();
@@ -335,8 +359,11 @@ class GanttChart extends HorizontalBarGraph {
       $this->setOption('datetime_text_format', $fmt);
       $this->setOption('axis_levels_h', $levels);
     }
-    if($div !== null)
+    if($div !== null) {
       $this->setOption('grid_division_h', $div);
+      if(isset($subdivisions[$div]))
+        $this->setOption('subdivision_h', $subdivisions[$div]);
+    }
     $this->auto_format = false;
   }
 
@@ -848,27 +875,59 @@ class GanttChart extends HorizontalBarGraph {
       return $ttext;
     }
 
+    $pluralize = function($n, $units) {
+      $str = new Number($n) . ' ' . $units;
+      if($n != 1)
+        $str .= 's';
+      return $str;
+    };
+
     $dte = new \DateTime('@' . $item->end);
     $text_end = $axis->format($dte, $format);
     $ttext = "{$text_start} - {$text_end}";
     if($this->getOption('gantt_tooltip_duration')) {
       $days = ceil(($item->end - $item->value) / 86400);
+      $hours = ceil(($item->end - $item->value) / 3600);
+      $mins = ceil(($item->end - $item->value) / 60);
       if($days > 364) {
         $years = $days / 365;
-        $ttext .= "\n" . new Number($years) . " years";
+        $ttext .= "\n" . $pluralize($years, "year");
       } elseif($days > 20) {
         $weeks = floor($days / 7);
         $days = $days % 7;
-        $ttext .= "\n" . new Number($weeks) . " weeks";
+        $ttext .= "\n" . $pluralize($weeks, "week");
         if($days) {
-          $ttext .= ", " . new Number($days) . " day";
-          if($days != 1)
-            $ttext .= 's';
+          $ttext .= ", " . $pluralize($days, "day");
         }
       } else {
-        $ttext .= "\n" . new Number($days) . " day";
-        if($days != 1)
-          $ttext .= 's';
+        $units = $this->getOption('gantt_units');
+        if($units === 'minute' && $hours <= 24) {
+          $ttext .= "\n";
+          $hours = floor($mins / 60);
+          if($hours > 0) {
+            $ttext .= $pluralize($hours, "hour");
+            $mins = $mins % 60;
+          }
+          if($mins > 0) {
+            if($hours > 0)
+              $ttext .= ', ';
+            $ttext .= $pluralize($mins, "minute");
+          }
+        } elseif($units === 'hour') {
+          $ttext .= "\n";
+          $days = floor($hours / 24);
+          if($days > 0) {
+            $ttext .= $pluralize($days, "day");
+            $hours = $hours % 24;
+          }
+          if($hours > 0) {
+            if($days > 0)
+              $ttext .= ', ';
+            $ttext .= $pluralize($hours, "hour");
+          }
+        } else {
+          $ttext .= "\n" . $pluralize($days, "day");
+        }
       }
     }
 
