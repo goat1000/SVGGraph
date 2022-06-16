@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2019 Graham Breach
+ * Copyright (C) 2018-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -34,10 +34,10 @@ class Markers {
   }
 
   /**
-   * Creates a marker
+   * Creates contents of a marker
    */
-  public function create($type, $size, $fill, $stroke_width, $stroke_colour,
-    $opacity, $angle, $more = null)
+  private function createContent($type, $size, $fill, $stroke_width,
+    $stroke_colour, $opacity, $angle, $more = null)
   {
     $marker = ['fill' => $fill];
     if(!empty($stroke_colour) && $stroke_colour != 'none') {
@@ -186,7 +186,7 @@ class Markers {
       $figure_id = $this->graph->figures->getFigure($figure);
       if(empty($figure_id))
         throw new \Exception('Figure [' . $figure . '] not defined');
-      return $figure_id;
+      return [$figure_id];
       break;
     case 'circle' :
     default :
@@ -208,8 +208,43 @@ class Markers {
     if(is_array($more))
       $marker = array_merge($marker, $more);
 
-    $marker_content = $this->graph->element($element, $marker, null, $content);
+    return $this->graph->element($element, $marker, null, $content);
+  }
+
+  /**
+   * Creates a marker, returning its ID
+   */
+  public function create($type, $size, $fill, $stroke_width, $stroke_colour,
+    $opacity, $angle, $more = null)
+  {
+    $marker_content = $this->createContent($type, $size, $fill, $stroke_width,
+      $stroke_colour, $opacity, $angle, $more);
+
+    // if the return is an array, it contains the ID
+    if(is_array($marker_content))
+      return $marker_content[0];
     return $this->graph->defs->defineSymbol($marker_content);
+  }
+
+  /**
+   * Creates a SVG marker element, returning its ID
+   */
+  public function createSVGMarker($type, $size, $fill, $stroke_width, $stroke_colour,
+    $opacity, $angle, $more = null)
+  {
+    $marker_content = $this->createContent($type, $size, $fill, $stroke_width,
+      $stroke_colour, $opacity, $angle, $more);
+
+    $sz = new Number($size);
+    $sz2 = new Number($size * 2);
+    $marker = [
+      'viewBox' => "-{$sz} -{$sz} {$sz2} {$sz2}",
+      'markerWidth' => $sz,
+      'markerHeight' => $sz,
+      'refX' => $sz,
+      'orient' => 'auto',
+    ];
+    return $this->graph->defs->addElement('marker', $marker, $marker_content);
   }
 }
 

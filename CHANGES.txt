@@ -1,3 +1,9 @@
+Version 3.15 (16/06/2022)
+------------
+- Added dependency arrow support to Gantt charts.
+- Added gantt_units option for tasks in hours and minutes.
+- Added grid_clip_overlap_* options for adjusting line graph clipping.
+
 Version 3.14 (02/05/2022)
 ------------
 - Added Gantt chart.

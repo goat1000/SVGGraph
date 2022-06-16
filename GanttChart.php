@@ -26,6 +26,7 @@ class GanttChart extends HorizontalBarGraph {
   protected $start_date = null;
   protected $end_date = null;
   protected $auto_format = true;
+  protected $bar_list = [];
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
@@ -619,6 +620,8 @@ class GanttChart extends HorizontalBarGraph {
         $bar['x'], $bar['y'], $bar['width'], $bar['height'], $label);
     }
 
+    $depends = $this->drawDependencies($item, $index, $dataset, $bar);
+
     if($this->semantic_classes)
       $element['class'] = 'series' . $dataset;
 
@@ -628,12 +631,15 @@ class GanttChart extends HorizontalBarGraph {
     if($this->show_context_menu)
       $this->setContextMenu($element, $dataset, $item, $label_shown);
 
+    $task_entry = '';
     if($item->milestone) {
       $m = new MarkerShape($element, 'above');
-      return $m->draw($this);
+      $task_entry .= $m->draw($this);
+    } else {
+      $bar_part = $this->element($bar_type, $element, null, $bar_content);
+      $task_entry .= $this->getLink($item, $item->key, $bar_part);
     }
-    $bar_part = $this->element($bar_type, $element, null, $bar_content);
-    return $this->getLink($item, $item->key, $bar_part);
+    return $task_entry . $depends;
   }
 
   /**
@@ -670,7 +676,7 @@ class GanttChart extends HorizontalBarGraph {
   /**
    * Returns the attributes of a bar
    */
-  protected function getBar(DataItem $item, $index, $dataset, $bar)
+  protected function getBar(DataItem $item, $index, $dataset, &$bar)
   {
     list($colour_incomplete, $colour_complete) = $this->getBarColours($item, $index, $dataset);
     $round = max($this->getItemOption('bar_round', $dataset, $item), 0);
@@ -685,7 +691,7 @@ class GanttChart extends HorizontalBarGraph {
       $corner_height = $this->getItemOption('gantt_group_corner_height', $dataset, $item, 'corner_height');
     }
 
-    $element =& $bar;
+    $element = $bar;
 
     // group bar has downward pointing corners
     if($corner_height && $corner_width) {
@@ -703,11 +709,15 @@ class GanttChart extends HorizontalBarGraph {
       $p->add('l', -$corner_width, $corner_height);
       $p->add('z');
       $path['d'] = $p;
-      $element =& $path;
+      $element = $path;
+
+      // update $bar
+      $bar['y'] -= $corner_height / 2;
+      $bar['height'] += $corner_height;
     } else {
 
-      $bar['element'] = 'rect';
-      $bar['content'] = null;
+      $element['element'] = 'rect';
+      $element['content'] = null;
     }
     if($item->complete >= 100) {
       $element['fill'] = $colour_complete;
@@ -726,7 +736,7 @@ class GanttChart extends HorizontalBarGraph {
 
     // % complete
     $c = $this->getClippers($bar['x'], $bar['y'], $bar['width'],
-      $bar['height'] + $corner_height, $item->complete);
+      $bar['height'], $item->complete);
     $bar_parts = '';
     $b1 = $element;
     $b1['fill'] = $colour_complete;
@@ -857,6 +867,58 @@ class GanttChart extends HorizontalBarGraph {
     ];
     $this->setStroke($marker, $item, $index, $dataset);
     return $marker;
+  }
+
+  /**
+   * Draws dependency arrows
+   */
+  protected function drawDependencies(&$item, $index, $dataset, $bar)
+  {
+    // add this bar to the list so others can draw arrows to it
+    $this->bar_list[$item->key] = $bar;
+    if(!isset($item->depends))
+      return '';
+
+    $arrows = '';
+    $depends = is_array($item->depends) ? $item->depends : [$item->depends];
+    $dtype = is_array($item->depends_type) ? $item->depends_type : [$item->depends_type];
+
+    $head_size = $this->getItemOption('gantt_depends_head_size', $dataset,
+      $item, 'depends_head_size');
+    $stroke_width = min(10, max(0.1,
+      $this->getItemOption('gantt_depends_stroke_width', $dataset, $item, 'depends_stroke_width')));
+    $cg = new ColourGroup($this, $item, $index, $dataset, 'gantt_depends_colour', null, 'depends_colour');
+    $colour = $cg->stroke();
+    $dash = $this->getItemOption('gantt_depends_dash', $dataset, $item, 'depends_dash');
+    $opacity = min(1, max(0,
+      $this->getItemOption('gantt_depends_opacity', $dataset, $item, 'depends_opacity')));
+
+    $group_style = [ 'stroke' => $colour, ];
+    if($stroke_width != 1)
+      $group_style['stroke-width'] = $stroke_width;
+    if(!empty($dash))
+      $group_style['stroke-dasharray'] = $dash;
+    if($opacity < 1)
+      $group_style['opacity'] = $opacity;
+
+    foreach($depends as $k => $d) {
+      if(!isset($this->bar_list[$d]))
+        break;
+
+      $dbar = $this->bar_list[$d];
+      $arrow = new GanttArrow(new Point($dbar['x'], $dbar['y']),
+        new Point($bar['x'], $bar['y']),
+        $dbar['width'], $dbar['height'],
+        $bar['width'], $bar['height'],
+        isset($dtype[$k]) ? $dtype[$k] : 'FS',
+        $this->calculated_bar_space);
+
+      $arrow->setHeadSize($head_size);
+      $arrow->setHeadColour($colour);
+      $arrows .= $arrow->draw($this);
+    }
+    $arrows = $this->element('g', $group_style, null, $arrows);
+    return $arrows;
   }
 
   /**
