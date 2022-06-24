@@ -56,6 +56,10 @@ class GanttArrow extends Arrow {
     }
     $a->y += $ha;
 
+    // only start horizontal if the first element has some width
+    if($wa < 1)
+      $this->vsplit = true;
+
     parent::__construct($a, $b);
     $this->type = $type;
     $this->space = max(5, $sp);
