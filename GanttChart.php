@@ -27,6 +27,7 @@ class GanttChart extends HorizontalBarGraph {
   protected $end_date = null;
   protected $auto_format = true;
   protected $bar_list = [];
+  protected $enabled_datasets = [];
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
@@ -46,6 +47,24 @@ class GanttChart extends HorizontalBarGraph {
     $res = parent::values($values);
     if(empty($values) || $this->values->error)
       return $res;
+
+    // find list of enabled datasets
+    $d_count = count($this->values);
+    $d_enabled = $this->getOption("dataset");
+    if($d_enabled === null) {
+      $d_enabled = range(0, $d_count - 1);
+    } else {
+      $enabled = [];
+      if(!is_array($d_enabled))
+        $d_enabled = [$d_enabled];
+      $d_enabled = array_unique($d_enabled);
+      foreach($d_enabled as $d) {
+        if($d > 0 && $d < $d_count)
+          $enabled[] = $d;
+      }
+      $d_enabled = $enabled;
+    }
+    $this->enabled_datasets = $d_enabled;
 
     // set up class for adjusting times
     $units = $this->getOption('gantt_units');
@@ -76,7 +95,8 @@ class GanttChart extends HorizontalBarGraph {
       }
       return $item;
     };
-    $this->values->transform($update_times);
+    foreach($d_enabled as $dataset)
+      $this->values->transform($update_times, $dataset);
 
     // find groups
     $groups = [];
@@ -84,59 +104,76 @@ class GanttChart extends HorizontalBarGraph {
     $key = null;
     $entries = 0;
     $levels = [];
-    foreach($this->values[0] as $item) {
 
-      if($item->group !== null) {
+    foreach($d_enabled as $dataset) {
+      foreach($this->values[$dataset] as $item) {
 
-        // numeric group has max number of entries
-        $entries = is_numeric($item->group) ? (int)$item->group : 1e6;
-        $key = $item->key;
-        $groups[$key] = [
-          'start' => 0,
-          'end' => 0,
-          'total_time' => 0,
-          'total_complete' => 0,
-          'level' => 0,
-        ];
+        if($item->group !== null) {
 
-        // named groups for multiple levels
-        $group_name = is_string($item->group) ? $item->group : 'unnamed_group';
-        if(isset($levels[$group_name])) {
-          $new_levels = [];
-          foreach($levels as $k => $v) {
-            if($k == $group_name)
-              break;
-            $new_levels[$k] = $v;
+          // things get strange if groups are in later datasets
+          if($dataset > 0 && !isset($groups[$item->key]))
+            throw new \Exception('Groups must be in dataset 0');
+
+          // numeric group has max number of entries
+          $entries = is_numeric($item->group) ? (int)$item->group : 1e6;
+          $key = $item->key;
+          if(!isset($groups[$key])) {
+            $groups[$key] = [
+              'start' => 0,
+              'end' => 0,
+              'total_time' => 0,
+              'total_complete' => 0,
+              'level' => 0,
+            ];
           }
-          $levels = $new_levels;
+
+          // named groups for multiple levels
+          $group_name = is_string($item->group) ? $item->group : 'unnamed_group';
+          if(isset($levels[$group_name])) {
+            $new_levels = [];
+            foreach($levels as $k => $v) {
+              if($k == $group_name)
+                break;
+              $new_levels[$k] = $v;
+            }
+            $levels = $new_levels;
+          }
+
+          $levels[$group_name] = $key;
+          $groups[$key]['level'] = count($levels);
+          continue;
         }
 
-        $levels[$group_name] = $key;
-        $groups[$key]['level'] = count($levels);
-        continue;
-      }
+        // not a group
+        if($key !== null && $entries) {
+          if($item->value === null)
+            continue;
 
-      // not a group
-      if($key !== null && $entries) {
-        $item_groups[$item->key] = $key;
-        $item_time = $item->end - $item->value;
-        $item_percent = $item_time > 0 ? $item_time * $item->complete / 100 : 0;
+          // groups and tasks/milestones don't work together on a row
+          if(isset($groups[$item->key]))
+            throw new \Exception('Groups must not be mixed with tasks/milestones');
 
-        // update group hierarchy
-        foreach($levels as $level => $key) {
-          $g = &$groups[$key];
-          if($g['start'] == 0 || $item->value < $g['start'])
-            $g['start'] = $item->value;
-          if($g['end'] == 0 || $item->value > $g['end'])
-            $g['end'] = $item->value;
-          if($g['end'] == 0 || $item->end > $g['end'])
-            $g['end'] = $item->end;
-          if($item_time > 0) {
-            $g['total_time'] += $item_time;
-            $g['total_complete'] += $item_percent;
+          $item_groups[$item->key] = $key;
+          $item_time = $item->end - $item->value;
+          $item_percent = $item_time > 0 && is_numeric($item->complete) ?
+            $item_time * $item->complete / 100 : 0;
+
+          // update group hierarchy
+          foreach($levels as $level => $key) {
+            $g = &$groups[$key];
+            if($g['start'] == 0 || $item->value < $g['start'])
+              $g['start'] = $item->value;
+            if($g['end'] == 0 || $item->value > $g['end'])
+              $g['end'] = $item->value;
+            if($g['end'] == 0 || $item->end > $g['end'])
+              $g['end'] = $item->end;
+            if($item_time > 0) {
+              $g['total_time'] += $item_time;
+              $g['total_complete'] += $item_percent;
+            }
           }
+          --$entries;
         }
-        --$entries;
       }
     }
 
@@ -221,6 +258,27 @@ class GanttChart extends HorizontalBarGraph {
       }
       $this->setOption('shape', $shapes);
     }
+  }
+
+  /**
+   * Override BarGraphTrait::drawBars to draw multiple datasets
+   */
+  protected function drawBars()
+  {
+    $this->barSetup();
+    $bars = '';
+
+    // use a MultiGraph to traverse more easily
+    $multi_graph = new MultiGraph($this->values, false, false, false);
+    foreach($multi_graph as $bnum => $itemlist) {
+      foreach($this->enabled_datasets as $dataset) {
+        $item = $itemlist[$dataset];
+        $this->setBarLegendEntry($dataset, $bnum, $item);
+        $bars .= $this->drawBar($item, $bnum, 0, null, $dataset);
+      }
+    }
+
+    return $bars;
   }
 
   /**
@@ -647,26 +705,27 @@ class GanttChart extends HorizontalBarGraph {
    */
   protected function getBarColours(DataItem $item, $index, $dataset)
   {
-    $colour_incomplete = $this->getColour($item, $index, $dataset);
-    $colour_complete = $this->getColour($item, $index, $dataset + 1);
+    // use datasets 0 and 1 for incomplete and complete colours
+    $colour_incomplete = $this->getColour($item, $index, 0);
+    $colour_complete = $this->getColour($item, $index, 1);
 
     if($item->group) {
       // group bars are coloured differently
       $ci = $this->getItemOption('gantt_group_colour', $dataset, $item, 'colour');
       $cc = $this->getItemOption('gantt_group_colour_complete', $dataset, $item, 'colour_complete');
       if(!empty($ci)) {
-        $cg = new ColourGroup($this, $item, $index, $dataset, 'gantt_group_colour', null, 'colour');
+        $cg = new ColourGroup($this, $item, $index, 0, 'gantt_group_colour', null, 'colour');
         $colour_incomplete = $cg->stroke();
       }
       if(!empty($cc)) {
-        $cg = new ColourGroup($this, $item, $index, $dataset + 1, 'gantt_group_colour_complete', null, 'colour_complete');
+        $cg = new ColourGroup($this, $item, $index, 1, 'gantt_group_colour_complete', null, 'colour_complete');
         $colour_complete = $cg->stroke();
       }
     } else {
       // support fill/fillColour for individual bar complete colours
-      $cc = $this->getItemOption('colour_complete', $dataset, $item);
+      $cc = $this->getItemOption('colour_complete', 0, $item);
       if(!empty($cc)) {
-        $cg = new ColourGroup($this, $item, $index, $dataset + 1, 'colour_complete', null, 'colour_complete');
+        $cg = new ColourGroup($this, $item, $index, 1, 'colour_complete', null, 'colour_complete');
         $colour_complete = $cg->stroke();
       }
     }
@@ -721,13 +780,13 @@ class GanttChart extends HorizontalBarGraph {
     }
     if($item->complete >= 100) {
       $element['fill'] = $colour_complete;
-      $this->setStroke($element, $item, $index, $dataset);
+      $this->setStroke($element, $item, $index, 0);
       return $element;
     }
 
     if($item->complete <= 0) {
       $element['fill'] = $colour_incomplete;
-      $this->setStroke($element, $item, $index, $dataset);
+      $this->setStroke($element, $item, $index, 0);
       return $element;
     }
 
@@ -751,7 +810,7 @@ class GanttChart extends HorizontalBarGraph {
 
     // outline over top
     $element['fill'] = 'none';
-    $this->setStroke($element, $item, $index, $dataset);
+    $this->setStroke($element, $item, $index, 0);
     $bar_parts .= $this->element($type, $element);
 
     return ['element' => 'g', 'content' => $bar_parts];
@@ -794,6 +853,9 @@ class GanttChart extends HorizontalBarGraph {
   {
     $gpat = !($this->getOption('marker_solid', true));
     $mcolour = $this->getItemOption('gantt_milestone_colour', $dataset, $item, 'colour');
+
+    // don't use per-dataset global colours, only used for complete bars
+    $dataset = 0;
     if(empty($mcolour))
       return $this->getColour(null, $index, $dataset, $gpat, $gpat);
 
@@ -875,7 +937,9 @@ class GanttChart extends HorizontalBarGraph {
   protected function drawDependencies(&$item, $index, $dataset, $bar)
   {
     // add this bar to the list so others can draw arrows to it
-    $this->bar_list[$item->key] = $bar;
+    if($dataset == 0)
+      $this->bar_list[$item->key] = $bar;
+    $this->bar_list[$item->key . ":" . new Number($dataset)] = $bar;
     if(!isset($item->depends))
       return '';
 
