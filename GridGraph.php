@@ -643,6 +643,9 @@ abstract class GridGraph extends Graph {
 
       $x_axes[] = $this->createXAxis($x_axis_factory, $x_len, $ends, $i, $min_space, $grid_division);
     }
+    // double X axis adds a second axis with same ends as first
+    if($x_axis_count == 1 && $this->getOption('axis_double_x'))
+      $x_axes[] = $this->createXAxis($x_axis_factory, $x_len, $ends, 0, $min_space, $grid_division);
 
     $y_axes = [];
     $y_axis_count = $this->yAxisCount();
@@ -667,6 +670,9 @@ abstract class GridGraph extends Graph {
 
       $y_axes[] = $this->createYAxis($y_axis_factory, $y_len, $ends, $i, $min_space, $grid_division);
     }
+    // double Y axis adds a second axis with same ends as first
+    if($y_axis_count == 1 && $this->getOption('axis_double_y'))
+      $y_axes[] = $this->createYAxis($y_axis_factory, $y_len, $ends, 0, $min_space, $grid_division);
 
     // set the main axis correctly
     if($this->getOption('axis_right') && count($y_axes) == 1) {
