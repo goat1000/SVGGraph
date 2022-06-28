@@ -294,12 +294,27 @@ class GanttChart extends HorizontalBarGraph {
 
     // fixed space allows for two lines of labels, plus two of headings
     $fixed = $this->pad_bottom + $this->pad_top;
-    $space = isset($h_style['t_space']) ? $h_style['t_space'] : 1;
-    if(isset($h_style['t_font_size']))
-      $fixed += ($space + $h_style['t_font_size']) * 2;
-    $space = isset($h_style['l_space']) ? $h_style['l_space'] : 1;
-    if(isset($h_style['l_font_size']))
+    if(isset($h_style['t_font_size'])) {
+      $space = isset($h_style['t_space']) ? $h_style['t_space'] : 1;
+      if($h_style['d_style'] == 'box')
+        $space *= 2;
+      $text_size = ($space + $h_style['t_font_size']) * 2;
+      if($this->getOption('axis_double_x'))
+        $text_size *= 2;
+      $fixed += $text_size;
+    }
+    if(isset($h_style['l_font_size'])) {
+      $space = isset($h_style['l_space']) ? $h_style['l_space'] : 1;
       $fixed += ($space + $h_style['l_font_size']) * 2;
+    }
+
+    // add in space for any titles
+    $titles = $this->getTitle();
+    if($titles['font_size'] && ($titles['pos'] == 'top' || $titles['pos'] == 'bottom')) {
+      $fixed += $titles['height'] + $titles['space'];
+      if($titles['sfont_size'])
+        $fixed += $titles['sheight'] + $titles['sspace'];
+    }
 
     $min_height = 10;
     $ch = $this->getOption('gantt_group_corner_width') ?
@@ -344,6 +359,8 @@ class GanttChart extends HorizontalBarGraph {
     $display_axis = new DisplayAxis($this, $axis, 0, 'v', 'x', true, $l_c);
     $bbox = $display_axis->measure();
     $left_text = $bbox->x2 - $bbox->x1;
+    if($this->getOption('axis_double_y'))
+      $left_text *= 2;
 
     // approximate length of X-axis
     $length = $this->width - $this->pad_left - $this->pad_right - $left_text;

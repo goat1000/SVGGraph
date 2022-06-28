@@ -535,125 +535,159 @@ abstract class Graph {
   }
 
   /**
+   * Returns details of title and subtitle
+   */
+  protected function getTitle()
+  {
+    $info = [
+      'title' => $this->getOption('graph_title'),
+      'font' => $this->getOption('graph_title_font'),
+      'font_size' => 0, // 0 font size = no title
+      'sfont_size' => 0, // 0 = no subtitle
+    ];
+
+    $svg_text = new Text($this, $info['font']);
+    if($svg_text->strlen($info['title']) <= 0)
+      return $info;
+
+    $info['font_size'] = $this->getOption('graph_title_font_size');
+    $info['weight'] = $this->getOption('graph_title_font_weight');
+    $info['colour'] = $this->getOption('graph_title_colour');
+    $info['pos'] = $this->getOption('graph_title_position');
+    $info['space'] = $this->getOption('graph_title_space');
+    $info['line_spacing'] = $this->getOption('graph_title_line_spacing');
+    if($info['line_spacing'] === null || $info['line_spacing'] < 1)
+      $info['line_spacing'] = $info['font_size'];
+
+    if($info['pos'] != 'bottom' && $info['pos'] != 'left' && $info['pos'] != 'right')
+      $info['pos'] = 'top';
+    list($width, $height) = $svg_text->measure($info['title'], $info['font_size'],
+      0, $info['line_spacing']);
+    $info['width'] = $width;
+    $info['height'] = $height;
+
+    // now deal with sub-title
+    $info['stitle'] = $this->getOption('graph_subtitle');
+    $info['sfont'] = $this->getOption('graph_subtitle_font', 'graph_title_font');
+    $svg_subtext = new Text($this, $info['sfont']);
+
+    if($svg_subtext->strlen($info['stitle']) > 0) {
+      $info['sfont_size'] = $this->getOption('graph_subtitle_font_size',
+        'graph_title_font_size');
+      $info['sweight'] = $this->getOption('graph_subtitle_font_weight',
+        'graph_title_font_weight');
+      $info['scolour'] = $this->getOption('graph_subtitle_colour',
+        'graph_title_colour');
+      $info['sspace'] = $this->getOption('graph_subtitle_space',
+        'graph_title_space');
+      $info['sline_spacing'] = $this->getOption('graph_subtitle_line_spacing');
+      if($info['sline_spacing'] === null || $info['sline_spacing'] < 1)
+        $info['sline_spacing'] = $info['sfont_size'];
+
+      list($swidth, $sheight) = $svg_subtext->measure($info['stitle'],
+        $info['sfont_size'], 0, $info['sline_spacing']);
+      $info['swidth'] = $swidth;
+      $info['sheight'] = $sheight;
+    }
+
+    return $info;
+  }
+
+  /**
    * Draws the graph title, if there is one
    */
   protected function drawTitle()
   {
-    $title = $this->getOption('graph_title');
-    $title_font = $this->getOption('graph_title_font');
-
-    $svg_text = new Text($this, $title_font);
-    if($svg_text->strlen($title) <= 0)
+    $info = $this->getTitle();
+    if($info['font_size'] == 0)
       return '';
 
-    $title_font_size = $this->getOption('graph_title_font_size');
-    $title_weight = $this->getOption('graph_title_font_weight');
-    $title_colour = $this->getOption('graph_title_colour');
-    $title_pos = $this->getOption('graph_title_position');
-    $title_space = $this->getOption('graph_title_space');
-    $title_line_spacing = $this->getOption('graph_title_line_spacing');
-    if($title_line_spacing === null || $title_line_spacing < 1)
-      $title_line_spacing = $title_font_size;
-
-    if($title_pos != 'bottom' && $title_pos != 'left' && $title_pos != 'right')
-      $title_pos = 'top';
-    $pad_side = 'pad_' . $title_pos;
-    list($width, $height) = $svg_text->measure($title, $title_font_size,
-      0, $title_line_spacing);
-    $baseline = $svg_text->baseline($title_font_size);
+    $svg_text = new Text($this, $info['font']);
+    $baseline = $svg_text->baseline($info['font_size']);
     $text = [
-      'font-size' => $title_font_size,
-      'font-family' => $title_font,
-      'font-weight' => $title_weight,
+      'font-size' => $info['font_size'],
+      'font-family' => $info['font'],
+      'font-weight' => $info['weight'],
       'text-anchor' => 'middle',
-      'fill' => new Colour($this, $title_colour),
+      'fill' => new Colour($this, $info['colour']),
     ];
 
     // ensure outside padding is at least the title space
-    if($this->{$pad_side} < $title_space)
-      $this->{$pad_side} = $title_space;
+    $pad_side = 'pad_' . $info['pos'];
+    if($this->{$pad_side} < $info['space'])
+      $this->{$pad_side} = $info['space'];
 
     $xform = new Transform;
-    if($title_pos == 'left') {
+    switch($info['pos']) {
+    case 'left':
       $text['x'] = $this->pad_left + $baseline;
       $text['y'] = $this->height / 2;
       $xform->rotate(270, $text['x'], $text['y']);
       $text['transform'] = $xform;
-    } elseif($title_pos == 'right') {
+      break;
+    case 'right':
       $text['x'] = $this->width - $this->pad_right - $baseline;
       $text['y'] = $this->height / 2;
       $xform->rotate(90, $text['x'], $text['y']);
       $text['transform'] = $xform;
-    } elseif($title_pos == 'bottom') {
+      break;
+    case 'bottom':
       $text['x'] = $this->width / 2;
-      $text['y'] = $this->height - $this->pad_bottom - $height + $baseline;
-    } else {
+      $text['y'] = $this->height - $this->pad_bottom - $info['height'] + $baseline;
+      break;
+    default:
       $text['x'] = $this->width / 2;
       $text['y'] = $this->pad_top + $baseline;
     }
     // increase padding by size of text
-    $this->{$pad_side} += $height + $title_space;
+    $this->{$pad_side} += $info['height'] + $info['space'];
 
     // now deal with sub-title
-    $subtitle = $this->getOption('graph_subtitle');
-    $subtitle_font = $this->getOption('graph_subtitle_font', 'graph_title_font');
-    $svg_subtext = new Text($this, $subtitle_font);
-
     $subtitle_text = '';
-    if($svg_subtext->strlen($subtitle) > 0) {
+    if($info['sfont_size'] != 0) {
 
-      $subtitle_font_size = $this->getOption('graph_subtitle_font_size',
-        'graph_title_font_size');
-      $subtitle_weight = $this->getOption('graph_subtitle_font_weight',
-        'graph_title_font_weight');
-      $subtitle_colour = $this->getOption('graph_subtitle_colour',
-        'graph_title_colour');
-      $subtitle_space = $this->getOption('graph_subtitle_space',
-        'graph_title_space');
-      $subtitle_line_spacing = $this->getOption('graph_subtitle_line_spacing');
-      if($subtitle_line_spacing === null || $subtitle_line_spacing < 1)
-        $subtitle_line_spacing = $subtitle_font_size;
-
-      list($swidth, $sheight) = $svg_subtext->measure($subtitle,
-        $subtitle_font_size, 0, $subtitle_line_spacing);
-      $sbaseline = $svg_text->baseline($subtitle_font_size);
+      $svg_subtext = new Text($this, $info['sfont']);
+      $sbaseline = $svg_subtext->baseline($info['sfont_size']);
       $stext = [
-        'font-size' => $subtitle_font_size,
-        'font-family' => $subtitle_font,
-        'font-weight' => $subtitle_weight,
+        'font-size' => $info['sfont_size'],
+        'font-family' => $info['sfont'],
+        'font-weight' => $info['sweight'],
         'text-anchor' => 'middle',
-        'fill' => new Colour($this, $subtitle_colour),
+        'fill' => new Colour($this, $info['scolour']),
       ];
 
       $sxform = new Transform;
-      $sub_offset = $sbaseline + $subtitle_space - $title_space;
-      if($title_pos == 'left') {
+      $sub_offset = $sbaseline + $info['sspace'] - $info['space'];
+      switch($info['pos']) {
+      case 'left':
         $stext['x'] = $this->pad_left + $sub_offset;
         $stext['y'] = $text['y'];
         $sxform->rotate(270, $stext['x'], $stext['y']);
         $stext['transform'] = $sxform;
-      } elseif($title_pos == 'right') {
+        break;
+      case 'right':
         $stext['x'] = $this->width - $this->pad_right - $sub_offset;
         $stext['y'] = $text['y'];
         $sxform->rotate(90, $stext['x'], $stext['y']);
         $stext['transform'] = $sxform;
-      } elseif($title_pos == 'bottom') {
-
+        break;
+      case 'bottom':
         // complicates things - need to shift title up
         $stext['x'] = $text['x'];
-        $stext['y'] = $text['y'] - $baseline + $height + $sbaseline - $sheight;
-        $text['y'] -= $sheight + $subtitle_space;
-      } else {
+        $stext['y'] = $text['y'] - $baseline + $info['height'] + $sbaseline - $info['sheight'];
+        $text['y'] -= $info['sheight'] + $info['sspace'];
+        break;
+      default:
         $stext['x'] = $text['x'];
         $stext['y'] = $this->pad_top + $sub_offset;
       }
 
-      $this->{$pad_side} += $sheight + $subtitle_space;
-      $subtitle_text = $svg_subtext->text($subtitle, $subtitle_line_spacing, $stext);
+      $this->{$pad_side} += $info['sheight'] + $info['sspace'];
+      $subtitle_text = $svg_subtext->text($info['stitle'], $info['sline_spacing'], $stext);
     }
 
     // the Text function will break it into lines
-    $title_text = $svg_text->text($title, $title_line_spacing, $text);
+    $title_text = $svg_text->text($info['title'], $info['line_spacing'], $text);
 
     return $title_text . $subtitle_text;
   }
