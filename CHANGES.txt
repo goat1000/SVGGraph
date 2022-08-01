@@ -1,3 +1,11 @@
+Version 3.16 (29/07/2022)
+------------
+- Added support for multiple task bars/milestones on Gantt chart rows.
+- Added axis_double_x and axis_double_y options for same axis both sides.
+- Added axis_pad_* options for adding space between axes and grid.
+- Added axis_extend_* options for extending ends of axes.
+- Fixed axis with levels on right side of horizontal graph.
+
 Version 3.15 (16/06/2022)
 ------------
 - Added dependency arrow support to Gantt charts.
