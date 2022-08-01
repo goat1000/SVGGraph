@@ -44,6 +44,7 @@ class DisplayAxis {
   protected $minimum_subdivision;
   protected $minimum_units;
   protected $subdivisions_fixed;
+  protected $offset = [0, 0];
 
   /**
    * $orientation = 'h' or 'v'
@@ -72,6 +73,23 @@ class DisplayAxis {
       $this->show_text = $graph->getOption('show_axis_text_' . $o);
     }
 
+    // offset caused by padding between axis and grid
+    if($o == 'v') {
+      switch($axis_no) {
+      case 0: $this->offset[0] = -$graph->getOption('axis_pad_left');
+        break;
+      case 1: $this->offset[0] = $graph->getOption('axis_pad_right');
+        break;
+      }
+    } else {
+      switch($axis_no) {
+      case 0: $this->offset[1] = $graph->getOption('axis_pad_bottom');
+        break;
+      case 1: $this->offset[1] = -$graph->getOption('axis_pad_top');
+        break;
+      }
+    }
+
     // lambda to make retrieving options simpler
     $get_axis_option = function($option) use ($graph, $o, $axis_no) {
       return $graph->getOption([$option . '_' . $o, $axis_no], $option);
@@ -94,6 +112,17 @@ class DisplayAxis {
     if($this->show_axis) {
       $styles['overlap'] = $graph->getOption('axis_overlap');
       $styles['stroke_width'] = $get_axis_option('axis_stroke_width');
+      if($o == 'v') {
+        $styles['extend'] = [
+          $graph->getOption('axis_extend_top', 'axis_pad_top'),
+          $graph->getOption('axis_extend_bottom', 'axis_pad_bottom'),
+        ];
+      } else {
+        $styles['extend'] = [
+          $graph->getOption('axis_extend_left', 'axis_pad_left'),
+          $graph->getOption('axis_extend_right', 'axis_pad_right'),
+        ];
+      }
 
       if($graph->getOption('show_divisions')) {
         $this->show_divisions = true;
@@ -226,7 +255,23 @@ class DisplayAxis {
       $bbox->grow($lpos['x'], $lpos['y'], $lpos['x'] + $lpos['width'],
         $lpos['y'] + $lpos['height']);
     }
+    $bbox = $this->addOffset($bbox);
 
+    return $bbox;
+  }
+
+  /**
+   * Adds the padding offset to the bounding box
+   */
+  protected function addOffset(BoundingBox $bbox)
+  {
+    if($this->axis_no > 0) {
+      $bbox->x2 += $this->offset[0];
+      $bbox->y1 += $this->offset[1];
+    } else {
+      $bbox->x1 += $this->offset[0];
+      $bbox->y2 += $this->offset[1];
+    }
     return $bbox;
   }
 
@@ -404,6 +449,10 @@ class DisplayAxis {
   public function draw($x, $y, $gx, $gy, $g_width, $g_height)
   {
     $content = '';
+    $x += $this->offset[0];
+    $y += $this->offset[1];
+    $gx += $this->offset[0];
+    $gy += $this->offset[1];
     if($this->show_axis) {
       if($this->show_divisions) {
         $content .= $this->drawDivisions($x, $y, $g_width, $g_height);
@@ -433,8 +482,12 @@ class DisplayAxis {
     $reversed = $this->axis->reversed();
     if($this->orientation == 'h') {
       $x = $reversed ? $x - $overlap - $len : $x - $overlap;
+      $x -= $this->styles['extend'][0];
+      $length += $this->styles['extend'][0] + $this->styles['extend'][1];
     } else {
       $y = $reversed ? $y - $overlap - $len : $y - $overlap;
+      $y -= $this->styles['extend'][0];
+      $length += $this->styles['extend'][0] + $this->styles['extend'][1];
     }
 
     $colour = $this->styles['colour'];
@@ -534,6 +587,7 @@ class DisplayAxis {
             if(!$opposite) {
               $anchor = 'start';
               $x_offset = $bbox->x1 + $space;
+              $x_offset -= $this->offset[0];
             }
           } else {
             $anchor = 'start';
@@ -664,6 +718,7 @@ class DisplayAxis {
       } else {
         $y = $bbox->y2 + $space;
       }
+      $y -= $this->offset[1]; // handle padding offset
       if(is_numeric($align)) {
         $tx = $a_length * $align;
       } else {
@@ -690,9 +745,11 @@ class DisplayAxis {
       $reversed = $this->axis->reversed();
       if($this->axis_no > 0) {
         $x = $bbox->x2 + $space;
+        $x -= $this->offset[0]; // handle padding offset
         $tx = $x + $width - $baseline;
       } else {
         $x = $bbox->x1 - $space - $width;
+        $x -= $this->offset[0]; // handle padding offset
         $tx = $x + $baseline;
         $x -= $space;
       }

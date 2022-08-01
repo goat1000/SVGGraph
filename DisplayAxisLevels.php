@@ -75,8 +75,13 @@ class DisplayAxisLevels extends DisplayAxis {
           $tbox->offset(0, $bbox->y2);
         }
       } else {
-        $dbox->offset($bbox->x1, 0);
-        $tbox->offset($bbox->x1, 0);
+        if($this->axis_no > 0) {
+          $dbox->offset($bbox->x2, 0);
+          $tbox->offset($bbox->x2, 0);
+        } else {
+          $dbox->offset($bbox->x1, 0);
+          $tbox->offset($bbox->x1, 0);
+        }
       }
       // store the text box for this level
       $this->levels[$i]['text_box'] = $tbox;
@@ -90,6 +95,7 @@ class DisplayAxisLevels extends DisplayAxis {
       $bbox->grow($lpos['x'], $lpos['y'], $lpos['x'] + $lpos['width'],
         $lpos['y'] + $lpos['height']);
     }
+    $bbox = $this->addOffset($bbox);
 
     return $bbox;
   }
@@ -174,7 +180,10 @@ class DisplayAxisLevels extends DisplayAxis {
           break;
         }
       } else {
-        $x1 = $x_offset + $tbox->x2;
+        if($this->axis_no > 0)
+          $x1 = $x_offset + $tbox->x1;
+        else
+          $x1 = $x_offset + $tbox->x2;
         switch($this->styles['t_align']) {
         case 'left':
           if(!$opposite) {

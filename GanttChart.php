@@ -292,8 +292,10 @@ class GanttChart extends HorizontalBarGraph {
     $v_style = $v_d_a->getStyling();
     $h_style = $h_d_a->getStyling();
 
-    // fixed space allows for two lines of labels, plus two of headings
+    // fixed space allows for two lines of labels, plus two of headings, plus padding
     $fixed = $this->pad_bottom + $this->pad_top;
+    $fixed += $this->getOption('axis_pad_top') + $this->getOption('axis_pad_bottom');
+
     if(isset($h_style['t_font_size'])) {
       $space = isset($h_style['t_space']) ? $h_style['t_space'] : 1;
       if($h_style['d_style'] == 'box')
