@@ -688,6 +688,8 @@ class DataLabels {
       'troughs' => function() use ($index, $dataset) {
         return in_array($index, $this->trough_indices[$dataset], true); },
       'nonzero' => function() use (&$item) { return $item->value != 0; },
+      'none' => function() use (&$item) {
+        return $item->label !== null && $item->label !== ''; },
     ];
 
     foreach($filters as $f) {
