@@ -19,6 +19,7 @@ function texttt(e,tt,on,t){
     for(i = 0; i < lines.length; ++i) {
       ts = newel('text', { y: {$number:ttoffset} + ({$number:tty} * i) + 'px' });
       ts.appendChild(newtext(lines[i]));
+      ts.innerHTML = ts.textContent;
       ttt.appendChild(ts);
     }
   }
