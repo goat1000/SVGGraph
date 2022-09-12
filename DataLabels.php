@@ -89,6 +89,7 @@ class DataLabels {
     'shadow_opacity' => 'data_label_shadow_opacity',
     'opacity' => 'data_label_opacity',
     'line_spacing' => 'data_label_line_spacing',
+    'align' => 'data_label_align',
   ];
 
   function __construct(&$graph)
@@ -507,6 +508,23 @@ class DataLabels {
     $svg_text = new Text($this->graph, $style['font'], $style['font_adjust']);
     list($tbw, $tbh) = $svg_text->measure($content, $font_size, 0, $line_spacing);
     $text_baseline = $svg_text->baseline($font_size);
+
+    // allow overriding text alignment
+    $align_map = ['left' => 'start', 'centre' => 'middle', 'right' => 'end'];
+    if($style['align'] !== null && isset($align_map[$style['align']])) {
+      $anchor_new = $align_map[$style['align']];
+      if($anchor_new != $anchor) {
+        // adjust label position for new anchor
+        $pos_remap = [
+          'middle' => ['start' => -0.5, 'end' => 0.5],
+          'start' => ['middle' => 0.5, 'end' => 1.0],
+          'end' => ['start' => -1.0, 'middle' => -0.5],
+        ];
+
+        $x += ($label_w * $pos_remap[$anchor][$anchor_new]);
+        $anchor = $anchor_new;
+      }
+    }
 
     $text['y'] = $y + ($label_h - $tbh) / 2 + $text_baseline;
     if($style['angle'] != 0) {
