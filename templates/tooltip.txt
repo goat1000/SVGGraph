@@ -28,7 +28,7 @@ function tooltip(e,callback,on,param) {
     bh = Math.ceil(brect.height + {$number:dpad});
     setattr(rect, 'width', bw + 'px');
     setattr(rect, 'height', bh + 'px');
-    setattr(inner, 'transform', 'translate(' + (bw / 2) + ',0)');
+    {$string:transform_part}
     if(shadow) {
       setattr(shadow, 'width', (bw + {$number:stroke_width}) + 'px');
       setattr(shadow, 'height', (bh + {$number:stroke_width}) + 'px');

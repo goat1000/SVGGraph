@@ -118,7 +118,7 @@ class Javascript {
         'svgCursorCoords');
       $this->insertVariable('tooltipOn', '');
       $opts = ['stroke_width', 'shadow_opacity', 'round', 'padding',
-        'back_colour', 'offset'];
+        'back_colour', 'offset', 'align'];
       $vars = [];
       foreach($opts as $opt) {
         $vars[$opt] = $this->graph->getOption('tooltip_' . $opt);
@@ -148,6 +148,18 @@ class Javascript {
         $shadow_part .= 'tt.appendChild(shadow);';
       }
 
+      $vars['transform_part'] = "setattr(inner, 'transform', 'translate(";
+      switch($vars['align']) {
+      case 'left' :
+        $vars['transform_part'] .= new Number($vars['padding']) . ",0)');";
+        break;
+      case 'right' :
+        $vars['transform_part'] .= "' + (bw - " .  new Number($vars['padding']) . ") + ',0)');";
+        break;
+      default:
+        $vars['transform_part'] .= "' + (bw / 2) + ',0)');";
+      }
+
       $vars['round_part'] = $round_part;
       $vars['shadow_part'] = $shadow_part;
       $vars['dpad'] = 2 * $vars['padding'];
@@ -157,7 +169,8 @@ class Javascript {
 
     case 'texttt' :
       $this->addFuncs('getE', 'setattr', 'newel', 'newtext');
-      $opts = ['padding', 'colour', 'font', 'font_size', 'font_weight', 'line_spacing'];
+      $opts = ['padding', 'colour', 'font', 'font_size', 'font_weight',
+        'line_spacing', 'align'];
       $vars = [];
       foreach($opts as $opt)
         $vars[$opt] = $this->graph->getOption('tooltip_' . $opt);
@@ -167,6 +180,10 @@ class Javascript {
         $vars['tty'] = $vars['ttoffset'];
       else
         $vars['tty'] = $vars['line_spacing'];
+
+      $anchors = ['left' => 'start', 'right' => 'end'];
+      $vars['anchor'] = isset($anchors[$vars['align']]) ?
+        $anchors[$vars['align']] : 'middle';
       return $this->insertTemplate('texttt', $vars);
 
     case 'ttEvent' :

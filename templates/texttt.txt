@@ -10,7 +10,7 @@ function texttt(e,tt,on,t){
         'font-size': '{$number:font_size}px',
         'font-family': '{$string:font}',
         'font-weight': '{$string:font_weight}',
-        'text-anchor': 'middle'
+        'text-anchor': '{$string:anchor}'
       });
       tt.appendChild(ttt);
     }
