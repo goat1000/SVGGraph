@@ -56,6 +56,16 @@ class AxisFixedTicks extends Axis {
   }
 
   /**
+   * For bar graphs, increase length by 1 unit
+   */
+  public function bar()
+  {
+    $this->unit_length++;
+    $this->setLength($this->length);
+    parent::bar();
+  }
+
+  /**
    * Returns the size of a unit in grid space
    */
   public function unit()
