@@ -1,3 +1,11 @@
+Version 3.17 (16/09/2022)
+------------
+- Added axis_tightness_x option for removing space at ends of X-axis.
+- Added data_label_align option for label text alignment.
+- Added tooltip_align option for tooltip text alignment.
+- Fixed missing final bar when using axis_ticks_x with bar graphs.
+- Fixed data labels from structured data not showing when filter set to "none".
+
 Version 3.16 (29/07/2022)
 ------------
 - Added support for multiple task bars/milestones on Gantt chart rows.
