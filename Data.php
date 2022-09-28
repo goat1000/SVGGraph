@@ -251,6 +251,14 @@ class Data implements \Countable, \ArrayAccess, \Iterator {
   }
 
   /**
+   * Doesn't return a structured data item
+   */
+  public function getItem($index, $dataset = 0)
+  {
+    return null;
+  }
+
+  /**
    * Transforms the keys using a callback function
    */
   public function rekey($callback)

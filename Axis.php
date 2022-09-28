@@ -514,11 +514,9 @@ class Axis {
     if($this->values) {
 
       // try structured data first
-      if(method_exists($this->values, 'getItem')) {
-        $item = $this->values->getItem($value);
-        if($this->values->getData($value, 'axis_text', $text))
-          return new GridPoint($position, $text, $value, $item);
-      }
+      $item = $this->values->getItem($value);
+      if($item !== null && $this->values->getData($value, 'axis_text', $text))
+        return new GridPoint($position, $text, $value, $item);
 
       // use the key if it is not the same as the value
       $key = $this->values->getKey($value);
