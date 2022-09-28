@@ -95,7 +95,7 @@ class PathData {
   public function __toString()
   {
     // already contains a string, this just reduces whitespace
-    return preg_replace(['/ ([a-zA-Z])/', '/([a-zA-Z]) /'], '${1}', $this->parts);
+    return preg_replace(['/ ([a-zA-Z])/', '/([a-zA-Z]) /'], '$1', $this->parts);
   }
 
   /**
