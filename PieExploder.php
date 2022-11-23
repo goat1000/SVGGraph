@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2021 Graham Breach
+ * Copyright (C) 2017-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,24 +77,25 @@ class PieExploder {
   {
     if($item === null)
       return [0,0];
-    $range = $this->largest_value - $this->smallest_value;
-    switch($this->explode) {
-    case 'none' :
-      $diff = 0;
-      break;
-    case 'all' :
-      $diff = $range;
-      break;
-    case 'large' :
-      $diff = $item->value - $this->smallest_value;
-      break;
-    default :
-      $diff = $this->largest_value - $item->value;
-    }
-    $amt = $range > 0 ? $diff / $range : 0;
     $iamt = $item->explode;
-    if($iamt !== null)
+    if($iamt !== null) {
       $amt = $iamt;
+    } else {
+      $range = $this->largest_value - $this->smallest_value;
+      switch($this->explode) {
+      case 'none' :
+        $amt = 0;
+        break;
+      case 'all' :
+        $amt = 1;
+        break;
+      case 'large' :
+        $amt = $range <= 0 ? 0 : ($item->value - $this->smallest_value) / $range;
+        break;
+      default :
+        $amt = $range <= 0 ? 0 : ($this->largest_value - $item->value) / $range;
+      }
+    }
     $explode = $this->explode_amount * $amt;
     $explode_direction = $angle_start + ($angle_end - $angle_start) * 0.5;
     $xo = $explode * cos($explode_direction);
