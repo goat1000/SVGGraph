@@ -95,6 +95,17 @@ class Defs {
   }
 
   /**
+   * Returns the colour at a point in the selected gradient
+   */
+  public function getGradientColour($key, $position)
+  {
+    if($this->gradients === null)
+      return 'none';
+
+    return $this->gradients->getColour($key, $position);
+  }
+
+  /**
    * Adds a pattern, returning the element ID
    */
   public function addPattern($pattern)

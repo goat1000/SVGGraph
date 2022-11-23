@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -98,6 +98,58 @@ class GradientList {
     }
 
     return $this->graph->element($type, $gradient, null, $stops);
+  }
+
+  /**
+   * Calculates a colour component from a gradient step
+   */
+  private function calcComponent($c0, $c1, $o0, $o1, $d)
+  {
+    return $c0 + ($c1 - $c0) * ($d - $o0) / ($o1 - $o0);
+  }
+
+  /**
+   * Returns the colour at a position in the gradient
+   */
+  public function getColour($key, $position)
+  {
+    if(!isset($this->gradients[$key]))
+      return '';
+    $colours = $this->gradients[$key]['colours'];
+    if(in_array($colours[count($colours)-1], ['h', 'v', 'r']))
+      $direction = array_pop($colours);
+    $segments = $this->decompose($colours);
+
+    $position = min(100, max(0, $position));
+    $seg0 = $segments[0];
+    $seg1 = null;
+    foreach($segments as $seg) {
+      if(abs($seg[0] - $position) < 0.1) {
+        // stop colour at or close to requested position
+        $c = $seg[1]->rgb();
+        $colour = new Colour($this->graph, "rgb({$c[0]},{$c[1]},{$c[2]}):{$seg[2]}");
+        return $colour;
+      }
+
+      if($seg[0] > $position) {
+        $seg1 = $seg;
+        break;
+      }
+      $seg0 = $seg;
+    }
+    if($seg1 === null) {
+      $seg1 = array_pop($segments);
+      $seg1[0] = 100;
+    }
+
+    $c0 = $seg0[1]->rgb();
+    $c1 = $seg1[1]->rgb();
+    $vr = $this->calcComponent($c0[0], $c1[0], $seg0[0], $seg1[0], $position);
+    $vg = $this->calcComponent($c0[1], $c1[1], $seg0[0], $seg1[0], $position);
+    $vb = $this->calcComponent($c0[2], $c1[2], $seg0[0], $seg1[0], $position);
+    $va = $this->calcComponent($seg0[2], $seg1[2], $seg0[0], $seg1[0], $position);
+    $colour = new Colour($this->graph, "rgb({$vr},{$vg},{$vb}):{$va}");
+    return $colour;
   }
 
   /**

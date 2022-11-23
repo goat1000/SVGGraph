@@ -219,7 +219,7 @@ class RGBColour {
     if(strlen($colour) === 4)
       $c = RGBColour::hex3ToHex($colour);
 
-    if(preg_match('/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i', $c, $m)) {
+    if($c !== null && preg_match('/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i', $c, $m)) {
       $red = $m[1];
       $green = $m[2];
       $blue = $m[3];

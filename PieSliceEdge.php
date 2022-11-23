@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2021 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -176,6 +176,16 @@ class PieSliceEdge {
   public function curve()
   {
     return $this->type > 1;
+  }
+
+  /**
+   * Returns angle of flat path
+   */
+  public function angle()
+  {
+    if($this->type > 1)
+      return 0;
+    return $this->type == 1 ? $this->a2 : $this->a1;
   }
 
   /**

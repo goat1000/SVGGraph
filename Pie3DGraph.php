@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2021 Graham Breach
+ * Copyright (C) 2010-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -127,7 +127,7 @@ class Pie3DGraph extends PieGraph {
     $content = '';
 
     // the gradient overlay uses a clip-path
-    if($overlay && $edge->curve()) {
+    if($overlay) {
       $clip_id = $this->newID();
       $this->defs->add($edge->getClipPath($this, $x_centre, $y_centre, $depth,
         $clip_id));
@@ -171,15 +171,35 @@ class Pie3DGraph extends PieGraph {
     }
 
     // clip a rect to the edge shape
-    $gradient_id = $this->defs->addGradient($this->depth_shade_gradient);
     $rect = [
       'x' => $x_centre - $radius_x,
       'y' => $y_centre - $radius_y,
       'width' => $radius_x * 2.0,
       'height' => $radius_y * 2.0 + $this->depth + 2.0,
-      'fill' => 'url(#' . $gradient_id . ')',
       'clip-path' => 'url(#' . $clip_path . ')',
     ];
+
+    $gradient_id = $this->defs->addGradient($this->depth_shade_gradient);
+    if($edge->curve()) {
+      $rect['fill'] = 'url(#' . $gradient_id . ')';
+    } else {
+      $a = $edge->angle();
+      if($a > M_PI)
+        $a -= M_PI;
+
+      $pos = 50 * cos($a);
+      if($pos < 0)
+        $pos = 100 + $pos;
+
+      $fill = $this->defs->getGradientColour($gradient_id, $pos);
+      $opacity = $fill->opacity();
+
+      if($opacity < 0.01)
+        return '';
+      if($opacity < 0.99)
+        $rect['opacity'] = $opacity;
+      $rect['fill'] = $fill;
+    }
     return $this->element('rect', $rect);
   }
 }
