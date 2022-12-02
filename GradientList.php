@@ -120,6 +120,17 @@ class GradientList {
       $direction = array_pop($colours);
     $segments = $this->decompose($colours);
 
+    // function to produce colour string
+    $make_colour = function($r, $g, $b, $o) {
+      $str = "rgb({$r},{$g},{$b})";
+      if(!is_numeric($o) || $o >= 1)
+        return $str;
+      if($o <= 0)
+        return 'none';
+      $str .= ':' . $o;
+      return $str;
+    };
+
     $position = min(100, max(0, $position));
     $seg0 = $segments[0];
     $seg1 = null;
@@ -127,7 +138,8 @@ class GradientList {
       if(abs($seg[0] - $position) < 0.1) {
         // stop colour at or close to requested position
         $c = $seg[1]->rgb();
-        $colour = new Colour($this->graph, "rgb({$c[0]},{$c[1]},{$c[2]}):{$seg[2]}");
+        $c_string = $make_colour($c[0], $c[1], $c[2], $seg[2]);
+        $colour = new Colour($this->graph, $c_string);
         return $colour;
       }
 
@@ -147,8 +159,12 @@ class GradientList {
     $vr = $this->calcComponent($c0[0], $c1[0], $seg0[0], $seg1[0], $position);
     $vg = $this->calcComponent($c0[1], $c1[1], $seg0[0], $seg1[0], $position);
     $vb = $this->calcComponent($c0[2], $c1[2], $seg0[0], $seg1[0], $position);
-    $va = $this->calcComponent($seg0[2], $seg1[2], $seg0[0], $seg1[0], $position);
-    $colour = new Colour($this->graph, "rgb({$vr},{$vg},{$vb}):{$va}");
+
+    $o0 = $seg0[2] === null ? 1 : $seg0[2];
+    $o1 = $seg1[2] === null ? 1 : $seg1[2];
+    $vo = $this->calcComponent($o0, $o1, $seg0[0], $seg1[0], $position);
+    $c_string = $make_colour($vr, $vg, $vb, $vo);
+    $colour = new Colour($this->graph, $c_string);
     return $colour;
   }
 

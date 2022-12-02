@@ -194,7 +194,7 @@ class Pie3DGraph extends PieGraph {
       $fill = $this->defs->getGradientColour($gradient_id, $pos);
       $opacity = $fill->opacity();
 
-      if($opacity < 0.01)
+      if($opacity < 0.01 || $fill->isNone())
         return '';
       if($opacity < 0.99)
         $rect['opacity'] = $opacity;
