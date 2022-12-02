@@ -92,6 +92,13 @@ class DataLabels {
     'align' => 'data_label_align',
   ];
 
+  /**
+   * Options that are colours, so need translation
+   */
+  protected $colour_options = [
+    'colour', 'altcolour', 'back_colour', 'back_altcolour', 'stroke', 'fill',
+  ];
+
   function __construct(&$graph)
   {
     $this->graph =& $graph;
@@ -378,9 +385,19 @@ class DataLabels {
 
     // structured styles and user defined label styles
     if($gobject['item'] !== null)
-      $this->itemStyles($style, $gobject['item']);
+      $this->itemStyles($style, $gobject['item'], $index, $dataset);
     elseif($dataset === '_user')
       $this->userStyles($style, $gobject);
+
+    // deal with fill/fillColour
+    foreach($this->colour_options as $s) {
+      if(isset($style[$s]) && is_string($style[$s]) &&
+        strpos($style[$s], 'fill') !== false) {
+        $cg = new ColourGroup($this->graph, $gobject['item'], $index, $dataset,
+          $style[$s], null, null, true);
+        $style[$s] = $cg->stroke();
+      }
+    }
     return $style;
   }
 
@@ -435,13 +452,15 @@ class DataLabels {
   protected function getColours($hpos, $vpos, $style)
   {
     // if the position is outside, use the alternative colours
-    $colour = $style['colour'];
-    $back_colour = $style['back_colour'];
+    $colour = new Colour($this->graph, $style['colour']);
+    $back_colour = new Colour($this->graph, $style['back_colour']);
     if(strpos($hpos . $vpos, 'o') !== false) {
-      if(!empty($style['altcolour']))
-        $colour = $style['altcolour'];
-      if(!empty($style['back_altcolour']))
-        $back_colour = $style['back_altcolour'];
+      $alt = new Colour($this->graph, $style['altcolour']);
+      $back_alt = new Colour($this->graph, $style['back_altcolour']);
+      if(!$alt->isNone())
+        $colour = $alt;
+      if(!$back_alt->isNone())
+        $back_colour = $back_alt;
     }
     return [$colour, $back_colour];
   }
@@ -493,7 +512,7 @@ class DataLabels {
     $text = [
       'font-family' => $style['font'],
       'font-size' => $font_size,
-      'fill' => new Colour($this->graph, $colour),
+      'fill' => $colour,
     ];
 
     $label_markup = '';
@@ -603,10 +622,11 @@ class DataLabels {
       }
     }
 
-    if(!empty($back_colour)) {
+    //$back_colour = new Colour($this, $back_colour);
+    if(!$back_colour->isNone()) {
       $outline = [
         'stroke-width' => '3px',
-        'stroke' => new Colour($this->graph, $back_colour),
+        'stroke' => $back_colour,
         'stroke-linejoin' => 'round',
       ];
       $t1 = array_merge($outline, $text);
@@ -640,7 +660,7 @@ class DataLabels {
   /**
    * Individual label styles from the structured data item
    */
-  protected function itemStyles(&$style, &$item)
+  protected function itemStyles(&$style, &$item, $index, $dataset)
   {
     // overwrite any style options that the item has set
     $v = $item->data_label_padding;

@@ -84,7 +84,8 @@ class Colours implements \Countable {
       return $this->colours[$dataset][$index];
 
     // try mod
-    $dataset = $dataset % $this->dataset_count;
+    if(is_numeric($dataset))
+      $dataset = $dataset % $this->dataset_count;
     if(array_key_exists($dataset, $this->colours))
       return $this->colours[$dataset][$index];
 

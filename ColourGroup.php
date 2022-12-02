@@ -28,9 +28,11 @@ class ColourGroup {
   private $stroke;
 
   public function __construct(&$graph, $item, $key, $dataset,
-    $stroke_opt = 'stroke_colour', $fill = null, $item_opt = null)
+    $stroke_opt = 'stroke_colour', $fill = null, $item_opt = null,
+    $stroke_opt_is_colour = false)
   {
-    $stroke = $graph->getItemOption($stroke_opt, $dataset, $item, $item_opt);
+    $stroke = $stroke_opt_is_colour ? $stroke_opt :
+      $graph->getItemOption($stroke_opt, $dataset, $item, $item_opt);
     if(is_array($stroke)) {
       $this->stroke = new Colour($graph, $stroke);
       return;

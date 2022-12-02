@@ -1,3 +1,10 @@
+Version 3.18 (02/12/2022)
+------------
+- Added shading of flat 3D pie graph sides.
+- Added support for colouring data labels using "fill" and "fillColour".
+- Fixed axis_text structure option on multi-dataset graphs.
+- Fixed explode "all" doing nothing on pie graphs with all values equal.
+
 Version 3.17 (16/09/2022)
 ------------
 - Added axis_tightness_x option for removing space at ends of X-axis.
