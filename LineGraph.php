@@ -134,7 +134,7 @@ class LineGraph extends PointGraph {
       if(!empty($dash))
         $attr['stroke-dasharray'] = $dash;
       $attr['stroke-width'] = $stroke_width <= 0 ? 1 : $stroke_width;
-      $y_bottom = new Number($y_bottom);
+      $y_bottom = new Number($fill === 'full' ? $this->height - $this->pad_bottom : $y_bottom);
 
       $line_points = $this->getLinePoints($points);
       $curve = min(5, max(0, $this->getOption(['line_curve', $dataset])));
