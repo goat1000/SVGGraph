@@ -150,7 +150,7 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   public static function convertFrom($values, $force_assoc, $datetime_keys,
     $int_keys)
   {
-    if(count($values) > 1 && $values instanceof Data) {
+    if($values instanceof Data) {
       $new_data = [];
       $count = count($values);
       $structure = ['key' => 0, 'value' => []];
@@ -590,35 +590,30 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   /**
    * Transforms values using a callback function
    */
-  public function revalue($callback, $fields = null)
+  public function revalue($datasets, $callback)
   {
-    // figure out which fields to convert
-    if($fields == null) {
-      $field_list = $this->structure['value'];
-    } else {
+    // $datasets is the number in the output
+    $new_values = [];
+    for($i = 0; $i < $datasets; ++$i)
+      $new_values[] = uniqid('val', false);
 
-      if(!is_array($fields))
-        $fields = [$fields];
-      $field_list = [];
-      foreach($fields as $f) {
-        if(isset($this->structure[$f])) {
-          $field = $this->structure[$f];
-          if(is_array($field))
-            $field_list = array_merge($field_list, $field);
-          else
-            $field_list[] = $field;
-        }
-      }
-    }
-
-    // call the callback for each value found
+    // call the callback for each row of values
     foreach($this->data as $index => $item) {
-      foreach($field_list as $field) {
-        if(isset($item[$field])) {
-          $this->data[$index][$field] = call_user_func($callback, $item[$field]);
-        }
-      }
+      $row = [];
+      foreach($this->dataset_fields as $field)
+        $row[] = isset($item[$field]) ? $item[$field] : null;
+
+      // get updated row
+      $new_row = call_user_func($callback, $item[$this->key_field], $row);
+      for($i = 0; $i < $datasets; ++$i)
+        $this->data[$index][$new_values[$i]] = isset($new_row[$i]) ?
+          $new_row[$i] : null;
     }
+
+    // update structure with new value fields
+    $this->structure['value'] = $new_values;
+    $this->dataset_fields = $new_values;
+    $this->datasets = $datasets;
 
     // forget previous min/max
     $this->min_values = [];
@@ -667,6 +662,36 @@ class StructuredData implements \Countable, \ArrayAccess, \Iterator {
   {
     if(!array_key_exists($name, $this->structure))
       $this->structure[$name] = uniqid($name, true);
+  }
+
+  /**
+   * Adds a row to the data at end or at $insert position
+   */
+  public function addRow(array $row, $insert = null)
+  {
+    if($insert === null || $insert >= count($this->data)) {
+      $this->data[] = $row;
+      return;
+    }
+    array_splice($this->data, $insert, 0, [$row]);
+  }
+
+  /**
+   * Returns the structure array
+   */
+  public function getStructure()
+  {
+    return $this->structure;
+  }
+
+  /**
+   * Sorts the data by the selected dataset values
+   */
+  public function sort($dataset, $reverse)
+  {
+    $key = $this->dataset_fields[$dataset];
+    $field_sort = new FieldSort($key, $reverse);
+    $field_sort->sort($this->data);
   }
 }
 
