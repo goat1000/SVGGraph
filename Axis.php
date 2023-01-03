@@ -43,6 +43,7 @@ class Axis {
   protected $label_callback = false;
   protected $values = false;
   protected $tightness = 1;
+  protected $grid_spacing;
 
   public function __construct($length, $max_val, $min_val, $min_unit, $min_space,
     $fit, $units_before, $units_after, $decimal_digits, $label_callback, $values)

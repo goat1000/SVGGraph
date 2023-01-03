@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2016-2022 Graham Breach
+ * Copyright (C) 2016-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +48,7 @@ class Legend {
   protected $stroke_colour;
   protected $stroke_width;
   protected $text_side;
+  protected $line_spacing;
   protected $title;
   protected $title_colour;
   protected $title_font;
@@ -371,10 +372,10 @@ class Legend {
         $o0 = 1;
         $group['opacity'] = $o1;
       }
-      $this->graph->javascript->autoHide($group, $o0, $o1);
+      $this->graph->getJavascript()->autoHide($group, $o0, $o1);
     }
     if($this->draggable)
-      $this->graph->javascript->setDraggable($group);
+      $this->graph->getJavascript()->setDraggable($group);
     return $this->graph->element('g', $group, null, $rect . $title . $parts);
   }
 

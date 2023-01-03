@@ -66,7 +66,7 @@ abstract class PointGraph extends GridGraph {
    */
   public function drawMarkers()
   {
-    if($this->marker_size == 0 || count($this->markers) == 0)
+    if($this->getOption('marker_size') == 0 || count($this->markers) == 0)
       return '';
 
     $this->createMarkers();
@@ -78,7 +78,7 @@ abstract class PointGraph extends GridGraph {
     }
 
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -110,11 +110,11 @@ abstract class PointGraph extends GridGraph {
 
     if(is_array($marker->extra))
       $use = array_merge($marker->extra, $use);
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $use['class'] = 'series' . $set;
-    if($this->show_tooltips)
+    if($this->getOption('show_tooltips'))
       $this->setTooltip($use, $marker->item, $set, $marker->key, $marker->value);
-    if($this->show_context_menu)
+    if($this->getOption('show_context_menu'))
       $this->setContextMenu($use, $set, $marker->item);
 
     if($this->getLinkURL($marker->item, $marker->key)) {
@@ -313,21 +313,21 @@ abstract class PointGraph extends GridGraph {
    */
   protected function formatTooltip(&$item, $dataset, $key, $value)
   {
-    if($this->datetime_keys) {
+    if($this->getOption('datetime_keys')) {
       $number_key = new Number($key);
       $dt = new \DateTime('@' . $number_key);
       $axis = $this->x_axes[$this->main_x_axis];
-      $text = $axis->format($dt, $this->tooltip_datetime_format);
+      $text = $axis->format($dt, $this->getOption('tooltip_datetime_format'));
     } elseif(is_numeric($key)) {
-      $num = new Number($key, $this->units_tooltip_key,
-        $this->units_before_tooltip_key);
+      $num = new Number($key, $this->getOption('units_tooltip_key'),
+        $this->getOption('units_before_tooltip_key'));
       $text = $num->format();
     } else {
       $text = $key;
     }
 
-    $num = new Number($value, $this->units_tooltip,
-      $this->units_before_tooltip);
+    $num = new Number($value, $this->getOption('units_tooltip'),
+      $this->getOption('units_before_tooltip'));
     $text .= ', ' . $num->format();
     return $text;
   }

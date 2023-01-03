@@ -136,7 +136,7 @@ class BarAndLineGraph extends GroupedBarGraph {
     $bars .= $this->element('g', $group, null, $graph_line);
 
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -176,9 +176,9 @@ class BarAndLineGraph extends GroupedBarGraph {
       throw new \Exception('No bar datasets enabled');
 
     list($chunk_width, $bspace, $chunk_unit_width) =
-      $this->barPosition($this->bar_width, $this->bar_width_min,
-      $this->x_axes[$this->main_x_axis]->unit(), $chunk_count, $this->bar_space,
-      $this->group_space);
+      $this->barPosition($this->getOption('bar_width'), $this->getOption('bar_width_min'),
+      $this->x_axes[$this->main_x_axis]->unit(), $chunk_count, $this->getOption('bar_space'),
+      $this->getOption('group_space'));
     $this->group_bar_spacing = $chunk_unit_width;
     $this->setBarWidth($chunk_width, $bspace);
   }

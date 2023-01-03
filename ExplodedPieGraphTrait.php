@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@ namespace Goat1000\SVGGraph;
 trait ExplodedPieGraphTrait {
 
   protected $pie_exploder = null;
+  protected $explode_amount = 0;
 
   /**
    * Calculates reduced radius of pie
@@ -80,9 +81,8 @@ trait ExplodedPieGraphTrait {
         $x1 += $xo;
         $y1 += $yo;
       } else {
-        // this shouldn't happen, but just in case
-        $x1 = $this->centre_x + $xo;
-        $y1 = $this->centre_y + $yo;
+        $x1 = $xo;
+        $y1 = $yo;
       }
 
       // explode target position too

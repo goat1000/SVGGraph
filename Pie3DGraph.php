@@ -24,6 +24,7 @@ namespace Goat1000\SVGGraph;
 class Pie3DGraph extends PieGraph {
 
   protected $edge_class = 'Goat1000\\SVGGraph\\PieSliceEdge';
+  protected $depth;
 
   public function __construct($w, $h, array $settings, array $fixed_settings = [])
   {
@@ -33,6 +34,8 @@ class Pie3DGraph extends PieGraph {
     ];
     $fs = array_merge($fs, $fixed_settings);
     parent::__construct($w, $h, $settings, $fs);
+
+    $this->depth = $this->getOption('depth');
   }
 
   protected function draw()
@@ -50,7 +53,7 @@ class Pie3DGraph extends PieGraph {
     if(is_numeric($this->end_angle)) {
       $start = fmod(deg2rad($this->start_angle), M_PI * 2.0);
       $end = fmod(deg2rad($this->end_angle), M_PI * 2.0);
-      if($this->reverse) {
+      if($this->getOption('reverse')) {
         if(($end > M_PI * 0.5 && $end < M_PI * 1.5) ||
           $start < M_PI * 0.5 || $start > M_PI * 1.5)
           $this->setOption('draw_flat_sides', true);
@@ -118,9 +121,9 @@ class Pie3DGraph extends PieGraph {
         $this->dataset, false, false),
       'id' => $this->newID(),
     ];
-    if($this->show_tooltips)
+    if($this->getOption('show_tooltips'))
       $this->setTooltip($attr, $item, $this->dataset, $item->key, $item->value, true);
-    if($this->show_context_menu)
+    if($this->getOption('show_context_menu'))
       $this->setContextMenu($attr, $this->dataset, $item, true);
     $this->addLabelClient($this->dataset, $edge->slice['original_position'], $attr);
 
@@ -179,7 +182,7 @@ class Pie3DGraph extends PieGraph {
       'clip-path' => 'url(#' . $clip_path . ')',
     ];
 
-    $gradient_id = $this->defs->addGradient($this->depth_shade_gradient);
+    $gradient_id = $this->defs->addGradient($this->getOption('depth_shade_gradient'));
     if($edge->curve()) {
       $rect['fill'] = 'url(#' . $gradient_id . ')';
     } else {

@@ -57,7 +57,7 @@ abstract class HorizontalThreeDGraph extends HorizontalGridGraph {
    */
   protected function getGridStripes()
   {
-    if(!$this->grid_back_stripe)
+    if(!$this->getOption('grid_back_stripe'))
       return '';
 
     $z = $this->depth * $this->depth_unit;

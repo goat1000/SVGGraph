@@ -77,7 +77,7 @@ class LineGraph extends PointGraph {
     $graph_line .= $this->drawLine($dataset, $points, $y_bottom);
     $group = [];
     $this->clipGrid($group);
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     if(!empty($group))
       $graph_line = $this->element('g', $group, null, $graph_line);
@@ -148,7 +148,7 @@ class LineGraph extends PointGraph {
         $path->add('z');
       $this->line_styles[$dataset] = $attr;
       $attr['d'] = $path;
-      if($this->semantic_classes)
+      if($this->getOption('semantic_classes'))
         $attr['class'] = 'series' . $dataset;
       $graph_line = $this->element('path', $attr);
 
@@ -163,7 +163,7 @@ class LineGraph extends PointGraph {
         ];
         if($opacity < 1)
           $fill_style['opacity'] = $opacity;
-        if($this->semantic_classes)
+        if($this->getOption('semantic_classes'))
           $fill_style['class'] = 'series' . $dataset;
         $graph_line = $this->element('path', $fill_style) . $graph_line;
 

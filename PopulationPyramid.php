@@ -27,7 +27,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
 
   protected function draw()
   {
-    if($this->log_axis_y)
+    if($this->getOption('log_axis_y'))
       throw new \Exception('log_axis_y not supported by PopulationPyramid');
 
     $body = $this->grid() . $this->underShapes();
@@ -37,7 +37,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
 
     $bnum = 0;
     $bspace = max(0, ($this->y_axes[$this->main_y_axis]->unit() - $bar_height) / 2);
-    $b_start = $this->height - $this->pad_bottom - ($this->bar_space / 2);
+    $b_start = $this->height - $this->pad_bottom - ($this->getOption('bar_space') / 2);
     $chunk_count = count($this->multi_graph);
     $bars_shown = array_fill(0, $chunk_count, 0);
     $bars = '';
@@ -101,22 +101,22 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
 
             $show_label = $this->addDataLabel($j, $bnum, $bar, $item,
               $bar['x'], $bar['y'], $bar['width'], $bar['height']);
-            if($this->show_tooltips)
+            if($this->getOption('show_tooltips'))
               $this->setTooltip($bar, $item, $j, $item->key, $item->value, $show_label);
-            if($this->show_context_menu)
+            if($this->getOption('show_context_menu'))
               $this->setContextMenu($bar, $j, $item, $show_label);
-            if($this->semantic_classes)
+            if($this->getOption('semantic_classes'))
               $bar['class'] = 'series' . $j;
             $rect = $this->element('rect', $bar, $bar_style);
             $bars .= $this->getLink($item, $k, $rect);
             unset($bar['id']);
           }
         }
-        if($this->show_bar_totals) {
+        if($this->getOption('show_bar_totals')) {
           if($xpos) {
             $this->barY($xpos, $bar);
-            if(is_callable($this->bar_total_callback)) {
-              $bar_total = call_user_func($this->bar_total_callback, $item->key,
+            if(is_callable($this->getOption('bar_total_callback'))) {
+              $bar_total = call_user_func($this->getOption('bar_total_callback'), $item->key,
                 $xpos);
             } else {
               $bar_total = new Number($xpos);
@@ -127,8 +127,8 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
           }
           if($xneg) {
             $this->barY($xneg, $bar);
-            if(is_callable($this->bar_total_callback)) {
-              $bar_total = call_user_func($this->bar_total_callback, $item->key,
+            if(is_callable($this->getOption('bar_total_callback'))) {
+              $bar_total = call_user_func($this->getOption('bar_total_callback'), $item->key,
                 -$xneg);
             } else {
               $bar_total = new Number(-$xneg);
@@ -143,7 +143,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     }
 
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -242,10 +242,10 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $this->setOption('units_before_x', null);
 
     // if fixed grid spacing is specified, make the min spacing 1 pixel
-    if(is_numeric($this->grid_division_v))
-      $this->minimum_grid_spacing_v = 1;
-    if(is_numeric($this->grid_division_h))
-      $this->minimum_grid_spacing_h = 1;
+    if(is_numeric($this->getOption('grid_division_v')))
+      $this->setOption('minimum_grid_spacing_v', 1);
+    if(is_numeric($this->getOption('grid_division_h')))
+      $this->setOption('minimum_grid_spacing_h', 1);
 
     $max_h = $ends['v_max'][0];
     $min_h = $ends['v_min'][0];
@@ -268,14 +268,16 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $y_text_callback = $this->getOption(['axis_text_callback_y', 0],
       'axis_text_callback');
 
-    $this->grid_division_h = $this->getOption(['grid_division_h', 0]);
-    $this->grid_division_v = $this->getOption(['grid_division_v', 0]);
+    $grid_division_h = $this->getOption(['grid_division_h', 0]);
+    $grid_division_v = $this->getOption(['grid_division_v', 0]);
 
     // sanitise grid divisions
-    if(is_numeric($this->grid_division_v) && $this->grid_division_v <= 0)
-      $this->grid_division_v = null;
-    if(is_numeric($this->grid_division_h) && $this->grid_division_h <= 0)
-      $this->grid_division_h = null;
+    if(is_numeric($grid_division_v) && $grid_division_v <= 0)
+      $grid_division_v = null;
+    if(is_numeric($grid_division_h) && $grid_division_h <= 0)
+      $grid_division_h = null;
+    $this->setOption('grid_division_v', $grid_division_v);
+    $this->setOption('grid_division_h', $grid_division_h);
 
     if(!is_numeric($max_h) || !is_numeric($min_h) ||
       !is_numeric($max_v) || !is_numeric($min_v))
@@ -291,7 +293,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
       $max_h += $inc;
     }
 
-    if(!is_numeric($this->grid_division_h)) {
+    if(!is_numeric($grid_division_h)) {
       $x_min_space = $this->getOption(['minimum_grid_spacing_h', 0],
         'minimum_grid_spacing');
       $x_axis = new AxisDoubleEnded($x_len, $max_h, $min_h, $x_min_unit,
@@ -299,7 +301,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
         $x_decimal_digits, $x_text_callback);
     } else {
       $x_axis = new AxisFixedDoubleEnded($x_len, $max_h, $min_h,
-        $this->grid_division_h, $x_units_before, $x_units_after,
+        $grid_division_h, $x_units_before, $x_units_after,
         $x_decimal_digits, $x_text_callback);
     }
 
@@ -316,7 +318,7 @@ class PopulationPyramid extends HorizontalStackedBarGraph {
     $levels = $this->getOption(['axis_levels_h', 0]);
     $ticks = $this->getOption('axis_ticks_x');
 
-    $y_axis_factory = new AxisFactory($this->datetime_keys, $this->settings,
+    $y_axis_factory = new AxisFactory($this->getOption('datetime_keys'), $this->settings,
       true, true, true);
     $y_axis = $y_axis_factory->get($y_len, $min_v, $max_v, $y_min_unit,
       $min_space, $grid_division, $y_units_before, $y_units_after,

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2020 Graham Breach
+ * Copyright (C) 2011-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,8 +43,8 @@ class MultiScatterGraph extends PointGraph {
     $body = $this->grid() . $this->underShapes();
 
     // a scatter graph without markers is empty!
-    if($this->marker_size == 0)
-      $this->marker_size = 1;
+    if($this->getOption('marker_size') == 0)
+      $this->setOption('marker_size', 1);
 
     $datasets = $this->multi_graph->getEnabledDatasets();
     foreach($datasets as $i) {

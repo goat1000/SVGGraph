@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2021 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,12 +78,12 @@ class BoxAndWhiskerGraph extends PointGraph {
         $show_label = $this->addDataLabel($dataset, $bnum, $g, $item,
           $bspace + $bar_pos, $this->gridY($top), $bar_width,
           $this->gridY($bottom) - $this->gridY($top));
-        if($this->show_tooltips)
+        if($this->getOption('show_tooltips'))
           $this->setTooltip($g, $item, $dataset, $item->key, $item->value, $show_label);
-        if($this->show_context_menu)
+        if($this->getOption('show_context_menu'))
           $this->setContextMenu($g, $dataset, $item, $show_label);
 
-        if($this->semantic_classes)
+        if($this->getOption('semantic_classes'))
           $g['class'] = 'series0';
         $group = $this->element('g', array_merge($g, $box_style), null, $shape);
         $series .= $this->getLink($item, $item->key, $group);
@@ -99,7 +99,7 @@ class BoxAndWhiskerGraph extends PointGraph {
     }
 
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -119,11 +119,12 @@ class BoxAndWhiskerGraph extends PointGraph {
    */
   protected function barWidth()
   {
-    if(is_numeric($this->bar_width) && $this->bar_width >= 1)
-      return $this->bar_width;
+    $bw = $this->getOption('bar_width');
+    if(is_numeric($bw) && $bw >= 1)
+      return $bw;
     $unit_w = $this->x_axes[$this->main_x_axis]->unit();
-    $bw = $unit_w - $this->bar_space;
-    return max(1, $bw, $this->bar_width_min);
+    $bw = $unit_w - $this->getOption('bar_space');
+    return max(1, $bw, $this->getOption('bar_width_min'));
   }
 
   /**
@@ -264,13 +265,14 @@ class BoxAndWhiskerGraph extends PointGraph {
   protected function getOutliers(&$item)
   {
     $outliers = [];
-    if(!isset($this->structure['outliers']) ||
-      !is_array($this->structure['outliers']))
+    $structure = $this->getOption('structure');
+    if(!isset($structure['outliers']) ||
+      !is_array($structure['outliers']))
       return $outliers;
 
     $min = $item->wbottom;
     $max = $item->wtop;
-    foreach($this->structure['outliers'] as $o) {
+    foreach($structure['outliers'] as $o) {
       $v = $item->rawData($o);
       if($v !== null && ($v > $max || $v < $min))
         $outliers[] = $v;

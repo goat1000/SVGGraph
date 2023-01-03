@@ -92,12 +92,13 @@ trait StackedBarTrait {
   public function barTotals(DataItem $item, $bnum, $yplus, $yminus, $dataset)
   {
     $bar_x = $this->gridPosition($item, $bnum);
-    if($this->show_bar_totals && $bar_x !== null) {
+    if($this->getOption('show_bar_totals') && $bar_x !== null) {
+      $cb = $this->getOption('bar_total_callback');
       if($yplus) {
         $bar = $this->barDimensions($item, $bnum, 0, null, $dataset);
         $this->barY($yplus, $bar);
-        if(is_callable($this->bar_total_callback)) {
-          $total = call_user_func($this->bar_total_callback, $item->key, $yplus);
+        if(is_callable($cb)) {
+          $total = call_user_func($cb, $item->key, $yplus);
         } else {
           $total = new Number($yplus);
           $total = $total->format();
@@ -108,8 +109,8 @@ trait StackedBarTrait {
       if($yminus) {
         $bar = $this->barDimensions($item, $bnum, 0, null, $dataset);
         $this->barY($yminus, $bar);
-        if(is_callable($this->bar_total_callback)) {
-          $total = call_user_func($this->bar_total_callback, $item->key, $yminus);
+        if(is_callable($cb)) {
+          $total = call_user_func($cb, $item->key, $yminus);
         } else {
           $total = new Number($yminus);
           $total = $total->format();

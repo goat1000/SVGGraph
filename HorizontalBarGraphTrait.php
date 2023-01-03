@@ -41,11 +41,11 @@ trait HorizontalBarGraphTrait {
    */
   protected function barWidth()
   {
-    if(is_numeric($this->bar_width) && $this->bar_width >= 1)
-      return $this->bar_width;
+    if(is_numeric($this->getOption('bar_width')) && $this->getOption('bar_width') >= 1)
+      return $this->getOption('bar_width');
     $unit_h = $this->y_axes[$this->main_y_axis]->unit();
-    $bh = $unit_h - $this->bar_space;
-    return max(1, $bh, $this->bar_width_min);
+    $bh = $unit_h - $this->getOption('bar_space');
+    return max(1, $bh, $this->getOption('bar_width_min'));
   }
 
   /**
@@ -121,7 +121,7 @@ trait HorizontalBarGraphTrait {
   {
     list($pos, $target) = parent::dataLabelPosition($dataset, $index, $item,
       $x, $y, $w, $h, $label_w, $label_h);
-    $bpos = $this->bar_label_position;
+    $bpos = $this->getOption('bar_label_position');
     if(!empty($bpos))
       $pos = $bpos;
 

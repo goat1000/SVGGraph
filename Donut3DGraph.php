@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -60,7 +60,7 @@ class Donut3DGraph extends Pie3DGraph {
     // clip a gradient-filled rect to the edge shape
     $cx = new Number($x_centre);
     $cy = new Number($y_centre);
-    $gradient_id = $this->defs->addGradient($this->depth_shade_gradient);
+    $gradient_id = $this->defs->addGradient($this->getOption('depth_shade_gradient'));
     $rect = [
       'x' => $x_centre - $radius_x,
       'y' => $y_centre - $radius_y,

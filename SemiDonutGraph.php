@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2019 Graham Breach
+ * Copyright (C) 2017-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -57,7 +57,7 @@ class SemiDonutGraph extends DonutGraph {
     $label_w, $label_h)
   {
     if($dataset === 'innertext') {
-      if($this->flipped)
+      if($this->getOption('flipped'))
         $y_offset = new Number($label_h / 2);
       else
         $y_offset = new Number($label_h / -2);

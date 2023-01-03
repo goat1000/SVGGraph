@@ -84,17 +84,19 @@ abstract class GridGraph extends Graph {
     $grid_set = $this->getOption('grid_left', 'grid_right', 'grid_top',
       'grid_bottom');
     if($grid_set) {
-      if(!empty($this->grid_left))
-        $grid_l = $this->pad_left = abs($this->grid_left);
-      if(!empty($this->grid_top))
-        $grid_t = $this->pad_top = abs($this->grid_top);
+      if(!empty($this->getOption('grid_left')))
+        $grid_l = $this->pad_left = abs($this->getOption('grid_left'));
+      if(!empty($this->getOption('grid_top')))
+        $grid_t = $this->pad_top = abs($this->getOption('grid_top'));
 
-      if(!empty($this->grid_bottom))
-        $grid_b = $this->pad_bottom = $this->grid_bottom < 0 ?
-          abs($this->grid_bottom) : $this->height - $this->grid_bottom;
-      if(!empty($this->grid_right))
-        $grid_r = $this->pad_right = $this->grid_right < 0 ?
-          abs($this->grid_right) : $this->width - $this->grid_right;
+      if(!empty($this->getOption('grid_bottom'))) {
+        $gb = $this->getOption('grid_bottom');
+        $grid_b = $this->pad_bottom = $gb < 0 ? abs($gb) : $this->height - $gb;
+      }
+      if(!empty($this->getOption('grid_right'))) {
+        $gr = $this->getOption('grid_right');
+        $grid_r = $this->pad_right = $gr < 0 ? abs($gr) : $this->width - $gr;
+      }
     }
 
     $label_v = $this->getOption('label_v');
@@ -232,7 +234,7 @@ abstract class GridGraph extends Graph {
         $this->y_axis_positions[$axis_no] = $right_pos + $inner;
         $ybb['max_x'] += $right_pos + $inner;
         $ybb['min_x'] += $right_pos + $inner;
-        $right_pos += $inner + $outer + $this->axis_space;
+        $right_pos += $inner + $outer + $this->getOption('axis_space');
       } else {
         $this->y_axis_positions[$axis_no] = 0;
       }
@@ -469,7 +471,7 @@ abstract class GridGraph extends Graph {
     for($i = 0; $i < $x_axis_count; ++$i) {
       list($fixed_min, $fixed_max) = $this->getFixedAxisOptions('x', $i);
 
-      if($this->datetime_keys) {
+      if($this->getOption('datetime_keys')) {
         // 0 is 1970-01-01, not a useful minimum
         if(empty($fixed_max)) {
           // guidelines support datetime values too
@@ -542,7 +544,7 @@ abstract class GridGraph extends Graph {
   protected function getXAxisFactory()
   {
     $x_bar = $this->getOption('label_centre');
-    return new AxisFactory($this->datetime_keys, $this->settings,
+    return new AxisFactory($this->getOption('datetime_keys'), $this->settings,
       true, $x_bar, false);
   }
 
@@ -638,7 +640,8 @@ abstract class GridGraph extends Graph {
         if($grid_division <= 0)
           throw new \Exception('Invalid grid division');
         // if fixed grid spacing is specified, make the min spacing 1 pixel
-        $this->minimum_grid_spacing_h = $min_space = 1;
+        $min_space = 1;
+        $this->setOption('minimum_grid_spacing_h', 1);
       }
 
       $x_axes[] = $this->createXAxis($x_axis_factory, $x_len, $ends, $i, $min_space, $grid_division);
@@ -664,8 +667,10 @@ abstract class GridGraph extends Graph {
         // if fixed grid spacing is specified, make the min spacing 1 pixel
         $this->setOption('minimum_grid_spacing_v', 1, $i);
         $min_space = 1;
-      } elseif(!isset($this->minimum_grid_spacing_v[$i])) {
-        $this->setOption('minimum_grid_spacing_v', $min_space, $i);
+      } else {
+        $mgsv = $this->getOption('minimum_grid_spacing_v');
+        if(!isset($mgsv[$i]))
+          $this->setOption('minimum_grid_spacing_v', $min_space, $i);
       }
 
       $y_axes[] = $this->createYAxis($y_axis_factory, $y_len, $ends, $i, $min_space, $grid_division);
@@ -727,7 +732,7 @@ abstract class GridGraph extends Graph {
       return;
 
     // can't have multiple invisible axes
-    if(!$this->show_axes)
+    if(!$this->getOption('show_axes'))
       $this->setOption('dataset_axis', null);
 
     $ends = $this->getAxisEnds();
@@ -836,7 +841,7 @@ abstract class GridGraph extends Graph {
         $y = $this->pad_top;
       } else {
         $y0 = $this->y_axes[$this->main_y_axis]->zero();
-        if($this->show_axis_h && $y0 >= 0 && $y0 <= $this->g_height)
+        if($this->getOption('show_axis_h') && $y0 >= 0 && $y0 <= $this->g_height)
           $y -= $y0;
       }
     } else {
@@ -976,7 +981,8 @@ abstract class GridGraph extends Graph {
     $crosshairs = $this->getCrossHairs();
 
     // if the grid is not displayed, stop now
-    if(!$this->show_grid || (!$this->show_grid_h && !$this->show_grid_v))
+    if(!$this->getOption('show_grid') ||
+      (!$this->getOption('show_grid_h') && !$this->getOption('show_grid_v')))
       return empty($crosshairs) ? '' :
         $this->element('g', $grid_group, null, $crosshairs);
 
@@ -987,21 +993,21 @@ abstract class GridGraph extends Graph {
         'width' => $width_num, 'height' => $height_num,
         'fill' => $back_colour
       ];
-      if($this->grid_back_opacity != 1)
-        $rect['fill-opacity'] = $this->grid_back_opacity;
+      if($this->getOption('grid_back_opacity') != 1)
+        $rect['fill-opacity'] = $this->getOption('grid_back_opacity');
       $back = $this->element('rect', $rect);
     }
     $back .= $this->getGridStripes();
 
-    if($this->show_grid_subdivisions) {
+    if($this->getOption('show_grid_subdivisions')) {
       $subpath_h = new PathData();
       $subpath_v = new PathData();
-      if($this->show_grid_h) {
+      if($this->getOption('show_grid_h')) {
         $subdivs = $this->getSubDivsY($this->main_y_axis);
         foreach($subdivs as $y)
           $subpath_v->add('M', $left_num, $y->position, 'h', $width_num);
       }
-      if($this->show_grid_v){
+      if($this->getOption('show_grid_v')){
         $subdivs = $this->getSubDivsX($this->main_x_axis);
         foreach($subdivs as $x)
           $subpath_h->add('M', $x->position, $top_num, 'v', $height_num);
@@ -1035,12 +1041,12 @@ abstract class GridGraph extends Graph {
 
     $path_v = new PathData;
     $path_h = new PathData;
-    if($this->show_grid_h) {
+    if($this->getOption('show_grid_h')) {
       $points = $this->getGridPointsY($this->main_y_axis);
       foreach($points as $y)
         $path_v->add('M', $left_num, $y->position, 'h', $width_num);
     }
-    if($this->show_grid_v) {
+    if($this->getOption('show_grid_v')) {
       $points = $this->getGridPointsX($this->main_x_axis);
       foreach($points as $x)
         $path_h->add('M', $x->position, $top_num, 'v', $height_num);
@@ -1236,7 +1242,8 @@ abstract class GridGraph extends Graph {
       return;
 
     $this->guidelines = new Guidelines($this, false,
-      $this->values->associativeKeys(), $this->datetime_keys);
+      $this->values->associativeKeys(),
+      $this->getOption('datetime_keys'));
   }
 
   public function underShapes()

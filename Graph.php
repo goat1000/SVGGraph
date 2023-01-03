@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2022 Graham Breach
+ * Copyright (C) 2019-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,24 +29,35 @@ abstract class Graph {
   public $subgraph = false;
   protected $width = 0;
   protected $height = 0;
+  protected $pad_left = 0;
+  protected $pad_right = 0;
+  protected $pad_top = 0;
+  protected $pad_bottom = 0;
   protected $settings = [];
   protected $values = [];
   protected $namespace = false;
   protected $link_base = '';
   protected $link_target = '_blank';
   protected $links = [];
+  public $encoding = 'UTF-8';
 
   protected $colours = null;
   public $defs = null;
+  public $figures = null;
   protected $subgraphs = [];
   protected $back_matter = '';
 
   protected $namespaces = [];
-  protected static $javascript = null;
   private static $last_id = 0;
   public static $key_format = null;
   protected $legend = null;
   protected $data_label_style_cache = [];
+  protected $multi_graph;
+
+  private static $javascript = null;
+  private $data_labels = null;
+  private $context_menu = null;
+  private $shapes = null;
 
   /**
    * @arg $w = width
@@ -73,62 +84,38 @@ abstract class Graph {
     ];
     $this->settings = array_merge($this->settings, $ini_settings, $settings,
       $fixed_setting_defaults, $fixed_settings);
-    $this->namespace = $this->getOption('namespace');
-    $this->link_base = $this->getOption('link_base');
-    $this->link_target = $this->getOption('link_target');
+
+    // set up figures - it can't be dynamic because figures can refer
+    // to other figures via Markers
+    $this->figures = new Figures($this, $this->settings);
+
+    // copy some settings to member variables
+    $opts = ['namespace', 'link_base', 'link_target', 'encoding',
+      'pad_top', 'pad_bottom', 'pad_left', 'pad_right'];
+    foreach($opts as $opt)
+      $this->{$opt} = $this->getOption($opt);
   }
 
   /**
-   * Retrieves properties from the settings array if they are not already
-   * available as properties, also sets up properties that must be created.
+   * Deprecated option/member access - display error and fail
    */
   public function __get($name)
   {
-    switch($name) {
-    case 'javascript':
-      // $this->javascript will forward to the static Graph::$javascript
-      if(!isset(Graph::$javascript))
-        Graph::$javascript = new Javascript($this);
-      return Graph::$javascript;
-    case 'data_labels':
-      $this->data_labels = new DataLabels($this);
-      return $this->data_labels;
-    case 'shapes':
-      $this->shapes = new ShapeList($this);
-      $this->shapes->load($this->settings);
-      return $this->shapes;
-    case 'figures':
-      if(!isset($this->settings['figure']))
-        throw new \Exception('No figures defined');
-      $this->figures = new Figures($this);
-      $this->figures->load($this->settings);
-      return $this->figures;
-    case 'context_menu':
-      $this->context_menu = new ContextMenu($this, $this->javascript);
-      return $this->context_menu;
-    }
-    if(isset($this->settings[$name]))
-      return $this->settings[$name];
-    return null;
+    trigger_error('Attempt to get $this->' . $name, E_USER_WARNING);
+    debug_print_backtrace(0, 1);
+    exit;
   }
-
-  /**
-   * Make empty($this->option) more robust
-   */
   public function __isset($name)
   {
-    return isset($this->settings[$name]);
+    trigger_error('Isset attempt on option $this->' . $name, E_USER_WARNING);
+    debug_print_backtrace(0, 1);
+    exit;
   }
-
   public function __set($name, $value)
   {
-    /**
-     * When everything is converted to getOption/setOption, this function
-     * should be redundant
-     */
-    // trigger_error('Attempt to set $this->' . $name, E_USER_WARNING);
-    $this->settings[$name] = $value;
-    $this->{$name} = $value;
+    trigger_error('Attempt to set $this->' . $name, E_USER_WARNING);
+    debug_print_backtrace(0, 1);
+    exit;
   }
 
   /**
@@ -291,6 +278,26 @@ abstract class Graph {
   }
 
   /**
+   * Returns the Javascript instance
+   */
+  public function getJavascript()
+  {
+      if(!isset(Graph::$javascript))
+        Graph::$javascript = new Javascript($this);
+      return Graph::$javascript;
+  }
+
+  /**
+   * Returns the DataLabels instance
+   */
+  public function getDataLabels()
+  {
+    if($this->data_labels === null)
+      $this->data_labels = new DataLabels($this);
+    return $this->data_labels;
+  }
+
+  /**
    * Draws the selected graph
    */
   public function drawGraph()
@@ -315,7 +322,7 @@ abstract class Graph {
 
     // magnifying means everything must be in a group for transformation
     if(!$this->subgraph && $this->getOption('magnify')) {
-      $this->javascript->magnifier();
+      $this->getJavascript()->magnifier();
       $group = ['class' => 'svggraph-magnifier'];
       $contents = $this->element('g', $group, null, $contents);
     }
@@ -710,6 +717,7 @@ abstract class Graph {
     $height = $this->getOption('back_image_height');
     $left = $this->getOption('back_image_left');
     $top = $this->getOption('back_image_top');
+    $mode = $this->getOption('back_image_mode');
 
     if($shadow) {
       if($width === '100%')
@@ -723,18 +731,18 @@ abstract class Graph {
       'x' => $left, 'y' => $top,
       'xlink:href' => $image_src,
       'preserveAspectRatio' =>
-        ($this->back_image_mode == 'stretch' ? 'none' : 'xMinYMin')
+        ($mode == 'stretch' ? 'none' : 'xMinYMin')
     ];
 
     if($clip_path !== null)
       $image['clip-path'] = 'url(#' . $clip_path . ')';
 
     $style = [];
-    if($this->back_image_opacity)
-      $style['opacity'] = $this->back_image_opacity;
+    if($this->getOption('back_image_opacity'))
+      $style['opacity'] = $this->getOption('back_image_opacity');
 
     $contents = '';
-    if($this->back_image_mode == 'tile') {
+    if($mode == 'tile') {
       $image['x'] = 0; $image['y'] = 0;
       $im = $this->element('image', $image, $style);
       $pattern = [
@@ -1177,6 +1185,10 @@ abstract class Graph {
   protected function setContextMenu(&$element, $dataset, &$item,
     $duplicate = false)
   {
+    if($this->context_menu === null) {
+      $js = $this->getJavascript();
+      $this->context_menu = new ContextMenu($this, $js);
+    }
     $this->context_menu->setMenu($element, $dataset, $item, $duplicate);
   }
 
@@ -1188,11 +1200,12 @@ abstract class Graph {
     $duplicate = false)
   {
     $callback = $this->getOption('tooltip_callback');
+    $structure = $this->getOption('structure');
     if(is_callable($callback)) {
       if($value === null)
         $value = $key;
       $text = call_user_func_array($callback, [$dataset, $key, $value]);
-    } elseif(is_array($this->structure) && isset($this->structure['tooltip'])) {
+    } elseif(is_array($structure) && isset($structure['tooltip'])) {
       // use structured data tooltips if specified
       $text = $item->tooltip;
     } else {
@@ -1201,7 +1214,7 @@ abstract class Graph {
     if($text === null)
       return;
     $text = addslashes(str_replace("\n", '\n', $text));
-    return $this->javascript->setTooltip($element, $text, $duplicate);
+    return $this->getJavascript()->setTooltip($element, $text, $duplicate);
   }
 
   /**
@@ -1209,7 +1222,8 @@ abstract class Graph {
    */
   protected function formatTooltip(&$item, $dataset, $key, $value)
   {
-    $n = new Number($value, $this->units_tooltip, $this->units_before_tooltip);
+    $n = new Number($value, $this->getOption('units_tooltip'),
+      $this->getOption('units_before_tooltip'));
     return $n->format();
   }
 
@@ -1230,21 +1244,21 @@ abstract class Graph {
     $popup = $this->getOption(['data_label_popfront', $dataset]);
     if($click == 'hide' || $click == 'show') {
       $id = $this->newID();
-      $this->javascript->setClickShow($element, $id, $click == 'hide', $duplicate);
+      $this->getJavascript()->setClickShow($element, $id, $click == 'hide', $duplicate);
     }
     if($popup) {
       if(!$id)
         $id = $this->newID();
-      $this->javascript->setPopFront($element, $id, $duplicate);
+      $this->getJavascript()->setPopFront($element, $id, $duplicate);
     }
     if($fade_in || $fade_out) {
       $speed_in = $fade_in ? $fade_in / 100 : 0;
       $speed_out = $fade_out ? $fade_out / 100 : 0;
       if(!$id)
         $id = $this->newID();
-      $this->javascript->setFader($element, $speed_in, $speed_out, $id, $duplicate);
+      $this->getJavascript()->setFader($element, $speed_in, $speed_out, $id, $duplicate);
     }
-    $this->data_labels->addLabel($dataset, $index, $item, $x, $y, $w, $h, $id,
+    $this->getDataLabels()->addLabel($dataset, $index, $item, $x, $y, $w, $h, $id,
       $content, $fade_in, $click);
     return true;
   }
@@ -1254,7 +1268,7 @@ abstract class Graph {
    */
   protected function addLabelClient($dataset, $index, &$element)
   {
-    $label = $this->data_labels->getLabel($dataset, $index);
+    $label = $this->getDataLabels()->getLabel($dataset, $index);
     if($label === null)
       return false;
 
@@ -1264,13 +1278,13 @@ abstract class Graph {
     $click = $this->getOption(['data_label_click', $dataset]);
     $popup = $this->getOption(['data_label_popfront', $dataset]);
     if($click == 'hide' || $click == 'show')
-      $this->javascript->setClickShow($element, $id, $click == 'hide', true);
+      $this->getJavascript()->setClickShow($element, $id, $click == 'hide', true);
     if($popup)
-      $this->javascript->setPopFront($element, $id, true);
+      $this->getJavascript()->setPopFront($element, $id, true);
     if($fade_in || $fade_out) {
       $speed_in = $fade_in ? $fade_in / 100 : 0;
       $speed_out = $fade_out ? $fade_out / 100 : 0;
-      $this->javascript->setFader($element, $speed_in, $speed_out, $id, true);
+      $this->getJavascript()->setFader($element, $speed_in, $speed_out, $id, true);
     }
   }
 
@@ -1279,7 +1293,7 @@ abstract class Graph {
    */
   protected function addContentLabel($dataset, $index, $x, $y, $w, $h, $content)
   {
-    $this->data_labels->addContentLabel($dataset, $index, $x, $y, $w, $h,
+    $this->getDataLabels()->addContentLabel($dataset, $index, $x, $y, $w, $h,
       $content);
     return true;
   }
@@ -1290,8 +1304,8 @@ abstract class Graph {
   protected function drawDataLabels()
   {
     if(isset($this->settings['label']))
-      $this->data_labels->load($this->settings);
-    return $this->data_labels->getLabels();
+      $this->getDataLabels()->load($this->settings);
+    return $this->getDataLabels()->getLabels();
   }
 
   /**
@@ -1307,18 +1321,30 @@ abstract class Graph {
     return [$pos, $end];
   }
 
+  /**
+   * Returns the ShapeList instance
+   */
+  public function getShapeList()
+  {
+    if($this->shapes === null) {
+      $this->shapes = new ShapeList($this);
+      $this->shapes->load($this->settings);
+    }
+    return $this->shapes;
+  }
+
   public function underShapes()
   {
     if(!isset($this->settings['shape']))
       return '';
-    return $this->shapes->draw(ShapeList::BELOW);
+    return $this->getShapeList()->draw(ShapeList::BELOW);
   }
 
   public function overShapes()
   {
     if(!isset($this->settings['shape']))
       return '';
-    return $this->shapes->draw(ShapeList::ABOVE);
+    return $this->getShapeList()->draw(ShapeList::ABOVE);
   }
 
   /**
@@ -1339,7 +1365,7 @@ abstract class Graph {
     if(isset($this->data_label_style_cache[$dataset]))
       return $this->data_label_style_cache[$dataset];
 
-    $map = $this->data_labels->getStyleMap();
+    $map = $this->getDataLabels()->getStyleMap();
     $style = [];
     foreach($map as $key => $option) {
       $style[$key] = $this->getOption([$option, $dataset]);
@@ -1399,8 +1425,8 @@ abstract class Graph {
       // encoding comes before standalone
       if(strlen($this->encoding) > 0)
         $content .= ' encoding="' . $this->encoding . '"';
-      $content .= ' standalone="no"?>' . "\n";
-      if($this->doctype)
+      $content .= ' standalone="no"?' . ">\n";
+      if($this->getOption('doctype'))
         $content .= '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' .
         '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' . "\n";
     }
@@ -1412,10 +1438,10 @@ abstract class Graph {
 
     $heading = $foot = '';
     // display title and description if available
-    if($this->title)
-      $heading .= $this->element('title', null, null, $this->title);
-    if($this->description)
-      $heading .= $this->element('desc', null, null, $this->description);
+    if($this->getOption('title'))
+      $heading .= $this->element('title', null, null, $this->getOption('title'));
+    if($this->getOption('description'))
+      $heading .= $this->element('desc', null, null, $this->getOption('description'));
 
     try {
       $body = $this->buildGraph();
@@ -1462,14 +1488,14 @@ abstract class Graph {
       foreach($this->namespaces as $ns => $url)
         $svg['xmlns:' . $ns] = $url;
 
-      if($this->auto_fit) {
+      if($this->getOption('auto_fit')) {
         // convert pixel size to viewbox size
         $svg['viewBox'] = '0 0 ' . $svg['width'] . ' ' . $svg['height'];
         $svg['width'] = $svg['height'] = '100%';
       }
     }
-    if($this->svg_class)
-      $svg['class'] = $this->svg_class;
+    if($this->getOption('svg_class'))
+      $svg['class'] = $this->getOption('svg_class');
 
     if(!$defer_javascript)
       $foot .= $this->fetchJavascript(true, !$this->namespace);
@@ -1478,7 +1504,7 @@ abstract class Graph {
     $heading .= $this->defs->get();
 
     // display version string
-    if($this->show_version) {
+    if($this->getOption('show_version')) {
       $text = ['x' => $this->pad_left, 'y' => $this->height - 3];
       $style = [
         'font-family' => 'Courier New',
@@ -1493,7 +1519,7 @@ abstract class Graph {
     // replace PHP's precision
     ini_set('precision', $old_precision);
 
-    if($this->minify)
+    if($this->getOption('minify'))
       $content = preg_replace('/\>\s+\</', '><', $content);
     return $content;
   }

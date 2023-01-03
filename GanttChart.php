@@ -630,7 +630,7 @@ class GanttChart extends HorizontalBarGraph {
   protected function getYAxisFactory()
   {
     // don't reverse the vertical axis for Gantt charts
-    return new AxisFactory($this->datetime_keys, $this->settings,
+    return new AxisFactory($this->getOption('datetime_keys'), $this->settings,
       true, true, false);
   }
 
@@ -699,13 +699,13 @@ class GanttChart extends HorizontalBarGraph {
 
     $depends = $this->drawDependencies($item, $index, $dataset, $bar);
 
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $element['class'] = 'series' . $dataset;
 
-    if($this->show_tooltips)
+    if($this->getOption('show_tooltips'))
       $this->setTooltip($element, $item, $dataset, $item->key, $item->value,
         $label_shown);
-    if($this->show_context_menu)
+    if($this->getOption('show_context_menu'))
       $this->setContextMenu($element, $dataset, $item, $label_shown);
 
     $task_entry = '';

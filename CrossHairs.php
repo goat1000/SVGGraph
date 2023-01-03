@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2021 Graham Breach
+ * Copyright (C) 2019-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -206,14 +206,14 @@ class CrossHairs {
         $gridx_attrs['base'] = $this->flip_axes ? $base_y : $base_x;
         $gridx_attrs['zero'] = $this->x_axis->value(0);
         $gridx_attrs['scale'] = $this->x_axis->value($this->width);
-        $this->graph->javascript->addFunction('logStrValueX');
+        $this->graph->getJavascript()->addFunction('logStrValueX');
         $gridx_attrs['function'] = 'logStrValueX';
       }
       if($log_v) {
         $gridy_attrs['base'] = $this->flip_axes ? $base_x : $base_y;
         $gridy_attrs['zero'] = $this->y_axis->value(0);
         $gridy_attrs['scale'] = $this->y_axis->value($this->height);
-        $this->graph->javascript->addFunction('logStrValueY');
+        $this->graph->getJavascript()->addFunction('logStrValueY');
         $gridy_attrs['function'] = 'logStrValueY';
       }
     }
@@ -223,7 +223,7 @@ class CrossHairs {
       method_exists($this->y_axis, 'GetFormat'))) {
       $dtf = new DateTimeFormatter;
       if($this->flip_axes) {
-        $this->graph->javascript->addFunction('dateStrValueY');
+        $this->graph->getJavascript()->addFunction('dateStrValueY');
         $zy = (int)$this->y_axis->value(0);
         $ey = (int)$this->y_axis->value($this->width);
         $dt = new \DateTime('@' . $zy);
@@ -232,7 +232,7 @@ class CrossHairs {
         $gridy_attrs['function'] = 'dateStrValueY';
         $gridy_attrs['format'] = $this->y_axis->getFormat();
       } else {
-        $this->graph->javascript->addFunction('dateStrValueX');
+        $this->graph->getJavascript()->addFunction('dateStrValueX');
         $zx = (int)$this->x_axis->value(0);
         $ex = (int)$this->x_axis->value($this->width);
         $dt = new \DateTime('@' . $zx);
@@ -246,13 +246,13 @@ class CrossHairs {
       $long_months = $dtf->getLongMonths();
       $short_months = $dtf->getShortMonths();
       foreach($long_days as $day)
-        $this->graph->javascript->insertVariable('daysLong', null, $day);
+        $this->graph->getJavascript()->insertVariable('daysLong', null, $day);
       foreach($short_days as $day)
-        $this->graph->javascript->insertVariable('daysShort', null, $day);
+        $this->graph->getJavascript()->insertVariable('daysShort', null, $day);
       foreach($long_months as $month)
-        $this->graph->javascript->insertVariable('monthsLong', null, $month);
+        $this->graph->getJavascript()->insertVariable('monthsLong', null, $month);
       foreach($short_months as $month)
-        $this->graph->javascript->insertVariable('monthsShort', null, $month);
+        $this->graph->getJavascript()->insertVariable('monthsShort', null, $month);
     }
 
     // build associative data keys XML
@@ -270,15 +270,15 @@ class CrossHairs {
       $round_function = 'kround';
       if($this->graph->getOption('label_centre'))
         $round_function = 'kroundDown';
-      $this->graph->javascript->addFunction($round_function);
+      $this->graph->getJavascript()->addFunction($round_function);
 
       // set the string function
       if($this->flip_axes) {
-        $this->graph->javascript->addFunction('keyStrValueY');
+        $this->graph->getJavascript()->addFunction('keyStrValueY');
         $gridy_attrs['function'] = 'keyStrValueY';
         $gridy_attrs['round'] = $round_function;
       } else {
-        $this->graph->javascript->addFunction('keyStrValueX');
+        $this->graph->getJavascript()->addFunction('keyStrValueX');
         $gridx_attrs['function'] = 'keyStrValueX';
         $gridx_attrs['round'] = $round_function;
       }
@@ -295,7 +295,7 @@ class CrossHairs {
     $this->graph->defs->add($defs);
 
     // add the main function at the end - it can fill in any defaults
-    $this->graph->javascript->addFunction('crosshairs');
+    $this->graph->getJavascript()->addFunction('crosshairs');
     return $crosshairs;
   }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2021 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,7 +84,7 @@ trait PolarAreaTrait {
     $t_radius = sqrt(pow($x1, 2) + pow($y1, 2));
 
     // see if the text fits in the slice
-    $pos_radius = $this->label_position;
+    $pos_radius = $this->getOption('label_position');
     $r1 = $pos_radius * $rx;
     $outside = false;
     if(sin($ab) * $r1 > $t_radius) {
@@ -114,7 +114,7 @@ trait PolarAreaTrait {
       }
       $outside = true;
     }
-    if($this->reverse)
+    if($this->getOption('reverse'))
       $yc = -$yc;
 
     $space = 0;
@@ -124,7 +124,7 @@ trait PolarAreaTrait {
       $multiplier = 1;
     }
     $xt = ($rx + $space) * $multiplier * $cos_ac;
-    $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * $multiplier * $sin_ac;
+    $yt = ($this->getOption('reverse') ? -1 : 1) * ($ry + $space) * $multiplier * $sin_ac;
     $target = [$x + $xt, $y + $yt];
     $position = new Number($xc) . ' ' . new Number($yc);
     return [$position, $target];

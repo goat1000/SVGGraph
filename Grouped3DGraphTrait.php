@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,8 +40,8 @@ trait Grouped3DGraphTrait {
     $block = $x_len / $num;
     $datasets = $this->multi_graph->getEnabledDatasets();
     $group = count($datasets);
-    $a = $this->bar_space;
-    $b = $this->group_space;
+    $a = $this->getOption('bar_space');
+    $b = $this->getOption('group_space');
     $c = (($block) - $a - ($group - 1) * $b) / $group;
     $d = ($a + $c) / $block;
     $this->depth = $d;

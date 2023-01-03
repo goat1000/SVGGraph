@@ -28,8 +28,11 @@ class PieGraph extends Graph {
   protected $y_centre;
   protected $radius_x;
   protected $radius_y;
+  public $start_angle;
+  public $end_angle;
   protected $s_angle; // start_angle in radians
   protected $full_angle; // amount of pie in radians
+  protected $aspect_ratio;
   protected $calc_done;
   protected $slice_info = [];
   protected $total = 0;
@@ -70,32 +73,36 @@ class PieGraph extends Graph {
 
     $this->x_centre = (($bound_x_right - $bound_x_left) / 2) + $bound_x_left;
     $this->y_centre = (($bound_y_bottom - $bound_y_top) / 2) + $bound_y_top;
-    $this->start_angle %= 360;
-    while($this->start_angle < 0)
-      $this->start_angle += 360;
-    $this->s_angle = deg2rad($this->start_angle);
+    $start_angle = $this->getOption('start_angle') % 360;
+    while($start_angle < 0)
+      $start_angle += 360;
+    $this->start_angle = $start_angle;
+    $this->s_angle = deg2rad($start_angle);
 
     // sanitize aspect ratio
-    if($this->aspect_ratio != 'auto' && $this->aspect_ratio <= 0)
-      $this->aspect_ratio = 1.0;
+    $aspect = $this->getOption('aspect_ratio');
+    $this->aspect_ratio = ($aspect != 'auto' && $aspect <= 0 ? 1.0 : $aspect);
 
-    if($this->end_angle === null || !is_numeric($this->end_angle) ||
-      $this->end_angle == $this->start_angle ||
-      abs($this->end_angle - $this->start_angle) % 360 == 0) {
+    $end_angle = $this->getOption('end_angle');
+    if($end_angle === null || !is_numeric($end_angle) ||
+      $end_angle == $start_angle || abs($end_angle - $start_angle) % 360 == 0) {
       $this->full_angle = M_PI * 2.0;
 
       $this->setupAspectRatio($w, $h);
 
     } else {
 
-      while($this->end_angle < $this->start_angle)
-        $this->end_angle += 360;
-      $full_angle = $this->end_angle - $this->start_angle;
+      while($end_angle < $start_angle)
+        $end_angle += 360;
+      $this->end_angle = $end_angle;
+      $this->setOption('end_angle', $end_angle);
+
+      $full_angle = $end_angle - $start_angle;
       if($full_angle > 360)
         $full_angle %= 360;
       $this->full_angle = deg2rad($full_angle);
 
-      if($this->slice_fit) {
+      if($this->getOption('slice_fit')) {
         // not a full pie, position based on actual shape
         $sw = 100;
         $sh = 100;
@@ -103,8 +110,8 @@ class PieGraph extends Graph {
           $sw /= $this->aspect_ratio;
 
         $all_slice = new SliceInfo($this->s_angle,
-          deg2rad($this->end_angle), $sw, $sh);
-        $bbox = $all_slice->boundingBox($this->reverse);
+          deg2rad($end_angle), $sw, $sh);
+        $bbox = $all_slice->boundingBox($this->getOption('reverse'));
 
         $bw = $bbox[2] - $bbox[0];
         $bh = $bbox[3] - $bbox[1];
@@ -177,7 +184,7 @@ class PieGraph extends Graph {
       if($item->value !== null)
         ++$vcount;
     }
-    if($this->sort) {
+    if($this->getOption('sort')) {
       uasort($values, function($a, $b) {
         return $b[1] - $a[1];
       });
@@ -196,8 +203,8 @@ class PieGraph extends Graph {
       $item = $value[2];
       $value = $value[1];
       $key = $item->key;
-      $colour_index = $this->keep_colour_order ? $original_position : $slice;
-      if($this->legend_show_empty || $item->value != 0) {
+      $colour_index = $this->getOption('keep_colour_order') ? $original_position : $slice;
+      if($this->getOption('legend_show_empty') || $item->value != 0) {
         $attr = [
           'fill' => $this->getColour($item, $colour_index, $this->dataset, false, true)
         ];
@@ -220,28 +227,29 @@ class PieGraph extends Graph {
       // add the data label if the slice angle is big enough
       if($this->slice_info[$original_position]->degrees() >= $min_slice_angle) {
         $parts = [];
-        if($this->show_label_key) {
+        if($this->getOption('show_label_key')) {
           $label_key = $this->getKey($this->values->associativeKeys() ?
             $original_position : $key);
-          if($this->datetime_keys) {
+          if($this->getOption('datetime_keys')) {
             $number_key = new Number($label_key);
             $dtf = new DateTimeFormatter;
             $dt = new \DateTime('@' . $number_key);
-            $label_key = $dtf->format($dt, $this->data_label_datetime_format);
+            $label_key = $dtf->format($dt, $this->getOption('data_label_datetime_format'));
           }
           $parts = explode("\n", $label_key);
         }
-        if($this->show_label_amount) {
+        if($this->getOption('show_label_amount')) {
           if($value === null) {
             $parts[] = '';
           } else {
-            $num = new Number($value * 1.0, $this->units_label, $this->units_before_label);
+            $num = new Number($value * 1.0, $this->getOption('units_label'),
+              $this->getOption('units_before_label'));
             $parts[] = $num->format();
           }
         }
-        if($this->show_label_percent) {
+        if($this->getOption('show_label_percent')) {
           $num = new Number($value / $this->total * 100.0, '%');
-          $parts[] = $num->format($this->label_percent_decimals);
+          $parts[] = $num->format($this->getOption('label_percent_decimals'));
         }
         $label_content = implode("\n", $parts);
 
@@ -257,7 +265,7 @@ class PieGraph extends Graph {
           ((string)$x1 == (string)$x2 && (string)$y1 == (string)$y2 &&
             (string)$angle_start != (string)$angle_end);
 
-        if($this->semantic_classes)
+        if($this->getOption('semantic_classes'))
           $attr['class'] = 'series0';
 
         $this_slice = [
@@ -287,7 +295,7 @@ class PieGraph extends Graph {
 
     $group = [];
     $series = $this->drawSlices($slices);
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -310,10 +318,10 @@ class PieGraph extends Graph {
     foreach($slice_list as $slice) {
       $item = $slice['item'];
 
-      if($this->show_tooltips)
+      if($this->getOption('show_tooltips'))
         $this->setTooltip($slice['attr'], $item, $this->dataset, $item->key,
           $item->value, true);
-      if($this->show_context_menu)
+      if($this->getOption('show_context_menu'))
         $this->setContextMenu($slice['attr'], $this->dataset, $item, true);
       $path = $this->getSlice($item,
         $slice['angle_start'], $slice['angle_end'],
@@ -344,7 +352,7 @@ class PieGraph extends Graph {
       return $this->element('ellipse', $attr);
     } else {
       $outer = ($angle_end - $angle_start > M_PI ? 1 : 0);
-      $sweep = ($this->reverse ? 0 : 1);
+      $sweep = ($this->getOption('reverse') ? 0 : 1);
       $d = new PathData('M', $this->x_centre, $this->y_centre, 'L', $x_start,
         $y_start, 'A', $radius_x, $radius_y, 0, $outer, $sweep, $x_end,
         $y_end, 'z');
@@ -359,11 +367,12 @@ class PieGraph extends Graph {
   protected function calcSlice($angle_start, $angle_end, $radius_x, $radius_y,
     &$x_start, &$y_start, &$x_end, &$y_end)
   {
+    $reverse = $this->getOption('reverse');
     $x_start = ($radius_x * cos($angle_start));
-    $y_start = ($this->reverse ? -1 : 1) *
+    $y_start = ($reverse ? -1 : 1) *
       ($radius_y * sin($angle_start));
     $x_end = ($radius_x * cos($angle_end));
-    $y_end = ($this->reverse ? -1 : 1) *
+    $y_end = ($reverse ? -1 : 1) *
       ($radius_y * sin($angle_end));
 
     $x_start += $this->x_centre;
@@ -442,19 +451,20 @@ class PieGraph extends Graph {
       $ry = $this->slice_info[$index]->radius_y;
 
       // place it at the label_position distance from centre
-      $pos_radius = $this->label_position;
+      $pos_radius = $this->getOption('label_position');
+      $reverse = $this->getOption('reverse');
       $ac = $this->s_angle + $a;
       $xc = $pos_radius * $rx * cos($ac);
-      $yc = ($this->reverse ? -1 : 1) * $pos_radius * $ry * sin($ac);
+      $yc = ($reverse ? -1 : 1) * $pos_radius * $ry * sin($ac);
       $pos = new Number($xc) . ' ' . new Number($yc);
 
       if($pos_radius > 1) {
         $space = $this->getOption(['data_label_space', $dataset]);
         $xt = ($rx + $space) * cos($ac);
-        $yt = ($this->reverse ? -1 : 1) * ($ry + $space) * sin($ac);
+        $yt = ($reverse ? -1 : 1) * ($ry + $space) * sin($ac);
       } else {
         $xt = $rx * 0.5 * cos($ac);
-        $yt = ($this->reverse ? -1 : 1) * $ry * 0.5 * sin($ac);
+        $yt = ($reverse ? -1 : 1) * $ry * 0.5 * sin($ac);
       }
       $target = [$x + $xt, $y + $yt];
     } else {
@@ -494,7 +504,7 @@ class PieGraph extends Graph {
     if(isset($this->slice_info[$index])) {
       $a = rad2deg($this->slice_info[$index]->midAngle());
       // tail direction is opposite slice direction
-      if($this->reverse)
+      if($this->getOption('reverse'))
         return fmod(900 - $this->start_angle - $a, 360); // 900 == 360 + 360 + 180
       else
         return fmod(180 + $this->start_angle + $a, 360);

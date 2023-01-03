@@ -62,8 +62,8 @@ class Text {
     if($font !== null)
       $this->metrics_file = $this->metricsFilename($font);
     $this->encoding = strtoupper($graph->encoding);
-    $this->no_tspan = $graph->no_tspan;
-    $this->no_metrics = $graph->no_font_metrics;
+    $this->no_tspan = $graph->getOption('no_tspan');
+    $this->no_metrics = $graph->getOption('no_font_metrics');
     $this->adjust = $adjust ? $adjust : 0.6;
   }
 

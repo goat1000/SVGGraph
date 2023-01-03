@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2013-2020 Graham Breach
+ * Copyright (C) 2013-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -54,7 +54,7 @@ class BubbleGraph extends PointGraph {
         $y = $this->gridY($item->value);
 
       if($y !== null) {
-        $r = $this->bubble_scale * $y_axis->unit() * sqrt(abs($area) / M_PI);
+        $r = $this->getOption('bubble_scale') * $y_axis->unit() * sqrt(abs($area) / M_PI);
         $circle = ['cx' => $x, 'cy' => $y, 'r' => $r];
         $colour = $this->getColour($item, $bnum, $dataset);
         $circle_style = ['fill' => $colour];
@@ -68,11 +68,11 @@ class BubbleGraph extends PointGraph {
         $this->addDataLabel($dataset, $bnum, $circle, $item,
           $x - $r, $y - $r, $r * 2, $r * 2);
 
-        if($this->show_tooltips)
+        if($this->getOption('show_tooltips'))
           $this->setTooltip($circle, $item, $dataset, $item->key, $area, true);
-        if($this->show_context_menu)
+        if($this->getOption('show_context_menu'))
           $this->setContextMenu($circle, $dataset, $item, true);
-        if($this->semantic_classes)
+        if($this->getOption('semantic_classes'))
           $circle['class'] = 'series0';
         $bubble = $this->element('circle', array_merge($circle, $circle_style));
         $series .= $this->getLink($item, $item->key, $bubble);
@@ -85,7 +85,7 @@ class BubbleGraph extends PointGraph {
     }
 
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -115,7 +115,7 @@ class BubbleGraph extends PointGraph {
       $this->setOption('force_assoc', true);
 
     // prevent drawing actual markers
-    $this->marker_size = 0;
+    $this->setOption('marker_size', 0);
   }
 
   /**

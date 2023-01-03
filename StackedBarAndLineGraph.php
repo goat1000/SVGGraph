@@ -25,6 +25,8 @@ class StackedBarAndLineGraph extends StackedBarGraph {
 
   protected $linegraph = null;
   protected $dataset_types = [];
+  protected $min_values = null;
+  protected $max_values = null;
 
   /**
    * We need an instance of the LineGraph class
@@ -65,7 +67,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
    */
   protected function draw()
   {
-    if($this->log_axis_y)
+    if($this->getOption('log_axis_y'))
       throw new \Exception('log_axis_y not supported by StackedBarAndLineGraph');
     $body = $this->grid() . $this->underShapes();
 
@@ -188,7 +190,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
     $bars .= $this->element('g', $group, null, $graph_line);
 
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -252,7 +254,7 @@ class StackedBarAndLineGraph extends StackedBarGraph {
    */
   private function calcMinMaxValues()
   {
-    $lines = $this->line_dataset;
+    $lines = $this->getOption('line_dataset');
     if(!is_array($lines))
       $lines = [$lines];
     sort($lines);

@@ -60,7 +60,7 @@ abstract class HorizontalGridGraph extends GridGraph {
   protected function getYAxisFactory()
   {
     $y_bar = $this->getOption('label_centre');
-    return new AxisFactory($this->datetime_keys, $this->settings,
+    return new AxisFactory($this->getOption('datetime_keys'), $this->settings,
       true, $y_bar, true);
   }
 
@@ -267,6 +267,6 @@ abstract class HorizontalGridGraph extends GridGraph {
       return;
 
     $this->guidelines = new Guidelines($this, true,
-      $this->values->associativeKeys(), $this->datetime_keys);
+      $this->values->associativeKeys(), $this->getOption('datetime_keys'));
   }
 }

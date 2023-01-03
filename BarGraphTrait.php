@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2021 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -72,8 +72,8 @@ trait BarGraphTrait {
     if(is_numeric($bw) && $bw >= 1)
       return $bw;
     $unit_w = $this->x_axes[$this->main_x_axis]->unit();
-    $bw = $unit_w - $this->bar_space;
-    return max(1, $bw, $this->bar_width_min);
+    $bw = $unit_w - $this->getOption('bar_space');
+    return max(1, $bw, $this->getOption('bar_width_min'));
   }
 
   /**
@@ -101,7 +101,7 @@ trait BarGraphTrait {
   protected function barGroup()
   {
     $group = [];
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     $shadow_id = $this->defs->getShadow();
     if($shadow_id !== null)
@@ -133,23 +133,23 @@ trait BarGraphTrait {
       return '';
 
     // if the bar is empty and no legend or labels to show give up now
-    if((string)$bar['height'] == '0' && !$this->legend_show_empty &&
-      !$this->show_data_labels)
+    if((string)$bar['height'] == '0' && !$this->getOption('legend_show_empty') &&
+      !$this->getOption('show_data_labels'))
       return '';
 
     $this->setStroke($bar, $item, $index, $dataset);
     $bar['fill'] = $this->getColour($item, $index, $dataset);
 
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $bar['class'] = 'series' . $dataset;
 
     $label_shown = $this->addDataLabel($dataset, $index, $bar, $item,
       $bar['x'], $bar['y'], $bar['width'], $bar['height']);
 
-    if($this->show_tooltips)
+    if($this->getOption('show_tooltips'))
       $this->setTooltip($bar, $item, $dataset, $item->key, $item->value,
         $label_shown);
-    if($this->show_context_menu)
+    if($this->getOption('show_context_menu'))
       $this->setContextMenu($bar, $dataset, $item, $label_shown);
 
     $round = max($this->getItemOption('bar_round', $dataset, $item), 0);
@@ -245,7 +245,7 @@ trait BarGraphTrait {
   {
     list($pos,$end) = parent::dataLabelPosition($dataset, $index, $item,
       $x, $y, $w, $h, $label_w, $label_h);
-    $bpos = $this->bar_label_position;
+    $bpos = $this->getOption('bar_label_position');
     if(!empty($bpos))
       $pos = $bpos;
 

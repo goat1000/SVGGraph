@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,7 @@
 namespace Goat1000\SVGGraph;
 
 class Marker {
-  public $x, $y, $key, $value, $extra, $item;
+  public $x, $y, $key, $value, $extra, $item, $id;
 
   public function __construct($x, $y, &$item, $extra)
   {

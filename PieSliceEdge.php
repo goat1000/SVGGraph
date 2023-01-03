@@ -54,7 +54,7 @@ class PieSliceEdge {
       // if end_angle is not set, then single_slice is full pie
       $start_angle = 0.0;
       $end_angle = M_PI;
-    } elseif($graph->reverse) {
+    } elseif($graph->getOption('reverse')) {
       // apply reverse now to save thinking about it later
       $s = M_PI * 4.0 - $end_angle;
       $e = M_PI * 4.0 - $start_angle;

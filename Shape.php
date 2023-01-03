@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2021 Graham Breach
+ * Copyright (C) 2015-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -140,7 +140,7 @@ abstract class Shape {
     $this->transformCoordinates($attributes);
 
     if($this->autohide) {
-      $graph->javascript->autoHide($attributes, $this->autohide[0],
+      $graph->getJavascript()->autoHide($attributes, $this->autohide[0],
         $this->autohide[1]);
     }
 

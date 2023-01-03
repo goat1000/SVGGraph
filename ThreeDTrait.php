@@ -26,6 +26,7 @@ trait ThreeDTrait {
   // Number of data ranges
   protected $depth = 1;
   protected $depth_unit = 1;
+  protected $project_angle;
 
   /**
    * Converts x,y,z coordinates into flat x,y
@@ -72,7 +73,8 @@ trait ThreeDTrait {
   {
     $this->calcAxes();
     $this->calcGrid();
-    if(!$this->show_grid || (!$this->show_grid_h && !$this->show_grid_v))
+    if(!$this->getOption('show_grid') ||
+      (!$this->getOption('show_grid_h') && !$this->getOption('show_grid_v')))
       return '';
 
     // move to depth
@@ -100,21 +102,21 @@ trait ThreeDTrait {
         'd' => $dpath,
         'fill' => $back_colour
       ];
-      if($this->grid_back_opacity != 1)
-        $bpath['fill-opacity'] = $this->grid_back_opacity;
+      if($this->getOption('grid_back_opacity') != 1)
+        $bpath['fill-opacity'] = $this->getOption('grid_back_opacity');
       $back = $this->element('path', $bpath);
     }
     $back .= $this->getGridStripes();
-    if($this->show_grid_subdivisions) {
+    if($this->getOption('show_grid_subdivisions')) {
       $subpath_h = new PathData;
       $subpath_v = new PathData;
-      if($this->show_grid_h) {
+      if($this->getOption('show_grid_h')) {
         $subdivs = $this->getSubDivsY($this->main_y_axis);
         foreach($subdivs as $y)
           $subpath_v->add('M', $xleft, $y->position, 'l', $xd, $yd,
             'l', $x_w, 0);
       }
-      if($this->show_grid_v) {
+      if($this->getOption('show_grid_v')) {
         $subdivs = $this->getSubDivsX(0);
         foreach($subdivs as $x)
           $subpath_h->add('M', $x->position, $ybottom, 'l', $xd, $yd,
@@ -154,12 +156,12 @@ trait ThreeDTrait {
     $path->add('M', $xleft, $ybottom, 'l', 0, $minus_y_h);
     $path_v = new PathData;
     $path_h = new PathData;
-    if($this->show_grid_h) {
+    if($this->getOption('show_grid_h')) {
       $points = $this->getGridPointsY($this->main_y_axis);
       foreach($points as $y)
         $path_v->add('M', $xleft, $y->position, 'l', $xd, $yd, 'l', $x_w, 0);
     }
-    if($this->show_grid_v) {
+    if($this->getOption('show_grid_v')) {
       $points = $this->getGridPointsX(0);
       foreach($points as $x)
         $path_h->add('M', $x->position, $ybottom, 'l', $xd, $yd, 'l', 0, $minus_y_h);
@@ -191,7 +193,7 @@ trait ThreeDTrait {
    */
   protected function getGridStripes()
   {
-    if(!$this->grid_back_stripe)
+    if(!$this->getOption('grid_back_stripe'))
       return '';
 
     // move to depth
@@ -207,9 +209,9 @@ trait ThreeDTrait {
     $yd = new Number($yd);
 
     // use array of colours if available, otherwise stripe a single colour
-    $colours = is_array($this->grid_back_stripe_colour) ?
-      $this->grid_back_stripe_colour :
-      [null, $this->grid_back_stripe_colour];
+    $colours = is_array($this->getOption('grid_back_stripe_colour')) ?
+      $this->getOption('grid_back_stripe_colour') :
+      [null, $this->getOption('grid_back_stripe_colour')];
     $pathdata = '';
     $c = 0;
     $p1 = null;
@@ -230,8 +232,8 @@ trait ThreeDTrait {
           'fill' => new Colour($this, $cc),
           'd' => $dpath,
         ];
-        if($this->grid_back_stripe_opacity != 1)
-          $bpath['fill-opacity'] = $this->grid_back_stripe_opacity;
+        if($this->getOption('grid_back_stripe_opacity') != 1)
+          $bpath['fill-opacity'] = $this->getOption('grid_back_stripe_opacity');
         $stripes .= $this->element('path', $bpath);
       } else {
         $p1 = $y;
@@ -337,24 +339,24 @@ trait ThreeDTrait {
     $top = !isset($options['top']) || $options['top'];
 
     // if the bar is empty and no legend or labels to show give up now
-    if(!$top && (string)$bar['height'] == '0' && !$this->legend_show_empty &&
-      !$this->show_data_labels)
+    if(!$top && (string)$bar['height'] == '0' && !$this->getOption('legend_show_empty') &&
+      !$this->getOption('show_data_labels'))
       return '';
 
     // fill and stroke the group
     $group = ['fill' => $this->getColour($item, $index, $dataset)];
     $this->setStroke($group, $item, $index, $dataset);
 
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series' . $dataset;
 
     $label_shown = $this->addDataLabel($dataset, $index, $group, $item,
       $bar['x'], $bar['y'], $bar['width'], $bar['height']);
 
-    if($this->show_tooltips)
+    if($this->getOption('show_tooltips'))
       $this->setTooltip($group, $item, $dataset, $item->key, $item->value,
         $label_shown);
-    if($this->show_context_menu)
+    if($this->getOption('show_context_menu'))
       $this->setContextMenu($group, $dataset, $item, $label_shown);
 
     $bar_part = $this->element('g', $group, null,

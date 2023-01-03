@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,7 +78,7 @@ trait DonutGraphTrait {
       $attr['fill-rule'] = 'evenodd';
     } else {
       $outer = ($angle > M_PI ? 1 : 0);
-      $sweep = ($this->reverse ? 0 : 1);
+      $sweep = ($this->getOption('reverse') ? 0 : 1);
 
       // inner radius reduced by gap
       $as = $angle_start + $inner_a;
@@ -102,13 +102,14 @@ trait DonutGraphTrait {
    */
   protected function pieExtras()
   {
-    if(empty($this->inner_text))
+    $inner_text = $this->getOption('inner_text');
+    if(empty($inner_text))
       return '';
 
     // use content label for inner text - measurements don't really matter
     $this->addContentLabel('innertext', 0,
       $this->x_centre - 100, $this->y_centre - 100, 200, 200,
-      $this->inner_text);
+      $inner_text);
     return '';
   }
 
@@ -123,14 +124,14 @@ trait DonutGraphTrait {
 
     list($pos, $target) = parent::dataLabelPosition($dataset, $index, $item,
       $x, $y, $w, $h, $label_w, $label_h);
-    if(isset($this->slice_info[$index]) && $this->label_position <= 1) {
+    if(isset($this->slice_info[$index]) && $this->getOption('label_position') <= 1) {
       $a = $this->slice_info[$index]->midAngle();
       $ac = $this->s_angle + $a;
       $rx = $this->slice_info[$index]->radius_x;
       $ry = $this->slice_info[$index]->radius_y;
-      $ring_centre = ($this->inner_radius + 1) * 0.5;
+      $ring_centre = ($this->getOption('inner_radius') + 1) * 0.5;
       $xt = $rx * $ring_centre * cos($ac);
-      $yt = ($this->reverse ? -1 : 1) * $ry * $ring_centre * sin($ac);
+      $yt = ($this->getOption('reverse') ? -1 : 1) * $ry * $ring_centre * sin($ac);
       $target = [$x + $xt, $y + $yt];
     }
     return [$pos, $target];

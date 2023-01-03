@@ -102,9 +102,10 @@ trait StackedGroupedBarTrait {
     $group_count = count($this->groups);
     $chunk_count = count($this->multi_graph);
     list($group_width, $bspace, $group_unit_width) =
-      $this->barPosition($this->bar_width, $this->bar_width_min,
-      $this->x_axes[$this->main_x_axis]->unit(), $group_count, $this->bar_space,
-      $this->group_space);
+      $this->barPosition($this->getOption('bar_width'),
+        $this->getOption('bar_width_min'),
+        $this->x_axes[$this->main_x_axis]->unit(), $group_count,
+        $this->getOption('bar_space'), $this->getOption('group_space'));
     $this->group_bar_spacing = $group_unit_width;
     $this->setBarWidth($group_width, $bspace);
   }

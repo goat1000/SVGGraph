@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2021 Graham Breach
+ * Copyright (C) 2017-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -52,6 +52,7 @@ class Guidelines {
   private $text_opacity;
   private $text_padding;
   private $text_position;
+  private $line_spacing;
 
   public function __construct(&$graph, $flip_axes, $assoc, $datetime)
   {

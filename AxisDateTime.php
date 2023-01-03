@@ -30,6 +30,9 @@ class AxisDateTime extends Axis {
   protected $grid_split = 0;
   protected $start = 0;
   protected $end = 0;
+  protected $duration = 1;
+  protected $grid_units;
+  protected $grid_unit_count;
   protected $label_callback;
   protected $axis_text_format = 'Y-m-d';
   protected $timezone = null;

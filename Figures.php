@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2019 Graham Breach
+ * Copyright (C) 2018-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,28 +24,36 @@ namespace Goat1000\SVGGraph;
 class Figures {
 
   private $graph;
+  private $settings;
+  private $loaded = false;
   private $figure_map = [];
 
-  public function __construct(&$graph)
+  public function __construct(&$graph, &$settings)
   {
     $this->graph =& $graph;
+    $this->settings =& $settings;
   }
 
   /**
    * Load figures from options list
    */
-  public function load(&$settings)
+  public function load()
   {
-    if(!isset($settings['figure']))
+    if($this->loaded)
+      return;
+    $this->loaded = true;
+
+    if(!isset($this->settings['figure']))
       return;
 
-    if(!is_array($settings['figure']) || !isset($settings['figure'][0]))
+    if(!is_array($this->settings['figure']) ||
+      !isset($this->settings['figure'][0]))
       throw new \Exception('Malformed figure option.');
 
-    if(!is_array($settings['figure'][0])) {
-      $this->addFigure($settings['figure']);
+    if(!is_array($this->settings['figure'][0])) {
+      $this->addFigure($this->settings['figure']);
     } else {
-      foreach($settings['figure'] as $figure) {
+      foreach($this->settings['figure'] as $figure) {
         $this->addFigure($figure);
       }
     }
@@ -60,12 +68,13 @@ class Figures {
     if(isset($this->figure_map[$name]))
       throw new \Exception('Figure [' . $name . '] defined more than once.');
     $content = '';
+    $shapes = $this->graph->getShapeList();
     if(!is_array($figure_array[0])) {
-      $shape = $this->graph->shapes->getShape($figure_array);
+      $shape = $shapes->getShape($figure_array);
       $content .= $shape->draw($this->graph);
     } else {
       foreach($figure_array as $s) {
-        $shape = $this->graph->shapes->getShape($s);
+        $shape = $shapes->getShape($s);
         $content .= $shape->draw($this->graph);
       }
     }
@@ -78,6 +87,7 @@ class Figures {
    */
   public function getFigure($name)
   {
+    $this->load();
     if(isset($this->figure_map[$name]))
       return $this->figure_map[$name];
     return null;

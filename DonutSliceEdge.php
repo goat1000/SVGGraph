@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,7 +65,7 @@ class DonutSliceEdge extends PieSliceEdge {
       default:
         return;
       }
-    } elseif($graph->reverse) {
+    } elseif($graph->getOption('reverse')) {
       // apply reverse now to save thinking about it later
       $s = M_PI * 4.0 - $end_angle;
       $e = M_PI * 4.0 - $start_angle;

@@ -39,8 +39,8 @@ trait StackedGrouped3DGraphTrait {
 
     $block = $x_len / $num;
     $group = count($this->groups);
-    $a = $this->bar_space;
-    $b = $this->group_space;
+    $a = $this->getOption('bar_space');
+    $b = $this->getOption('group_space');
     $c = (($block) - $a - ($group - 1) * $b) / $group;
     $d = ($a + $c) / $block;
     $this->depth = $d;

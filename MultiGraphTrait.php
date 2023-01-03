@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,12 +27,6 @@ namespace Goat1000\SVGGraph;
 trait MultiGraphTrait {
 
   /**
-   * Can't actually define it here because it could be defined multiple times,
-   * causing E_STRICT error
-   */
-  // protected $multi_graph = null;
-
-  /**
    * Construct MultiGraph when setting values
    */
   public function values($values)
@@ -41,7 +35,7 @@ trait MultiGraphTrait {
     if(!$this->values->error) {
       $this->multi_graph = new MultiGraph($this->values,
         $this->getOption('force_assoc'),
-        $this->datetime_keys,
+        $this->getOption('datetime_keys'),
         $this->getOption('require_integer_keys'));
 
       $this->multi_graph->setEnabledDatasets($this->getOption('dataset'));

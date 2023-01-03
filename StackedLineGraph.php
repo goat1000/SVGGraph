@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2012-2021 Graham Breach
+ * Copyright (C) 2012-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,7 +35,7 @@ class StackedLineGraph extends MultiLineGraph {
 
   protected function draw()
   {
-    if($this->log_axis_y)
+    if($this->getOption('log_axis_y'))
       throw new \Exception('log_axis_y not supported by StackedLineGraph');
 
     $body = $this->grid() . $this->underShapes();
@@ -87,7 +87,7 @@ class StackedLineGraph extends MultiLineGraph {
       if($point_count > 0) {
         $attr['d'] = $path;
         $attr['stroke'] = $this->getColour(null, 0, $i, false, false);
-        if($this->semantic_classes)
+        if($this->getOption('semantic_classes'))
           $attr['class'] = 'series' . $i;
         $graph_line = $this->element('path', $attr);
         $fill_style = null;
@@ -110,7 +110,7 @@ class StackedLineGraph extends MultiLineGraph {
           ];
           if($opacity < 1)
             $fill_style['opacity'] = $opacity;
-          if($this->semantic_classes)
+          if($this->getOption('semantic_classes'))
             $fill_style['class'] = 'series' . $i;
           $graph_line = $this->element('path', $fill_style) . $graph_line;
         }
@@ -145,7 +145,7 @@ class StackedLineGraph extends MultiLineGraph {
 
     $group = [];
     $this->clipGrid($group);
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $group['class'] = 'series';
     if(!empty($group))
       $all_plots = $this->element('g', $group, null, $all_plots);

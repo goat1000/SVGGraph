@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2022 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -158,16 +158,16 @@ class CandlestickGraph extends BarGraph {
     $this->setStroke($bar, $item, $index, $dataset);
     $bar['fill'] = $this->getColour($item, $index, $dataset);
 
-    if($this->semantic_classes)
+    if($this->getOption('semantic_classes'))
       $bar['class'] = 'series' . $dataset;
 
     $label_shown = $this->addDataLabel($dataset, $index, $bar, $item,
       $bar['x'], $bar['y'], $bar['width'], $bar['height']);
 
-    if($this->show_tooltips)
+    if($this->getOption('show_tooltips'))
       $this->setTooltip($bar, $item, $dataset, $item->key, $item->value,
         $label_shown);
-    if($this->show_context_menu)
+    if($this->getOption('show_context_menu'))
       $this->setContextMenu($bar, $dataset, $item, $label_shown);
 
     $round = max($this->getItemOption('bar_round', $dataset, $item), 0);
