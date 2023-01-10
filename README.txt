@@ -1,4 +1,4 @@
-SVGGraph Library version 3.18
+SVGGraph Library version 3.19
 =============================
 
 This library provides PHP classes and functions for easily creating SVG
@@ -57,6 +57,8 @@ At the moment these types of graph are supported by SVGGraph:
                           graph;
 
  Histogram - a bar graph that shows the range of values;
+
+ ParetoChart - a bar and line graph showing sorted and summed values;
 
  MultiScatterGraph - scatter graph supporting multiple data sets;
 
@@ -329,4 +331,4 @@ For more information about this software please contact the author,
 graham(at)goat1000.com or visit the website: http://www.goat1000.com/
 
 
-Copyright (C) 2009-2022 Graham Breach
+Copyright (C) 2009-2023 Graham Breach

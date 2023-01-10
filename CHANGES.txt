@@ -1,3 +1,9 @@
+Version 3.19 (10/01/2023)
+------------
+- Added ParetoChart.
+- Added fill_under "full" option to always fill to bottom of grid.
+- Updated code to work properly under PHP 8.2.
+
 Version 3.18 (02/12/2022)
 ------------
 - Added shading of flat 3D pie graph sides.
