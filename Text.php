@@ -73,6 +73,9 @@ class Text {
    */
   public function measure($text, $font_size, $angle = 0, $line_spacing = 0)
   {
+    if(!is_numeric($font_size))
+      throw new \InvalidArgumentException("Font size is not numeric");
+
     if(!is_string($text)) {
       if(is_numeric($text)) {
         $num = new Number($text);
@@ -87,6 +90,9 @@ class Text {
     $cached = $this->measureCached($text, $font_size, $angle, $line_spacing);
     if($cached !== null)
       return $cached;
+
+    if($line_spacing !== 0 && !is_numeric($line_spacing))
+      throw new \InvalidArgumentException("Line spacing is not numeric");
 
     $lines = $line_spacing > 0 ? $this->splitLines($text) : [$text];
     $width = $height = 0;
@@ -259,6 +265,9 @@ class Text {
    */
   public function baseline($font_size)
   {
+    if(!is_numeric($font_size))
+      throw new \InvalidArgumentException("Font size is not numeric");
+
     $metrics = $this->no_metrics ? false : $this->loadMetrics($this->font);
 
     if($metrics) {
@@ -297,6 +306,9 @@ class Text {
       $content = $this->unconvert($content);
       return $this->graph->element('text', $attribs, $styles, $content);
     }
+
+    if($line_spacing !== 0 && !is_numeric($line_spacing))
+      throw new \InvalidArgumentException("Line spacing is not numeric");
 
     $lines = $this->splitLines($text);
     $content = '';
