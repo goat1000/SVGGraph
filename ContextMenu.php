@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2020 Graham Breach
+ * Copyright (C) 2018-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,12 +78,13 @@ class ContextMenu {
     $this->js->addInitFunction('contextMenuInit');
 
     $opts = ['link_target', 'link_underline', 'stroke_width', 'round', 'font',
-      'font_size', 'font_weight', 'document_menu', 'spacing', 'min_width',
+      'font_weight', 'document_menu', 'spacing', 'min_width',
       'shadow_opacity', 'mouseleave'];
     $colours = ['colour', 'link_colour', 'link_hover_colour', 'back_colour'];
     $vars = [];
     foreach($opts as $opt)
       $vars[$opt] = $this->graph->getOption('context_' . $opt);
+    $vars['font_size'] = Number::units($this->graph->getOption('context_font_size'));
     foreach($colours as $opt)
       $vars[$opt] = new Colour($this->graph, $this->graph->getOption('context_' . $opt));
 

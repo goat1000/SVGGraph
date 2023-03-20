@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019 Graham Breach
+ * Copyright (C) 2019-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,7 @@ class Number {
   private static $default_precision = 5;
   private static $decimal_separator = '.';
   private static $thousands_separator = ',';
-  
+
   public function __construct($value, $units = '', $units_before = '')
   {
     if(is_object($value) && get_class($value) === 'Goat1000\\SVGGraph\\Number') {
@@ -124,6 +124,27 @@ class Number {
       $s = $b1 != '' ? $a . Number::$decimal_separator . $b1 : $a;
     }
     return $this->units_before . $s . $this->units;
+  }
+
+  /**
+   * Converts a string with units to a value in SVG user units
+   */
+  public static function units($value)
+  {
+    if(is_numeric($value) || $value === null)
+      return $value;
+    if(!is_string($value))
+      throw new \InvalidArgumentException("Unit value not a string");
+
+    if(!preg_match('/^([0-9.]+)(px|in|cm|mm|pt|pc)$/', $value, $parts))
+      throw new \InvalidArgumentException("Unit value {$value} not in supported format");
+
+    $count = (float)$parts[1];
+    $units = $parts[2];
+    $umap = [
+      'px' => 1.0, 'in' => 96.0, 'cm' => 37.795, 'mm' => 3.7795, 'pt' => 1.3333, 'pc' => 16.0
+    ];
+    return $count * $umap[$units];
   }
 }
 

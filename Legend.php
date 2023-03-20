@@ -67,7 +67,7 @@ class Legend {
     // copy options to class
     $opts = ['autohide', 'autohide_opacity', 'back_colour', 'colour', 'columns',
       'draggable', 'entries', 'entry_height', 'entry_width', 'font',
-      'font_adjust', 'font_size', 'font_weight', 'position', 'round',
+      'font_adjust', 'font_weight', 'position', 'round',
       'shadow_opacity', 'show_empty', 'stroke_colour', 'stroke_width',
       'text_side', 'title', 'title_link', 'title_font_weight', 'type',
       'unique_fields'];
@@ -76,17 +76,18 @@ class Legend {
     }
 
     // slightly more complicated options
+    $this->font_size = Number::units($graph->getOption('legend_font_size'));
     $this->title_colour = $graph->getOption('legend_title_colour',
       'legend_colour');
     $this->title_font = $graph->getOption('legend_title_font', 'legend_font');
     $this->title_font_adjust = $graph->getOption('legend_title_font_adjust',
       'legend_font_adjust');
-    $this->title_font_size = $graph->getOption('legend_title_font_size',
-      'legend_font_size');
-    $this->line_spacing = $graph->getOption('legend_line_spacing');
+    $this->title_font_size = Number::units($graph->getOption('legend_title_font_size',
+      'legend_font_size'));
+    $this->line_spacing = Number::units($graph->getOption('legend_line_spacing'));
     if($this->line_spacing === null || $this->line_spacing < 1)
       $this->line_spacing = $this->font_size;
-    $this->title_line_spacing = $graph->getOption('legend_title_line_spacing');
+    $this->title_line_spacing = Number::units($graph->getOption('legend_title_line_spacing'));
     if($this->title_line_spacing === null || $this->title_line_spacing < 1)
       $this->title_line_spacing = $this->title_font_size;
   }

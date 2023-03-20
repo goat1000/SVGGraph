@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2017-2022 Graham Breach
+ * Copyright (C) 2017-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -68,9 +68,9 @@ class Guidelines {
     $this->guidelines = [];
 
     // set up options
-    $opts = ['above', 'dash', 'font', 'font_adjust', 'font_size',
-      'font_weight', 'length', 'length_units', 'opacity', 'stroke_width',
-      'text_align', 'text_angle', 'text_padding', 'text_position', 'line_spacing'];
+    $opts = ['above', 'dash', 'font', 'font_adjust', 'font_weight',
+      'length', 'length_units', 'opacity', 'stroke_width',
+      'text_align', 'text_angle', 'text_padding', 'text_position' ];
     foreach($opts as $opt)
       $this->{$opt} = $graph->getOption('guideline_' . $opt);
 
@@ -80,6 +80,9 @@ class Guidelines {
       $graph->getOption('guideline_text_colour', 'guideline_colour'));
     $this->text_opacity = $graph->getOption('guideline_text_opacity',
       'guideline_opacity');
+    $this->font_size = Number::units($graph->getOption('guideline_font_size'));
+    $this->line_spacing = Number::units($graph->getOption('guideline_line_spacing',
+      'guideline_font_size'));
 
     $lines = $this->normalize($lines);
     foreach($lines as $line)

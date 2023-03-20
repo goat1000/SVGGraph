@@ -121,6 +121,7 @@ class CrossHairs {
     foreach($text_options as $opt)
       $t_opt[$opt] = $this->graph->getOption('crosshairs_text_' . $opt);
 
+
     // text group for grid details
     $text_group = ['id' => $this->graph->newId(), 'visibility' => 'hidden'];
     $text_rect = [
@@ -133,7 +134,7 @@ class CrossHairs {
       $text_rect['stroke-width'] = $t_opt['stroke_width'];
       $text_rect['stroke'] = $t_opt['colour'];
     }
-    $font_size = max(3, (int)$t_opt['font_size']);
+    $font_size = max(3, Number::units($t_opt['font_size']));
     $text_element = [
       'x' => 0, 'y' => $font_size,
       'font-family' => $t_opt['font'],

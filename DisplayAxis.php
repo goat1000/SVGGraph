@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2018-2022 Graham Breach
+ * Copyright (C) 2018-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -164,14 +164,14 @@ class DisplayAxis {
       $styles['t_position'] = $get_axis_option('axis_text_position');
       $styles['t_location'] = $get_axis_option('axis_text_location');
       $styles['t_font'] = $get_axis_option('axis_font');
-      $styles['t_font_size'] = $get_axis_option('axis_font_size');
+      $styles['t_font_size'] = Number::units($get_axis_option('axis_font_size'));
       $styles['t_font_adjust'] = $get_axis_option('axis_font_adjust');
       $styles['t_font_weight'] = $get_axis_option('axis_font_weight');
       $styles['t_space'] = $get_axis_option('axis_text_space');
       $styles['t_colour'] = new Colour($graph, $graph->getOption(
         ['axis_text_colour_' . $o, $axis_no], 'axis_text_colour',
         ['@', $styles['colour']]));
-      $styles['t_line_spacing'] = $get_axis_option('axis_text_line_spacing');
+      $styles['t_line_spacing'] = Number::units($get_axis_option('axis_text_line_spacing'));
       if($styles['t_line_spacing'] === null || $styles['t_line_spacing'] < 1)
         $styles['t_line_spacing'] = $styles['t_font_size'];
       $styles['t_back_colour'] = null;
@@ -202,9 +202,9 @@ class DisplayAxis {
       $styles['l_font'] = $graph->getOption(
         ['label_font_' . $o, $axis_no], 'label_font',
         ['axis_font_' . $o, $axis_no], 'axis_font');
-      $styles['l_font_size'] = $graph->getOption(
+      $styles['l_font_size'] = Number::units($graph->getOption(
         ['label_font_size_' . $o, $axis_no], 'label_font_size',
-        ['axis_font_size_' . $o, $axis_no], 'axis_font_size');
+        ['axis_font_size_' . $o, $axis_no], 'axis_font_size'));
       $styles['l_font_weight'] = $graph->getOption(
         ['label_font_weight_' . $o, $axis_no], 'label_font_weight');
       $styles['l_colour'] = new Colour($graph, $graph->getOption(
@@ -213,7 +213,7 @@ class DisplayAxis {
         ['@', $styles['colour']]));
       $styles['l_space'] = $graph->getOption('label_space');
       $styles['l_pos'] = $get_axis_option('axis_label_position');
-      $styles['l_line_spacing'] = $get_axis_option('label_line_spacing');
+      $styles['l_line_spacing'] = Number::units($get_axis_option('label_line_spacing'));
       if($styles['l_line_spacing'] === null || $styles['l_line_spacing'] < 1)
         $styles['l_line_spacing'] = $styles['l_font_size'];
     }

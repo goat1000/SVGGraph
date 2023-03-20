@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2020 Graham Breach
+ * Copyright (C) 2020-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,7 +42,7 @@ class Average {
       $line = [ $avg ];
 
       $title = $this->getTitle($graph, $avg, $d);
-      if(strlen($title) > 0)
+      if($title !== null && strlen($title) > 0)
         $line[] = $title;
 
       $cg = new ColourGroup($graph, null, 0, $d, 'average_colour');
@@ -54,13 +54,12 @@ class Average {
         $line['text_colour'] = $cg->stroke();
       }
 
-      $sw = new Number($graph->getOption(['average_stroke_width', $d], 1));
-      $line['stroke_width'] = $sw;
+      $line['stroke_width'] = new Number($graph->getOption(['average_stroke_width', $d], 1));
+      $line['font_size'] = Number::units($graph->getOption(['average_font_size', $d]));
 
       $opts = ["opacity", "above", "dash", "title_align",
         "title_angle", "title_opacity", "title_padding", "title_position",
-        "font", "font_size", "font_adjust", "font_weight",
-        "length", "length_units"];
+        "font", "font_adjust", "font_weight", "length", "length_units"];
       foreach($opts as $opt) {
         $g_opt = str_replace('title', 'text', $opt);
         $line[$g_opt] = $graph->getOption(['average_' . $opt, $d]);

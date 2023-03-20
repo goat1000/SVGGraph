@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2022 Graham Breach
+ * Copyright (C) 2015-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -406,9 +406,9 @@ class DataLabels {
    */
   protected function getFontSize($style)
   {
-    $font_size = $line_spacing = max(4, (float)$style['font_size']);
+    $font_size = $line_spacing = max(4, Number::units($style['font_size']));
     if($style['line_spacing'] !== null)
-      $line_spacing = max(1, (float)$style['line_spacing']);
+      $line_spacing = max(1, Number::units($style['line_spacing']));
     return [$font_size, $line_spacing];
   }
 

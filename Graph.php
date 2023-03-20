@@ -557,12 +557,12 @@ abstract class Graph {
     if($svg_text->strlen($info['title']) <= 0)
       return $info;
 
-    $info['font_size'] = $this->getOption('graph_title_font_size');
+    $info['font_size'] = Number::units($this->getOption('graph_title_font_size'));
     $info['weight'] = $this->getOption('graph_title_font_weight');
     $info['colour'] = $this->getOption('graph_title_colour');
     $info['pos'] = $this->getOption('graph_title_position');
     $info['space'] = $this->getOption('graph_title_space');
-    $info['line_spacing'] = $this->getOption('graph_title_line_spacing');
+    $info['line_spacing'] = Number::units($this->getOption('graph_title_line_spacing'));
     if($info['line_spacing'] === null || $info['line_spacing'] < 1)
       $info['line_spacing'] = $info['font_size'];
 
@@ -579,15 +579,15 @@ abstract class Graph {
     $svg_subtext = new Text($this, $info['sfont']);
 
     if($svg_subtext->strlen($info['stitle']) > 0) {
-      $info['sfont_size'] = $this->getOption('graph_subtitle_font_size',
-        'graph_title_font_size');
+      $info['sfont_size'] = Number::units($this->getOption('graph_subtitle_font_size',
+        'graph_title_font_size'));
       $info['sweight'] = $this->getOption('graph_subtitle_font_weight',
         'graph_title_font_weight');
       $info['scolour'] = $this->getOption('graph_subtitle_colour',
         'graph_title_colour');
       $info['sspace'] = $this->getOption('graph_subtitle_space',
         'graph_title_space');
-      $info['sline_spacing'] = $this->getOption('graph_subtitle_line_spacing');
+      $info['sline_spacing'] = Number::units($this->getOption('graph_subtitle_line_spacing'));
       if($info['sline_spacing'] === null || $info['sline_spacing'] < 1)
         $info['sline_spacing'] = $info['sfont_size'];
 
