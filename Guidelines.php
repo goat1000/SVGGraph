@@ -81,8 +81,7 @@ class Guidelines {
     $this->text_opacity = $graph->getOption('guideline_text_opacity',
       'guideline_opacity');
     $this->font_size = Number::units($graph->getOption('guideline_font_size'));
-    $this->line_spacing = Number::units($graph->getOption('guideline_line_spacing',
-      'guideline_font_size'));
+    $this->line_spacing = Number::units($graph->getOption('guideline_line_spacing'));
 
     $lines = $this->normalize($lines);
     foreach($lines as $line)
