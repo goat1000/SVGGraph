@@ -156,7 +156,6 @@ class Guidelines {
     $text_opts = [
       'opacity' => 'opacity',
       'font' => 'font-family',
-      'font_size' => 'font-size',
       'font_weight' => 'font-weight',
       'text_opacity' => 'opacity', // overrides line opacity
 
@@ -166,7 +165,6 @@ class Guidelines {
       'text_padding' => 'text_padding',
       'text_angle' => 'text_angle',
       'text_align' => 'text_align',
-      'line_spacing' => 'line_spacing',
     ];
 
     // handle colours first
@@ -178,6 +176,12 @@ class Guidelines {
       // text colour overrides line colour
       $topts['fill'] = new Colour($this->graph, $g['text_colour']);
     }
+
+    // font size and line spacing
+    if(isset($g['font_size']))
+      $topts['font-size'] = Number::units($g['font_size']);
+    if(isset($g['line_spacing']))
+      $topts['line_spacing'] = Number::units($g['line_spacing']);
 
     // copy other options to line or text array
     foreach($line_opts as $okey => $opt)
