@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2021 Graham Breach
+ * Copyright (C) 2021-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -42,8 +42,9 @@ class TextShape extends Shape {
   {
     $content = $attributes['text'];
     $font = $attributes['font'];
-    $spacing = isset($attributes['line-spacing']) ? $attributes['line-spacing'] :
-      $attributes['font-size'];
+    $attributes['font-size'] = Number::units($attributes['font-size']);
+    $spacing = isset($attributes['line-spacing']) ?
+      Number::units($attributes['line-spacing']) : $attributes['font-size'];
     $align = isset($attributes['text-align']) ? $attributes['text-align'] : '';
 
     // remove SVGGraph's shape options
