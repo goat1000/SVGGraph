@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2020 Graham Breach
+ * Copyright (C) 2020-2023 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,7 +43,7 @@ class BestFit {
   public function add($dataset, $points)
   {
     $type = $this->graph->getOption(['best_fit', $dataset]);
-    if($type !== 'straight')
+    if($type !== 'straight' && $type !== 'curve')
       return;
 
     // range and projection
@@ -63,7 +63,10 @@ class BestFit {
       $points = $this->filterPoints($points, $r_start, $r_end);
     }
 
-    $best_fit = new BestFitLine($this->graph, $points);
+    $class = '\\Goat1000\\SVGGraph\\' . ($type === 'straight' ? 'BestFitLine' : 'BestFitCurve');
+    $subtypes = $this->graph->getOption(['best_fit_type', $dataset]);
+
+    $best_fit = new $class($this->graph, $points, $subtypes);
     $best_fit->calculate($this->bbox, $r_start, $r_end, $p_start, $p_end);
     if($this->graph->getOption(['best_fit_above', $dataset]))
       $this->lines_above[$dataset] = $best_fit;
@@ -162,6 +165,7 @@ class BestFit {
     $dash = $this->graph->getOption(['best_fit_dash', $dataset]);
     $opacity = $this->graph->getOption(['best_fit_opacity', $dataset]);
     $above = $this->graph->getOption(['best_fit_above', $dataset]);
+    $type = $this->graph->getOption(['best_fit', $dataset]);
     $path = [
       'd' => $line_path,
       'stroke' => $colour->isNone() ? '#000' : $colour,
@@ -172,6 +176,8 @@ class BestFit {
       $path['stroke-dasharray'] = $dash;
     if($opacity != 1)
       $path['opacity'] = $opacity;
+    if($type != 'straight')
+      $path['fill'] = 'none'; // don't fill curves
 
     $line = $this->graph->element('path', $path);
     if($proj_path->isEmpty())
