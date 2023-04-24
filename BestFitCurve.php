@@ -192,10 +192,10 @@ class BestFitCurve {
 
     $step = 1;
     if($project_start)
-      $this->buildPath($projection, $fn, 0, $x_min, $step, $area);
-    $this->buildPath($line, $fn, $x_min, $x_max, $step, $area);
+      $this->buildPath($projection, $fn, 0, $x_min, $y_min, $y_max, $step, $area);
+    $this->buildPath($line, $fn, $x_min, $x_max, $y_min, $y_max, $step, $area);
     if($project_end)
-      $this->buildPath($projection, $fn, $x_max, $area->width(), $step, $area);
+      $this->buildPath($projection, $fn, $x_max, $area->width(), $y_min, $y_max, $step, $area);
 
     $this->projection = $projection;
     $this->line = $line;
@@ -205,11 +205,15 @@ class BestFitCurve {
   /**
    * Builds a single path section between $x1 and $x2
    */
-  private function buildPath(&$path, &$fn, $x1, $x2, $step, $area)
+  private function buildPath(&$path, &$fn, $x1, $x2, $y_min, $y_max, $step, $area)
   {
     $cmd = 'M';
     for($x = $x1; $x <= $x2; $x += $step) {
       $y = $fn($x);
+      if($y < $y_min || $y > $y_max) {
+        $cmd = 'M';
+        continue;
+      }
       $path->add($cmd, $area->x1 + $x, $area->y2 - $y);
       switch($cmd) {
       case 'M' : $cmd = 'L'; break;
