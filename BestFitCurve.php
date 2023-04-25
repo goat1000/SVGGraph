@@ -99,7 +99,11 @@ class BestFitCurve {
 
       // sort by error, best first
       uasort($errors, 'bccomp');
-      $best = array_key_first($errors);
+      $best = null;
+      foreach($errors as $k => $v) {
+        $best = $k;
+        break;
+      }
 
       $r = $results[$best];
       $c = $r->asArray();
