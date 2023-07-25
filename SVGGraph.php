@@ -85,11 +85,11 @@ class SVGGraph {
   /**
    * Fetch the Javascript for ALL graphs that have been Fetched
    */
-  public static function fetchJavascript()
+  public static function fetchJavascript($nonce = null)
   {
     if(SVGGraph::$last_instance === null)
       return '';
-    return SVGGraph::$last_instance->fetchJavascript(true, true);
+    return SVGGraph::$last_instance->fetchJavascript(true, true, $nonce);
   }
 }
 

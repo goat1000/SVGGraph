@@ -1547,7 +1547,7 @@ abstract class Graph {
    * When using the defer_javascript option, this returns the
    * Javascript block
    */
-  public function fetchJavascript($cdata = true, $no_namespace = true)
+  public function fetchJavascript($cdata = true, $no_namespace = true, $nonce = null)
   {
     if(!isset(Graph::$javascript))
       return '';
@@ -1557,6 +1557,8 @@ abstract class Graph {
       return '';
 
     $script_attr = ['type' => 'application/ecmascript'];
+    if($nonce !== null)
+      $script_attr['nonce'] = $nonce;
     $namespace = $this->namespace;
     if($no_namespace)
       $this->namespace = false;
