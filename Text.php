@@ -46,7 +46,7 @@ class Text {
       if($graph->getOption('use_iconv', true) && extension_loaded('iconv')) {
         // test the iconv function
         $test_euro = "Test:\u{20ac}";
-        $out = iconv('UTF-8', 'ASCII//TRANSLIT', $test_euro);
+        $out = @iconv('UTF-8', 'ASCII//TRANSLIT', $test_euro);
         Text::$use_iconv = (strlen($out) > 0);
       }
     }
