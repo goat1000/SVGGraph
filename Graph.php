@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2023 Graham Breach
+ * Copyright (C) 2019-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -1345,6 +1345,13 @@ abstract class Graph {
     if(!isset($this->settings['shape']))
       return '';
     return $this->getShapeList()->draw(ShapeList::ABOVE);
+  }
+
+  public function topShapes()
+  {
+    if(!isset($this->settings['shape']))
+      return '';
+    return $this->getShapeList()->draw(ShapeList::TOP);
   }
 
   /**

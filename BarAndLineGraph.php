@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2022 Graham Breach
+ * Copyright (C) 2015-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -151,6 +151,7 @@ class BarAndLineGraph extends GroupedBarGraph {
     // add in the markers created by line graph
     $body .= $this->linegraph->drawMarkers();
     $body .= $best_fit_above;
+    $body .= $this->topShapes();
 
     return $body;
   }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2019-2020 Graham Breach
+ * Copyright (C) 2019-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,7 +36,9 @@ class EmptyGraph extends Graph {
   protected function draw()
   {
     // maybe not completely empty
-    return $this->underShapes() . $this->overShapes();
+    return $this->underShapes() .
+      $this->overShapes() .
+      $this->topShapes();
   }
 
   /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015-2021 Graham Breach
+ * Copyright (C) 2015-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,7 @@ class ShapeList {
 
   const ABOVE = 1;
   const BELOW = 0;
+  const TOP = 2;
 
   private $graph;
   private $shapes = [];
@@ -102,8 +103,16 @@ class ShapeList {
 
     if(isset($class_map[$shape]) && class_exists($class_map[$shape])) {
       $depth = ShapeList::BELOW;
-      if(isset($shape_array['depth']) && $shape_array['depth'] == 'above')
-        $depth = ShapeList::ABOVE;
+      if(isset($shape_array['depth'])) {
+        switch($shape_array['depth']) {
+          case 'above':
+            $depth = ShapeList::ABOVE;
+            break;
+          case 'top':
+            $depth = ShapeList::TOP;
+            break;
+        }
+      }
 
       if(isset($shape_array['clip_to_grid']) && $shape_array['clip_to_grid'] &&
         method_exists($this->graph, 'gridClipPath')) {

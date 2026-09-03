@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2022 Graham Breach
+ * Copyright (C) 2009-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -96,6 +96,7 @@ class LineGraph extends PointGraph {
     $body .= $this->axes();
     $body .= $this->drawMarkers();
     $body .= $best_fit_above;
+    $body .= $this->topShapes();
     return $body;
   }
 

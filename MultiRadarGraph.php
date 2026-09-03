@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2011-2022 Graham Breach
+ * Copyright (C) 2011-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -89,6 +89,7 @@ class MultiRadarGraph extends RadarGraph {
     $body .= $this->overShapes();
     $body .= $this->axes();
     $body .= $this->drawMarkers();
+    $body .= $this->topShapes();
     return $body;
   }
 }
