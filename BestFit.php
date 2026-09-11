@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2020-2023 Graham Breach
+ * Copyright (C) 2020-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,23 +28,78 @@ class BestFit {
 
   protected $graph;
   protected $bbox;
+  protected $points = [];
   protected $lines_below = [];
   protected $lines_above = [];
+  protected $combined = false;
+  protected $build_done = false;
 
   public function __construct(Graph &$graph, BoundingBox $bbox)
   {
     $this->graph =& $graph;
     $this->bbox = $bbox;
+    $this->combined = $graph->getOption('best_fit_combined');
   }
 
   /**
-   * Adds a line
+   * Adds points for a set of data
    */
   public function add($dataset, $points)
   {
     $type = $this->graph->getOption(['best_fit', $dataset]);
-    if($type !== 'straight' && $type !== 'curve')
+    if(!$this->checkType($type)) {
+      if(!$this->checkType($this->combined))
+        return;
+      $type = 'combined';
+    }
+
+    $this->points[$dataset] = ['type' => $type, 'points' => $points];
+  }
+
+  /**
+   * Checks that the type is valid
+   */
+  protected function checkType($type)
+  {
+    return $type === 'straight' || $type === 'curve';
+  }
+
+  /**
+   * Builds the lines
+   */
+  protected function buildLines()
+  {
+    if($this->build_done)
       return;
+
+    $combined = $this->checkType($this->combined);
+    $cpoints = [];
+    $ccount = 0;
+
+    foreach($this->points as $dataset => $point_data) {
+
+      // add straight or curve line
+      if($this->checkType($point_data['type']))
+        $this->addLine($dataset, $point_data['points'], $point_data['type']);
+
+      // join points for combined line
+      if($combined) {
+        $cpoints = array_merge($cpoints, $point_data['points']);
+        ++$ccount;
+      }
+    }
+
+    if($ccount)
+      $this->addLine('combined', $cpoints, $this->combined);
+    $this->build_done = true;
+  }
+
+  /**
+   * Adds a single line to the list
+   */
+  protected function addLine($dataset, $points, $type)
+  {
+    $combined = ($dataset === 'combined');
 
     // range and projection
     $r_start = $r_end = $p_start = $p_end = null;
@@ -55,7 +110,8 @@ class BestFit {
         $r_start = $this->graph->unitsX($start);
       if($end !== null)
         $r_end = $this->graph->unitsX($end);
-      $project = $this->graph->getOption(['best_fit_project', $dataset]);
+      $project = $combined ? $this->graph->getOption('best_fit_combined_project') :
+        $this->graph->getOption(['best_fit_project', $dataset]);
       $p_start = $project == 'start' || $project == 'both';
       $p_end = $project == 'end' || $project == 'both';
       $project = $p_start || $p_end;
@@ -64,11 +120,14 @@ class BestFit {
     }
 
     $class = '\\Goat1000\\SVGGraph\\' . ($type === 'straight' ? 'BestFitLine' : 'BestFitCurve');
-    $subtypes = $this->graph->getOption(['best_fit_type', $dataset]);
+    $subtypes = $combined ? $this->graph->getOption('best_fit_combined_type') :
+      $this->graph->getOption(['best_fit_type', $dataset]);
 
     $best_fit = new $class($this->graph, $points, $subtypes);
     $best_fit->calculate($this->bbox, $r_start, $r_end, $p_start, $p_end);
-    if($this->graph->getOption(['best_fit_above', $dataset]))
+    $above = $combined ? $this->graph->getOption('best_fit_combined_above') :
+      $this->graph->getOption(['best_fit_above', $dataset]);
+    if($above)
       $this->lines_above[$dataset] = $best_fit;
     else
       $this->lines_below[$dataset] = $best_fit;
@@ -79,9 +138,13 @@ class BestFit {
    */
   protected function getRange($dataset)
   {
-    $range = $this->graph->getOption(['best_fit_range', $dataset]);
-    if(!is_array($range))
-      $range = $this->graph->getOption('best_fit_range');
+    if($dataset == 'combined') {
+      $range = $this->graph->getOption('best_fit_combined_range');
+    } else {
+      $range = $this->graph->getOption(['best_fit_range', $dataset]);
+      if(!is_array($range))
+        $range = $this->graph->getOption('best_fit_range');
+    }
     if(!is_array($range))
       return [null, null];
     if(count($range) !== 2)
@@ -134,6 +197,7 @@ class BestFit {
    */
   private function getLines($which_lines)
   {
+    $this->buildLines();
     $lines = '';
     foreach($this->{$which_lines} as $dataset => $best_fit) {
       $line_path = $best_fit->getLine();
@@ -158,14 +222,22 @@ class BestFit {
    */
   protected function getLinePath($dataset, $line_path, $proj_path)
   {
-    // use ColourGroup to support fill and fillColour
-    $cg = new ColourGroup($this->graph, null, 0, $dataset, 'best_fit_colour');
-    $colour = $cg->stroke();
-    $stroke_width = $this->graph->getOption(['best_fit_width', $dataset]);
-    $dash = $this->graph->getOption(['best_fit_dash', $dataset]);
-    $opacity = $this->graph->getOption(['best_fit_opacity', $dataset]);
-    $above = $this->graph->getOption(['best_fit_above', $dataset]);
-    $type = $this->graph->getOption(['best_fit', $dataset]);
+    $combined = ($dataset === 'combined');
+    if($combined) {
+      $colour = new Colour($this->graph, $this->graph->getOption('best_fit_combined_colour'));
+      $stroke_width = $this->graph->getOption('best_fit_combined_width');
+      $dash = $this->graph->getOption('best_fit_combined_dash');
+      $opacity = $this->graph->getOption('best_fit_combined_opacity');
+      $type = $this->combined;
+    } else {
+      // use ColourGroup to support fill and fillColour
+      $cg = new ColourGroup($this->graph, null, 0, $dataset, 'best_fit_colour');
+      $colour = $cg->stroke();
+      $stroke_width = $this->graph->getOption(['best_fit_width', $dataset]);
+      $dash = $this->graph->getOption(['best_fit_dash', $dataset]);
+      $opacity = $this->graph->getOption(['best_fit_opacity', $dataset]);
+      $type = $this->graph->getOption(['best_fit', $dataset]);
+    }
     $path = [
       'd' => $line_path,
       'stroke' => $colour->isNone() ? '#000' : $colour,
@@ -185,11 +257,19 @@ class BestFit {
 
     // append the projection path
     $path['d'] = $proj_path;
-    $cg = new ColourGroup($this->graph, null, 0, $dataset, 'best_fit_project_colour');
-    $colour = $cg->stroke();
-    $stroke_width = $this->graph->getOption(['best_fit_project_width', $dataset]);
-    $dash = $this->graph->getOption(['best_fit_project_dash', $dataset]);
-    $opacity = $this->graph->getOption(['best_fit_project_opacity', $dataset]);
+    if($combined) {
+      $colour = new Colour($this->graph,
+        $this->graph->getOption('best_fit_combined_project_colour'));
+      $stroke_width = $this->graph->getOption('best_fit_combined_project_width');
+      $dash = $this->graph->getOption('best_fit_combined_project_dash');
+      $opacity = $this->graph->getOption('best_fit_combined_project_opacity');
+    } else {
+      $cg = new ColourGroup($this->graph, null, 0, $dataset, 'best_fit_project_colour');
+      $colour = $cg->stroke();
+      $stroke_width = $this->graph->getOption(['best_fit_project_width', $dataset]);
+      $dash = $this->graph->getOption(['best_fit_project_dash', $dataset]);
+      $opacity = $this->graph->getOption(['best_fit_project_opacity', $dataset]);
+    }
 
     if(!$colour->isNone())
       $path['stroke'] = $colour;
