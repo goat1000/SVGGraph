@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2023 Graham Breach
+ * Copyright (C) 2009-2026 Graham Breach
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,7 @@ class SVGGraph {
 
   use SVGGraphTrait;
 
-  const VERSION = 'SVGGraph 3.20';
+  const VERSION = 'SVGGraph 3.20.4';
   private $width = 100;
   private $height = 100;
   private $settings = [];

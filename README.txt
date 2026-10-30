@@ -1,5 +1,5 @@
-SVGGraph Library version 3.20
-=============================
+SVGGraph Library version 3.20.4
+===============================
 
 This library provides PHP classes and functions for easily creating SVG
 graphs from data. Version 3.0 of SVGGraph requires at least PHP 5.4 - if
@@ -331,4 +331,4 @@ For more information about this software please contact the author,
 graham(at)goat1000.com or visit the website: http://www.goat1000.com/
 
 
-Copyright (C) 2009-2023 Graham Breach
+Copyright (C) 2009-2026 Graham Breach
